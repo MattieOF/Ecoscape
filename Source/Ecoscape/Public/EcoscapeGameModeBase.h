@@ -9,7 +9,7 @@
 /**
  * Base game mode for Ecoscape
  */
-UCLASS()
+UCLASS(Blueprintable)
 class ECOSCAPE_API AEcoscapeGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
