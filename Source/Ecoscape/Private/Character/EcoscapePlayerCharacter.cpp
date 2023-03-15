@@ -14,7 +14,7 @@
 
 #include "Character/EcoscapePlayerMovement.h"
 
-static TAutoConsoleVariable<int32> CVarAutoBHop(TEXT("move.Pogo"), 1, TEXT("If holding spacebar should make the player jump whenever possible.\n"), ECVF_Cheat);
+static TAutoConsoleVariable<int32> CVarAutoBHop(TEXT("move.Pogo"), 0, TEXT("If holding spacebar should make the player jump whenever possible.\n"), ECVF_Cheat);
 static TAutoConsoleVariable<int32> CVarJumpBoost(TEXT("move.JumpBoost"), 1, TEXT("If the player should boost in a movement direction while jumping.\n0 - disables jump boosting entirely\n1 - boosts in the direction of input, even when moving in another direction\n2 - boosts in the direction of input when moving in the same direction\n"), ECVF_Cheat);
 static TAutoConsoleVariable<int32> CVarBunnyhop(TEXT("move.Bunnyhopping"), 0, TEXT("Enable normal bunnyhopping.\n"), ECVF_Cheat);
 
@@ -176,7 +176,7 @@ void AEcoscapePlayerCharacter::OnJumped_Implementation()
 	{
 		LastJumpBoostTime = GetWorld()->GetTimeSeconds();
 		// Boost forward speed on jump
-		FVector Facing = GetActorForwardVector();
+		const FVector Facing = GetActorForwardVector();
 		// Use input direction
 		FVector Input = GetCharacterMovement()->GetCurrentAcceleration();
 		if (JumpBoost != 1)
@@ -184,15 +184,15 @@ void AEcoscapePlayerCharacter::OnJumped_Implementation()
 			// Only boost input in the direction of current movement axis (prevents ABH).
 			Input *= FMath::Max(Input.GetSafeNormal2D() | GetCharacterMovement()->Velocity.GetSafeNormal2D(), 0.0f);
 		}
-		float ForwardSpeed = Input | Facing;
+		const float ForwardSpeed = Input | Facing;
 		// Adjust how much the boost is
-		float SpeedBoostPerc = bIsSprinting || bIsCrouched ? 0.1f : 0.5f;
+		const float SpeedBoostPercent = bIsSprinting || bIsCrouched ? 0.1f : 0.5f;
 		// How much we are boosting by
-		float SpeedAddition = FMath::Abs(ForwardSpeed * SpeedBoostPerc);
+		float SpeedAddition = FMath::Abs(ForwardSpeed * SpeedBoostPercent);
 		// We can only boost up to this much
-		float MaxBoostedSpeed = GetCharacterMovement()->GetMaxSpeed() + GetCharacterMovement()->GetMaxSpeed() * SpeedBoostPerc;
+		const float MaxBoostedSpeed = GetCharacterMovement()->GetMaxSpeed() + GetCharacterMovement()->GetMaxSpeed() * SpeedBoostPercent;
 		// Calculate new speed
-		float NewSpeed = SpeedAddition + GetMovementComponent()->Velocity.Size2D();
+		const float NewSpeed = SpeedAddition + GetMovementComponent()->Velocity.Size2D();
 		float SpeedAdditionNoClamp = SpeedAddition;
 
 		// Scale the boost down if we are going over
@@ -213,8 +213,8 @@ void AEcoscapePlayerCharacter::OnJumped_Implementation()
 		float JumpBoostedSizeSq = JumpBoostedVel.SizeSquared2D();
 		if (CVarBunnyhop.GetValueOnGameThread() != 0)
 		{
-			FVector JumpBoostedUnclampVel = GetMovementComponent()->Velocity + Facing * SpeedAdditionNoClamp;
-			float JumpBoostedUnclampSizeSq = JumpBoostedUnclampVel.SizeSquared2D();
+			const FVector JumpBoostedUnclampVel = GetMovementComponent()->Velocity + Facing * SpeedAdditionNoClamp;
+			const float JumpBoostedUnclampSizeSq = JumpBoostedUnclampVel.SizeSquared2D();
 			if (JumpBoostedUnclampSizeSq > JumpBoostedSizeSq)
 			{
 				JumpBoostedVel = JumpBoostedUnclampVel;
@@ -228,6 +228,7 @@ void AEcoscapePlayerCharacter::OnJumped_Implementation()
 	}
 }
 
+// ReSharper disable once CppMemberFunctionMayBeConst
 void AEcoscapePlayerCharacter::ToggleNoClip()
 {
 	MovementPtr->ToggleNoClip();
@@ -292,8 +293,8 @@ bool AEcoscapePlayerCharacter::CanJumpInternal_Implementation() const
 		}
 		if (GetCharacterMovement()->IsMovingOnGround())
 		{
-			float FloorZ = FVector(0.0f, 0.0f, 1.0f) | GetCharacterMovement()->CurrentFloor.HitResult.ImpactNormal;
-			float WalkableFloor = GetCharacterMovement()->GetWalkableFloorZ();
+			const float FloorZ = FVector(0.0f, 0.0f, 1.0f) | GetCharacterMovement()->CurrentFloor.HitResult.ImpactNormal;
+			const float WalkableFloor = GetCharacterMovement()->GetWalkableFloorZ();
 			bCanJump &= (FloorZ >= WalkableFloor || FMath::IsNearlyEqual(FloorZ, WalkableFloor));
 		}
 	}
@@ -301,7 +302,8 @@ bool AEcoscapePlayerCharacter::CanJumpInternal_Implementation() const
 	return bCanJump;
 }
 
-void AEcoscapePlayerCharacter::Move(FVector Direction, float Value)
+// ReSharper disable once CppPassValueParameterByConstReference
+void AEcoscapePlayerCharacter::Move(FVector Direction, const float Value)
 {
 	if (!FMath::IsNearlyZero(Value))
 	{
@@ -310,7 +312,7 @@ void AEcoscapePlayerCharacter::Move(FVector Direction, float Value)
 	}
 }
 
-void AEcoscapePlayerCharacter::Turn(bool bIsPure, float Rate)
+void AEcoscapePlayerCharacter::Turn(const bool bIsPure, float Rate)
 {
 	if (!bIsPure)
 	{
@@ -321,7 +323,7 @@ void AEcoscapePlayerCharacter::Turn(bool bIsPure, float Rate)
 	AddControllerYawInput(Rate);
 }
 
-void AEcoscapePlayerCharacter::LookUp(bool bIsPure, float Rate)
+void AEcoscapePlayerCharacter::LookUp(const bool bIsPure, float Rate)
 {
 	if (!bIsPure)
 	{

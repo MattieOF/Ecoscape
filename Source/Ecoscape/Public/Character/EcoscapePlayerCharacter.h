@@ -28,19 +28,19 @@ class ECOSCAPE_API AEcoscapePlayerCharacter : public ACharacter
 	GENERATED_BODY()
 
 public:
-	void Tick(float DeltaTime) override;
+	virtual void Tick(float DeltaTime) override;
 	virtual void ClearJumpInput(float DeltaTime) override;
-	void Jump() override;
+	virtual void Jump() override;
 	virtual void StopJumping() override;
 	virtual void OnJumped_Implementation() override;
 	virtual bool CanJumpInternal_Implementation() const override;
 
-	void RecalculateBaseEyeHeight() override;
+	virtual void RecalculateBaseEyeHeight() override;
 
 	/* Triggered when player's movement mode has changed */
-	void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PrevCustomMode) override;
+	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PrevCustomMode) override;
 
-	float GetLastJumpTime()
+	float GetLastJumpTime() const
 	{
 		return LastJumpTime;
 	}
@@ -94,6 +94,7 @@ private:
 	float CapDamageMomentumZ = 0.f;
 
 	/** Pointer to player movement component */
+	UPROPERTY()
 	UEcoscapePlayerMovement* MovementPtr;
 
 	/** True if we're sprinting*/
@@ -107,7 +108,7 @@ private:
 	virtual void ApplyDamageMomentum(float DamageTaken, FDamageEvent const& DamageEvent, APawn* PawnInstigator, AActor* DamageCauser) override;
 
 protected:
-	virtual void BeginPlay();
+	virtual void BeginPlay() override;
 public:
 	AEcoscapePlayerCharacter(const FObjectInitializer& ObjectInitializer);
 
@@ -167,12 +168,13 @@ public:
 
 	float GetMinLandBounceSpeed() const { return MinLandBounceSpeed; }
 
-	/** Handles stafing movement, left and right */
+	/** Handles strafing movement, left and right */
 	UFUNCTION()
 	void Move(FVector Direction, float Value);
 
 	/**
 	 * Called via input to turn at a given rate.
+	 * @param bIsPure If true, rate is not multiplied by turn rate and DeltaTime
 	 * @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired
 	 * turn rate
 	 */
@@ -181,6 +183,7 @@ public:
 
 	/**
 	 * Called via input to turn look up/down at a given rate.
+	 * @param bIsPure If true, rate is not multiplied by turn rate and DeltaTime
 	 * @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired
 	 * turn rate
 	 */

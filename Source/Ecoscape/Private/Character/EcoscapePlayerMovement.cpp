@@ -22,9 +22,9 @@ DECLARE_CYCLE_STAT(TEXT("Char PhysFalling"), STAT_CharPhysFalling, STATGROUP_Cha
 
 // MAGIC NUMBERS
 constexpr float JumpVelocity = 266.7f;
-constexpr float MAX_STEP_SIDE_Z = 0.08f;			 // maximum z value for the normal on the vertical side of steps
-constexpr float VERTICAL_SLOPE_NORMAL_Z = 0.001f;	 // Slope is vertical if Abs(Normal.Z) <= this threshold. Accounts for precision problems that sometimes angle
-												 // normals slightly off horizontal for vertical surface.
+constexpr float GMax_Step_Side_Z = 0.08f;			 // maximum z value for the normal on the vertical side of steps
+constexpr float GVertical_Slope_Normal_Z = 0.001f;	 // Slope is vertical if Abs(Normal.Z) <= this threshold. Accounts for precision problems that sometimes angle
+												     // normals slightly off horizontal for vertical surface.
 
 constexpr float DesiredGravity = -1143.0f;
 
@@ -140,15 +140,14 @@ UEcoscapePlayerMovement::UEcoscapePlayerMovement()
 void UEcoscapePlayerMovement::InitializeComponent()
 {
 	Super::InitializeComponent();
-	PBCharacter = Cast<AEcoscapePlayerCharacter>(GetOwner());
+	EcoscapeCharacter = Cast<AEcoscapePlayerCharacter>(GetOwner());
 }
 
 void UEcoscapePlayerMovement::OnRegister()
 {
 	Super::OnRegister();
 
-	const bool bIsReplay = (GetWorld() && GetWorld()->IsPlayingReplay());
-	if (!bIsReplay && GetNetMode() == NM_ListenServer)
+	if (const bool bIsReplay = (GetWorld() && GetWorld()->IsPlayingReplay()); !bIsReplay && GetNetMode() == NM_ListenServer)
 	{
 		NetworkSmoothingMode = ENetworkSmoothingMode::Linear;
 	}
@@ -178,11 +177,11 @@ void UEcoscapePlayerMovement::TickComponent(float DeltaTime, enum ELevelTick Tic
 		GEngine->AddOnScreenDebugMessage(3, 1.0f, FColor::Green, FString::Printf(TEXT("vel: %f"), Velocity.Size()));
 	}
 
-	if (RollAngle != 0 && RollSpeed != 0 && PBCharacter->GetController())
+	if (RollAngle != 0 && RollSpeed != 0 && EcoscapeCharacter->GetController())
 	{
-		FRotator ControlRotation = PBCharacter->GetController()->GetControlRotation();
+		FRotator ControlRotation = EcoscapeCharacter->GetController()->GetControlRotation();
 		ControlRotation.Roll = GetCameraRoll();
-		PBCharacter->GetController()->SetControlRotation(ControlRotation);
+		EcoscapeCharacter->GetController()->SetControlRotation(ControlRotation);
 	}
 
 	bBrakingFrameTolerated = IsMovingOnGround();
@@ -248,7 +247,7 @@ FVector UEcoscapePlayerMovement::HandleSlopeBoosting(const FVector& SlideResult,
 	const float WallAngle = FMath::Abs(Hit.ImpactNormal.Z);
 	FVector ImpactNormal;
 	// If too extreme, use the more stable hit normal
-	if (WallAngle <= VERTICAL_SLOPE_NORMAL_Z || WallAngle == 1.0f)
+	if (WallAngle <= GVertical_Slope_Normal_Z || WallAngle == 1.0f)
 	{
 		ImpactNormal = Normal;
 	}
@@ -386,7 +385,7 @@ bool UEcoscapePlayerMovement::IsValidLandingSpot(const FVector& CapsuleLocation,
 	return true;
 }
 
-void UEcoscapePlayerMovement::TraceCharacterFloor(FHitResult& OutHit)
+void UEcoscapePlayerMovement::TraceCharacterFloor(FHitResult& OutHit) const
 {
 	FCollisionQueryParams CapsuleParams(SCENE_QUERY_STAT(CharacterFloorTrace), false, CharacterOwner);
 	FCollisionResponseParams ResponseParam;
@@ -572,8 +571,7 @@ void UEcoscapePlayerMovement::UpdateSurfaceFriction(bool bIsSliding)
 	}
 	else
 	{
-		const bool bPlayerControlsMovedVertically = bOnLadder || Velocity.Z > JumpVelocity || Velocity.Z <= 0.0f || bCheatFlying;
-		if (bPlayerControlsMovedVertically)
+		if (bOnLadder || Velocity.Z > JumpVelocity || Velocity.Z <= 0.0f || bCheatFlying)
 		{
 			SurfaceFriction = 1.0f;
 		}
@@ -633,9 +631,7 @@ void UEcoscapePlayerMovement::UpdateCrouching(float DeltaTime, bool bOnlyUncrouc
 
 UPBMoveStepSound* UEcoscapePlayerMovement::GetMoveStepSoundBySurface(EPhysicalSurface SurfaceType) const
 {
-	TSubclassOf<UPBMoveStepSound>* GotSound = PBCharacter->GetMoveStepSound(TEnumAsByte<EPhysicalSurface>(SurfaceType));
-
-	if (GotSound)
+	if (const TSubclassOf<UPBMoveStepSound>* GotSound = EcoscapeCharacter->GetMoveStepSound(TEnumAsByte<EPhysicalSurface>(SurfaceType)))
 	{
 		return GotSound->GetDefaultObject();
 	}
@@ -795,11 +791,11 @@ void UEcoscapePlayerMovement::PlayJumpSound(const FHitResult& Hit, bool bJumped)
 		return;
 	}
 
-	UPBMoveStepSound* MoveSound = nullptr;
-	TSubclassOf<UPBMoveStepSound>* GotSound = nullptr;
+	const UPBMoveStepSound* MoveSound = nullptr;
+	const TSubclassOf<UPBMoveStepSound>* GotSound = nullptr;
 	if (Hit.PhysMaterial.IsValid())
 	{
-		GotSound = PBCharacter->GetMoveStepSound(Hit.PhysMaterial->SurfaceType);
+		GotSound = EcoscapeCharacter->GetMoveStepSound(Hit.PhysMaterial->SurfaceType);
 	}
 	if (GotSound)
 	{
@@ -807,11 +803,11 @@ void UEcoscapePlayerMovement::PlayJumpSound(const FHitResult& Hit, bool bJumped)
 	}
 	if (!MoveSound)
 	{
-		if (!PBCharacter->GetMoveStepSound(TEnumAsByte<EPhysicalSurface>(SurfaceType_Default)))
+		if (!EcoscapeCharacter->GetMoveStepSound(TEnumAsByte<EPhysicalSurface>(SurfaceType_Default)))
 		{
 			return;
 		}
-		MoveSound = PBCharacter->GetMoveStepSound(TEnumAsByte<EPhysicalSurface>(SurfaceType_Default))->GetDefaultObject();
+		MoveSound = EcoscapeCharacter->GetMoveStepSound(TEnumAsByte<EPhysicalSurface>(SurfaceType_Default))->GetDefaultObject();
 	}
 
 	if (MoveSound)
@@ -822,15 +818,15 @@ void UEcoscapePlayerMovement::PlayJumpSound(const FHitResult& Hit, bool bJumped)
 		if (!bJumped)
 		{
 			const float FallSpeed = -Velocity.Z;
-			if (FallSpeed > PBCharacter->GetMinSpeedForFallDamage())
+			if (FallSpeed > EcoscapeCharacter->GetMinSpeedForFallDamage())
 			{
 				MoveSoundVolume = 1.0f;
 			}
-			else if (FallSpeed > PBCharacter->GetMinSpeedForFallDamage() / 2.0f)
+			else if (FallSpeed > EcoscapeCharacter->GetMinSpeedForFallDamage() / 2.0f)
 			{
 				MoveSoundVolume = 0.85f;
 			}
-			else if (FallSpeed < PBCharacter->GetMinLandBounceSpeed())
+			else if (FallSpeed < EcoscapeCharacter->GetMinLandBounceSpeed())
 			{
 				MoveSoundVolume = 0.0f;
 			}
@@ -841,7 +837,7 @@ void UEcoscapePlayerMovement::PlayJumpSound(const FHitResult& Hit, bool bJumped)
 		}
 		else
 		{
-			MoveSoundVolume = PBCharacter->IsSprinting() ? MoveSound->GetSprintVolume() : MoveSound->GetWalkVolume();
+			MoveSoundVolume = EcoscapeCharacter->IsSprinting() ? MoveSound->GetSprintVolume() : MoveSound->GetWalkVolume();
 		}
 
 		if (IsCrouching())
@@ -904,7 +900,7 @@ void UEcoscapePlayerMovement::PhysFalling(float deltaTime, int32 Iterations)
 		const FVector OldVelocity = Velocity;
 
 		// Apply input
-		const float MaxDecel = GetMaxBrakingDeceleration();
+		const float MaxDeceleration = GetMaxBrakingDeceleration();
 		if (!HasAnimRootMotion() && !CurrentRootMotion.HasOverrideVelocity())
 		{
 			// Compute Velocity
@@ -912,7 +908,7 @@ void UEcoscapePlayerMovement::PhysFalling(float deltaTime, int32 Iterations)
 				// Acceleration = FallAcceleration for CalcVelocity(), but we restore it after using it.
 				TGuardValue<FVector> RestoreAcceleration(Acceleration, FallAcceleration);
 				Velocity.Z = 0.f;
-				CalcVelocity(timeTick, FallingLateralFriction, false, MaxDecel);
+				CalcVelocity(timeTick, FallingLateralFriction, false, MaxDeceleration);
 				Velocity.Z = OldVelocity.Z;
 			}
 		}
@@ -950,7 +946,7 @@ void UEcoscapePlayerMovement::PhysFalling(float deltaTime, int32 Iterations)
 				const float TimeToApex = -OldVelocity.Z / DerivedAccel.Z;
 				
 				// The time-to-apex calculation should be precise, and we want to avoid adding a substep when we are basically already at the apex from the previous iteration's work.
-				const float ApexTimeMinimum = 0.0001f;
+				constexpr float ApexTimeMinimum = 0.0001f;
 				if (TimeToApex >= ApexTimeMinimum && TimeToApex < timeTick)
 				{
 					const FVector ApexVelocity = OldVelocity + DerivedAccel * TimeToApex;
@@ -1055,12 +1051,12 @@ void UEcoscapePlayerMovement::PhysFalling(float deltaTime, int32 Iterations)
 						TGuardValue<FVector> RestoreAcceleration(Acceleration, FVector::ZeroVector);
 						TGuardValue<FVector> RestoreVelocity(Velocity, OldVelocity);
 						Velocity.Z = 0.f;
-						CalcVelocity(timeTick, FallingLateralFriction, false, MaxDecel);
+						CalcVelocity(timeTick, FallingLateralFriction, false, MaxDeceleration);
 						VelocityNoAirControl = FVector(Velocity.X, Velocity.Y, OldVelocity.Z);
 						VelocityNoAirControl = NewFallVelocity(VelocityNoAirControl, Gravity, GravityTime);
 					}
 
-					const bool bCheckLandingSpot = false; // we already checked above.
+					constexpr bool bCheckLandingSpot = false; // we already checked above.
 					AirControlAccel = (Velocity - VelocityNoAirControl) / timeTick;
 					const FVector AirControlDeltaV = LimitAirControl(LastMoveTimeSlice, AirControlAccel, Hit, bCheckLandingSpot) * LastMoveTimeSlice;
 					Adjusted = (VelocityNoAirControl + AirControlDeltaV) * LastMoveTimeSlice;
@@ -1106,19 +1102,18 @@ void UEcoscapePlayerMovement::PhysFalling(float deltaTime, int32 Iterations)
 						}
 
 						// Act as if there was no air control on the last move when computing new deflection.
-						if (bHasLimitedAirControl && Hit.Normal.Z > VERTICAL_SLOPE_NORMAL_Z)
+						if (bHasLimitedAirControl && Hit.Normal.Z > GVertical_Slope_Normal_Z)
 						{
 							const FVector LastMoveNoAirControl = VelocityNoAirControl * LastMoveTimeSlice;
 							Delta = ComputeSlideVector(LastMoveNoAirControl, 1.f, OldHitNormal, Hit);
 						}
 
-						FVector PreTwoWallDelta = Delta;
 						TwoWallAdjust(Delta, Hit, OldHitNormal);
 
 						// Limit air control, but allow a slide along the second wall.
 						if (bHasLimitedAirControl)
 						{
-							const bool bCheckLandingSpot = false; // we already checked above.
+							constexpr bool bCheckLandingSpot = false; // we already checked above.
 							const FVector AirControlDeltaV = LimitAirControl(subTimeTickRemaining, AirControlAccel, Hit, bCheckLandingSpot) * subTimeTickRemaining;
 
 							// Only allow if not back in to first wall
@@ -1187,7 +1182,7 @@ void UEcoscapePlayerMovement::CalcVelocity(float DeltaTime, float Friction, bool
 {
 	// UE4-COPY: void UCharacterMovementComponent::CalcVelocity(float DeltaTime, float Friction, bool bFluid, float BrakingDeceleration)
 
-	// Do not update velocity when using root motion or when SimulatedProxy and not simulating root motion - SimulatedProxy are repped their Velocity
+	// Do not update velocity when using root motion or when SimulatedProxy and not simulating root motion - SimulatedProxy are replicated their Velocity
 	if (!HasValidData() || HasAnimRootMotion() || DeltaTime < MIN_TICK_TIME || (CharacterOwner && CharacterOwner->GetLocalRole() == ROLE_SimulatedProxy && !bWasSimulatingRootMotion))
 	{
 		return;
@@ -1274,14 +1269,14 @@ void UEcoscapePlayerMovement::CalcVelocity(float DeltaTime, float Friction, bool
 		}
 		else
 		{
-			auto LookVec = CharacterOwner->GetControlRotation().Vector();
+			const auto LookVec = CharacterOwner->GetControlRotation().Vector();
 			auto LookVec2D = CharacterOwner->GetActorForwardVector();
 			LookVec2D.Z = 0.0f;
-			auto PerpendicularAccel = (LookVec2D | Acceleration) * LookVec2D;
-			auto TangentialAccel = Acceleration - PerpendicularAccel;
-			auto UnitAcceleration = Acceleration;
-			auto Dir = UnitAcceleration.CosineAngle2D(LookVec);
-			auto NoClipAccelClamp = PBCharacter->IsSprinting() ? 2.0f * MaxAcceleration : MaxAcceleration;
+			const auto PerpendicularAccel = (LookVec2D | Acceleration) * LookVec2D;
+			const auto TangentialAccel = Acceleration - PerpendicularAccel;
+			const auto UnitAcceleration = Acceleration;
+			const auto Dir = UnitAcceleration.CosineAngle2D(LookVec);
+			const auto NoClipAccelClamp = EcoscapeCharacter->IsSprinting() ? 2.0f * MaxAcceleration : MaxAcceleration;
 			Velocity = (Dir * LookVec * PerpendicularAccel.Size2D() + TangentialAccel).GetClampedToSize(NoClipAccelClamp, NoClipAccelClamp);
 		}
 	}
@@ -1338,8 +1333,8 @@ void UEcoscapePlayerMovement::CalcVelocity(float DeltaTime, float Friction, bool
 	else
 	{
 		// Scale step/ramp height down the faster we go
-		float Speed = FMath::Sqrt(SpeedSq);
-		float SpeedScale = (Speed - SpeedMultMin) / (SpeedMultMax - SpeedMultMin);
+		const float Speed = FMath::Sqrt(SpeedSq);
+		const float SpeedScale = (Speed - SpeedMultMin) / (SpeedMultMax - SpeedMultMin);
 		float SpeedMultiplier = FMath::Clamp(SpeedScale, 0.0f, 1.0f);
 		SpeedMultiplier *= SpeedMultiplier;
 		if (!IsFalling())
@@ -1394,7 +1389,7 @@ void UEcoscapePlayerMovement::DoCrouchResize(float TargetTime, float DeltaTime, 
 		return;
 	}
 
-	ACharacter* DefaultCharacter = CharacterOwner->GetClass()->GetDefaultObject<ACharacter>();
+	const ACharacter* DefaultCharacter = CharacterOwner->GetClass()->GetDefaultObject<ACharacter>();
 
 	if (bClientSimulation && CharacterOwner->GetLocalRole() == ROLE_SimulatedProxy)
 	{
@@ -1428,12 +1423,12 @@ void UEcoscapePlayerMovement::DoCrouchResize(float TargetTime, float DeltaTime, 
 		CharacterOwner->bIsCrouched = true;
 	}
 	// Determine the target height for this tick
-	float TargetCrouchedHalfHeight = OldUnscaledHalfHeight - FullCrouchDiff * TargetAlpha;
+	const float TargetCrouchedHalfHeight = OldUnscaledHalfHeight - FullCrouchDiff * TargetAlpha;
 	// Height is not allowed to be smaller than radius.
-	float ClampedCrouchedHalfHeight = FMath::Max3(0.0f, OldUnscaledRadius, TargetCrouchedHalfHeight);
+	const float ClampedCrouchedHalfHeight = FMath::Max3(0.0f, OldUnscaledRadius, TargetCrouchedHalfHeight);
 	CharacterCapsule->SetCapsuleSize(OldUnscaledRadius, ClampedCrouchedHalfHeight);
-	float HalfHeightAdjust = FullCrouchDiff * TargetAlphaDiff;
-	float ScaledHalfHeightAdjust = HalfHeightAdjust * ComponentScale;
+	const float HalfHeightAdjust = FullCrouchDiff * TargetAlphaDiff;
+	const float ScaledHalfHeightAdjust = HalfHeightAdjust * ComponentScale;
 
 	if (!bClientSimulation)
 	{
@@ -1459,8 +1454,7 @@ void UEcoscapePlayerMovement::DoCrouchResize(float TargetTime, float DeltaTime, 
 	// Don't smooth this change in mesh position
 	if ((bClientSimulation && CharacterOwner->GetLocalRole() == ROLE_SimulatedProxy) || (IsNetMode(NM_ListenServer) && CharacterOwner->GetRemoteRole() == ROLE_AutonomousProxy))
 	{
-		FNetworkPredictionData_Client_Character* ClientData = GetPredictionData_Client_Character();
-		if (ClientData)
+		if (FNetworkPredictionData_Client_Character* ClientData = GetPredictionData_Client_Character())
 		{
 			ClientData->MeshTranslationOffset -= FVector(0.0f, 0.0f, ScaledHalfHeightAdjust);
 			ClientData->OriginalMeshTranslationOffset = ClientData->MeshTranslationOffset;
@@ -1528,7 +1522,7 @@ void UEcoscapePlayerMovement::DoUnCrouchResize(float TargetTime, float DeltaTime
 		{
 			// Try to stay in place and see if the larger capsule fits. We use a
 			// slightly taller capsule to avoid penetration.
-			const float SweepInflation = KINDA_SMALL_NUMBER * 10.0f;
+			constexpr float SweepInflation = KINDA_SMALL_NUMBER * 10.0f;
 			FCollisionQueryParams CapsuleParams(SCENE_QUERY_STAT(CrouchTrace), false, CharacterOwner);
 			FCollisionResponseParams ResponseParam;
 			InitCollisionParams(CapsuleParams, ResponseParam);
@@ -1541,8 +1535,7 @@ void UEcoscapePlayerMovement::DoUnCrouchResize(float TargetTime, float DeltaTime
 			const FCollisionShape StandingCapsuleShape = GetPawnCapsuleCollisionShape(SHRINK_HeightCustom, -SweepInflation - HalfHeightAdjust);
 			const ECollisionChannel CollisionChannel = UpdatedComponent->GetCollisionObjectType();
 			FVector StandingLocation = PawnLocation + FVector(0.0f, 0.0f, StandingCapsuleShape.GetCapsuleHalfHeight() - CurrentCrouchedHalfHeight);
-			bool bEncroached = MyWorld->OverlapBlockingTestByChannel(StandingLocation, FQuat::Identity, CollisionChannel, StandingCapsuleShape, CapsuleParams, ResponseParam);
-			if (bEncroached)
+			if (MyWorld->OverlapBlockingTestByChannel(StandingLocation, FQuat::Identity, CollisionChannel, StandingCapsuleShape, CapsuleParams, ResponseParam))
 			{
 				// We're blocked from doing a full uncrouch, so don't attempt for now
 				return;
@@ -1565,7 +1558,7 @@ void UEcoscapePlayerMovement::DoUnCrouchResize(float TargetTime, float DeltaTime
 	{
 		// Try to stay in place and see if the larger capsule fits. We use a
 		// slightly taller capsule to avoid penetration.
-		const float SweepInflation = KINDA_SMALL_NUMBER * 10.0f;
+		constexpr float SweepInflation = KINDA_SMALL_NUMBER * 10.0f;
 		FCollisionQueryParams CapsuleParams(SCENE_QUERY_STAT(CrouchTrace), false, CharacterOwner);
 		FCollisionResponseParams ResponseParam;
 		InitCollisionParams(CapsuleParams, ResponseParam);
@@ -1633,8 +1626,7 @@ void UEcoscapePlayerMovement::DoUnCrouchResize(float TargetTime, float DeltaTime
 				{
 					// Something might be just barely overhead, try moving down
 					// closer to the floor to avoid it.
-					const float MinFloorDist = KINDA_SMALL_NUMBER * 10.0f;
-					if (CurrentFloor.bBlockingHit && CurrentFloor.FloorDist > MinFloorDist)
+					if (constexpr float MinFloorDist = KINDA_SMALL_NUMBER * 10.0f; CurrentFloor.bBlockingHit && CurrentFloor.FloorDist > MinFloorDist)
 					{
 						StandingLocation.Z -= CurrentFloor.FloorDist - MinFloorDist;
 						bEncroached = MyWorld->OverlapBlockingTestByChannel(StandingLocation, FQuat::Identity, CollisionChannel, StandingCapsuleShape, CapsuleParams, ResponseParam);
@@ -1675,8 +1667,7 @@ void UEcoscapePlayerMovement::DoUnCrouchResize(float TargetTime, float DeltaTime
 	// Don't smooth this change in mesh position
 	if ((bClientSimulation && CharacterOwner->GetLocalRole() == ROLE_SimulatedProxy) || (IsNetMode(NM_ListenServer) && CharacterOwner->GetRemoteRole() == ROLE_AutonomousProxy))
 	{
-		FNetworkPredictionData_Client_Character* ClientData = GetPredictionData_Client_Character();
-		if (ClientData)
+		if (FNetworkPredictionData_Client_Character* ClientData = GetPredictionData_Client_Character())
 		{
 			ClientData->MeshTranslationOffset += FVector(0.0f, 0.0f, ScaledHalfHeightAdjust);
 			ClientData->OriginalMeshTranslationOffset = ClientData->MeshTranslationOffset;
@@ -1704,10 +1695,10 @@ float UEcoscapePlayerMovement::GetMaxSpeed() const
 {
 	if (bCheatFlying)
 	{
-		return (PBCharacter->IsSprinting() ? SprintSpeed : WalkSpeed) * 1.5f;
+		return (EcoscapeCharacter->IsSprinting() ? SprintSpeed : WalkSpeed) * 1.5f;
 	}
 	float Speed;
-	if (PBCharacter->IsSprinting())
+	if (EcoscapeCharacter->IsSprinting())
 	{
 		if (IsCrouching() && bCrouchFrameTolerated)
 		{
@@ -1718,7 +1709,7 @@ float UEcoscapePlayerMovement::GetMaxSpeed() const
 			Speed = SprintSpeed;
 		}
 	}
-	else if (PBCharacter->DoesWantToWalk())
+	else if (EcoscapeCharacter->DoesWantToWalk())
 	{
 		Speed = WalkSpeed;
 	}
