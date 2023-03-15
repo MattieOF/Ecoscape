@@ -6,6 +6,7 @@
 #include "CoreMinimal.h"
 
 #include "GameFramework/Character.h"
+#include "Kismet/GameplayStatics.h"
 
 #include "Runtime/Launch/Resources/Version.h"
 
@@ -42,6 +43,12 @@ public:
 	float GetLastJumpTime()
 	{
 		return LastJumpTime;
+	}
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, meta=(WorldContext="WorldContext"))
+	static FORCEINLINE AEcoscapePlayerCharacter* GetEcoscapeCharacter(UObject* WorldContext, int32 Index = 0)
+	{
+		return Cast<AEcoscapePlayerCharacter>(UGameplayStatics::GetPlayerPawn(WorldContext, Index));
 	}
 
 private:

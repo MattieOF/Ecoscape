@@ -336,7 +336,7 @@ void AEcoscapePlayerCharacter::RecalculateBaseEyeHeight()
 {
 	const ACharacter* DefaultCharacter = GetClass()->GetDefaultObject<ACharacter>();
 	const float OldUnscaledHalfHeight = DefaultCharacter->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
-	const float CrouchedHalfHeight = GetCharacterMovement()->CrouchedHalfHeight;
+	const float CrouchedHalfHeight = GetCharacterMovement()->GetCrouchedHalfHeight();
 	const float FullCrouchDiff = OldUnscaledHalfHeight - CrouchedHalfHeight;
 	const UCapsuleComponent* CharacterCapsule = GetCapsuleComponent();
 	const float CurrentUnscaledHalfHeight = CharacterCapsule->GetUnscaledCapsuleHalfHeight();

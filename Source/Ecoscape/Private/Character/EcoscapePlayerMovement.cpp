@@ -91,7 +91,7 @@ UEcoscapePlayerMovement::UEcoscapePlayerMovement()
 	// Start out braking
 	bBrakingFrameTolerated = true;
 	// Crouching
-	CrouchedHalfHeight = 34.29f;
+	SetCrouchedHalfHeight(34.29f);
 	MaxWalkSpeedCrouched = RunSpeed * 0.33333333f;
 	bCanWalkOffLedgesWhenCrouching = true;
 	CrouchTime = MOVEMENT_DEFAULT_CROUCHTIME;
@@ -1383,7 +1383,7 @@ void UEcoscapePlayerMovement::DoCrouchResize(float TargetTime, float DeltaTime, 
 
 	// See if collision is already at desired size.
 	UCapsuleComponent* CharacterCapsule = CharacterOwner->GetCapsuleComponent();
-	if (FMath::IsNearlyEqual(CharacterCapsule->GetUnscaledCapsuleHalfHeight(), CrouchedHalfHeight))
+	if (FMath::IsNearlyEqual(CharacterCapsule->GetUnscaledCapsuleHalfHeight(), GetCrouchedHalfHeight()))
 	{
 		if (!bClientSimulation)
 		{
@@ -1407,11 +1407,11 @@ void UEcoscapePlayerMovement::DoCrouchResize(float TargetTime, float DeltaTime, 
 	const float ComponentScale = CharacterCapsule->GetShapeScale();
 	const float OldUnscaledHalfHeight = DefaultCharacter->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
 	const float OldUnscaledRadius = CharacterCapsule->GetUnscaledCapsuleRadius();
-	const float FullCrouchDiff = OldUnscaledHalfHeight - CrouchedHalfHeight;
+	const float FullCrouchDiff = OldUnscaledHalfHeight - GetCrouchedHalfHeight();
 	const float CurrentUnscaledHalfHeight = CharacterCapsule->GetUnscaledCapsuleHalfHeight();
 	// Determine the crouching progress
 	const bool bInstantCrouch = FMath::IsNearlyZero(TargetTime);
-	const float CurrentAlpha = 1.0f - (CurrentUnscaledHalfHeight - CrouchedHalfHeight) / FullCrouchDiff;
+	const float CurrentAlpha = 1.0f - (CurrentUnscaledHalfHeight - GetCrouchedHalfHeight()) / FullCrouchDiff;
 	// Determine how much we are progressing this tick
 	float TargetAlphaDiff = 1.0f;
 	float TargetAlpha = 1.0f;
@@ -1511,7 +1511,7 @@ void UEcoscapePlayerMovement::DoUnCrouchResize(float TargetTime, float DeltaTime
 	const float ComponentScale = CharacterCapsule->GetShapeScale();
 	const float OldUnscaledHalfHeight = CharacterCapsule->GetUnscaledCapsuleHalfHeight();
 	const float UncrouchedHeight = DefaultCharacter->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
-	const float FullCrouchDiff = UncrouchedHeight - CrouchedHalfHeight;
+	const float FullCrouchDiff = UncrouchedHeight - GetCrouchedHalfHeight();
 	// Determine the crouching progress
 	const bool InstantCrouch = FMath::IsNearlyZero(TargetTime);
 	float CurrentAlpha = 1.0f - (UncrouchedHeight - OldUnscaledHalfHeight) / FullCrouchDiff;
