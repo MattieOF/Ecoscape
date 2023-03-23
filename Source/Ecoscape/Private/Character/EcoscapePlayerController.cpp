@@ -30,6 +30,7 @@ void AEcoscapePlayerController::BeginPlay()
 	InputComponent->BindAxis("MoveRight", this, &AEcoscapePlayerController::OnMoveRight);
 	InputComponent->BindAxis("LookUp", this, &AEcoscapePlayerController::OnLookUp);
 	InputComponent->BindAxis("Turn", this, &AEcoscapePlayerController::OnTurn);
+	InputComponent->BindAxis("Scroll", this, &AEcoscapePlayerController::OnScroll);
 
 	InputComponent->BindAction("Jump", IE_Pressed, this, &AEcoscapePlayerController::OnJumpPressed);
 	InputComponent->BindAction("Jump", IE_Released, this, &AEcoscapePlayerController::OnJumpReleased);
@@ -56,6 +57,12 @@ void AEcoscapePlayerController::OnLookUp(const float Value)
 void AEcoscapePlayerController::OnTurn(const float Value)
 {
 	CurrentPawn->AddControllerYawInput(Value);
+}
+
+void AEcoscapePlayerController::OnScroll(float Value)
+{
+	if (CurrentView == EPSTopDown)
+		TDCharacter->AddScrollInput(Value);
 }
 
 void AEcoscapePlayerController::OnJumpPressed()

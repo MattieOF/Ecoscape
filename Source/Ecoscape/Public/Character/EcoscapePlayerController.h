@@ -47,6 +47,7 @@ protected:
 	void OnMoveRight(float Value);
 	void OnLookUp(float Value);
 	void OnTurn(float Value);
+	void OnScroll(float Value);
 
 	void OnJumpPressed();
 	void OnJumpReleased();

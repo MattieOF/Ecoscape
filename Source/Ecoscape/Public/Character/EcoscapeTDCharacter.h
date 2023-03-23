@@ -23,12 +23,28 @@ public:
 	
 	virtual void AddMovementInput(FVector WorldDirection, float ScaleValue, bool bForce) override;
 
+	UFUNCTION(BlueprintCallable)
+	void AddScrollInput(float Value);
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Speed = 10;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float ZoomSensitivity = 75;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector2D HeightBounds = FVector2D(800, 2000);
 
 protected:
 	UPROPERTY(BlueprintReadOnly)
 	UCameraComponent* Camera;
+
+	UPROPERTY(BlueprintReadOnly)
+	float TargetHeight = 0;
+
+	virtual void BeginPlay() override;
+
+	virtual void Tick(float DeltaSeconds) override;
 	
 	virtual void PossessedBy(AController* NewController) override;
 };
