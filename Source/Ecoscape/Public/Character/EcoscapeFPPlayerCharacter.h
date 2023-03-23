@@ -10,11 +10,11 @@
 
 #include "Runtime/Launch/Resources/Version.h"
 
-#include "EcoscapePlayerCharacter.generated.h"
+#include "EcoscapeFPPlayerCharacter.generated.h"
 
 class USoundCue;
 class UPBMoveStepSound;
-class UEcoscapePlayerMovement;
+class UEcoscapeFPPlayerMovement;
 
 inline float SimpleSpline(float Value)
 {
@@ -23,7 +23,7 @@ inline float SimpleSpline(float Value)
 }
 
 UCLASS(config = Game)
-class ECOSCAPE_API AEcoscapePlayerCharacter : public ACharacter
+class ECOSCAPE_API AEcoscapeFPPlayerCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
@@ -46,9 +46,9 @@ public:
 	}
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta=(WorldContext="WorldContext"))
-	static FORCEINLINE AEcoscapePlayerCharacter* GetEcoscapeCharacter(UObject* WorldContext, int32 Index = 0)
+	static FORCEINLINE AEcoscapeFPPlayerCharacter* GetEcoscapeFPCharacter(UObject* WorldContext, int32 Index = 0)
 	{
-		return Cast<AEcoscapePlayerCharacter>(UGameplayStatics::GetPlayerPawn(WorldContext, Index));
+		return Cast<AEcoscapeFPPlayerCharacter>(UGameplayStatics::GetPlayerPawn(WorldContext, Index));
 	}
 
 private:
@@ -95,7 +95,7 @@ private:
 
 	/** Pointer to player movement component */
 	UPROPERTY()
-	UEcoscapePlayerMovement* MovementPtr;
+	UEcoscapeFPPlayerMovement* MovementPtr;
 
 	/** True if we're sprinting*/
 	bool bIsSprinting;
@@ -107,10 +107,12 @@ private:
 
 	virtual void ApplyDamageMomentum(float DamageTaken, FDamageEvent const& DamageEvent, APawn* PawnInstigator, AActor* DamageCauser) override;
 
+	virtual void PossessedBy(AController* NewController) override;
+
 protected:
 	virtual void BeginPlay() override;
 public:
-	AEcoscapePlayerCharacter(const FObjectInitializer& ObjectInitializer);
+	AEcoscapeFPPlayerCharacter(const FObjectInitializer& ObjectInitializer);
 
 #pragma region Mutators
 	UFUNCTION()
@@ -151,7 +153,7 @@ public:
 	{
 		bAutoBunnyhop = val;
 	};
-	UFUNCTION(Category = "PB Getters", BlueprintPure) FORCEINLINE UEcoscapePlayerMovement* GetMovementPtr() const
+	UFUNCTION(Category = "PB Getters", BlueprintPure) FORCEINLINE UEcoscapeFPPlayerMovement* GetMovementPtr() const
 	{
 		return MovementPtr;
 	};

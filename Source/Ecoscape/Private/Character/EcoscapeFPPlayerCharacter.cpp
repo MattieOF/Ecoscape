@@ -1,7 +1,7 @@
 // Copyright Project Borealis
 // with edits by Matt Ware
 
-#include "Character/EcoscapePlayerCharacter.h"
+#include "Character/EcoscapeFPPlayerCharacter.h"
 	
 #include "Launch/Resources/Version.h"
 
@@ -9,18 +9,20 @@
 #include "Engine/DamageEvents.h"
 #endif
 
+#include "EcoscapeLog.h"
 #include "Components/CapsuleComponent.h"
 #include "HAL/IConsoleManager.h"
 
-#include "Character/EcoscapePlayerMovement.h"
+#include "../../Public/Character/EcoscapeFPPlayerMovement.h"
+#include "Character/EcoscapePlayerController.h"
 
 static TAutoConsoleVariable<int32> CVarAutoBHop(TEXT("move.Pogo"), 0, TEXT("If holding spacebar should make the player jump whenever possible.\n"), ECVF_Cheat);
 static TAutoConsoleVariable<int32> CVarJumpBoost(TEXT("move.JumpBoost"), 1, TEXT("If the player should boost in a movement direction while jumping.\n0 - disables jump boosting entirely\n1 - boosts in the direction of input, even when moving in another direction\n2 - boosts in the direction of input when moving in the same direction\n"), ECVF_Cheat);
 static TAutoConsoleVariable<int32> CVarBunnyhop(TEXT("move.Bunnyhopping"), 0, TEXT("Enable normal bunnyhopping.\n"), ECVF_Cheat);
 
 // Sets default values
-AEcoscapePlayerCharacter::AEcoscapePlayerCharacter(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer.SetDefaultSubobjectClass<UEcoscapePlayerMovement>(ACharacter::CharacterMovementComponentName))
+AEcoscapeFPPlayerCharacter::AEcoscapeFPPlayerCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UEcoscapeFPPlayerMovement>(ACharacter::CharacterMovementComponentName))
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -46,12 +48,12 @@ AEcoscapePlayerCharacter::AEcoscapePlayerCharacter(const FObjectInitializer& Obj
 	MinLandBounceSpeed = 329.565f;
 
 	// get pointer to movement component
-	MovementPtr = Cast<UEcoscapePlayerMovement>(ACharacter::GetMovementComponent());
+	MovementPtr = Cast<UEcoscapeFPPlayerMovement>(ACharacter::GetMovementComponent());
 
 	CapDamageMomentumZ = 476.25f;
 }
 
-void AEcoscapePlayerCharacter::BeginPlay()
+void AEcoscapeFPPlayerCharacter::BeginPlay()
 {
 	// Call the base class
 	Super::BeginPlay();
@@ -59,7 +61,7 @@ void AEcoscapePlayerCharacter::BeginPlay()
 	MaxJumpTime = -4.0f * GetCharacterMovement()->JumpZVelocity / (3.0f * GetCharacterMovement()->GetGravityZ());
 }
 
-void AEcoscapePlayerCharacter::Tick(float DeltaTime)
+void AEcoscapeFPPlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
@@ -71,7 +73,7 @@ void AEcoscapePlayerCharacter::Tick(float DeltaTime)
 	}
 }
 
-void AEcoscapePlayerCharacter::ApplyDamageMomentum(float DamageTaken, FDamageEvent const& DamageEvent, APawn* PawnInstigator, AActor* DamageCauser)
+void AEcoscapeFPPlayerCharacter::ApplyDamageMomentum(float DamageTaken, FDamageEvent const& DamageEvent, APawn* PawnInstigator, AActor* DamageCauser)
 {
 	UDamageType const* const DmgTypeCDO = DamageEvent.DamageTypeClass->GetDefaultObject<UDamageType>();
 	if (GetCharacterMovement())
@@ -109,7 +111,19 @@ void AEcoscapePlayerCharacter::ApplyDamageMomentum(float DamageTaken, FDamageEve
 	}
 }
 
-void AEcoscapePlayerCharacter::ClearJumpInput(float DeltaTime)
+void AEcoscapeFPPlayerCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+	if (AEcoscapePlayerController* PlayerController = Cast<AEcoscapePlayerController>(NewController))
+	{
+		PlayerController->SetMouseEnabled(false);
+		PlayerController->CenterMouse();
+	}
+	else
+		UE_LOG(LogEcoscape, Error, TEXT("Ecoscape pawn possessed by non-ecoscape controller!"));
+}
+
+void AEcoscapeFPPlayerCharacter::ClearJumpInput(float DeltaTime)
 {
 	// Don't clear jump input right away if we're auto hopping or noclipping (holding to go up), or if we are deferring a jump stop
 	if (CVarAutoBHop.GetValueOnGameThread() != 0 || bAutoBunnyhop || GetCharacterMovement()->bCheatFlying || bDeferJumpStop)
@@ -119,7 +133,7 @@ void AEcoscapePlayerCharacter::ClearJumpInput(float DeltaTime)
 	Super::ClearJumpInput(DeltaTime);
 }
 
-void AEcoscapePlayerCharacter::Jump()
+void AEcoscapeFPPlayerCharacter::Jump()
 {
 	if (GetCharacterMovement()->IsFalling())
 	{
@@ -129,7 +143,7 @@ void AEcoscapePlayerCharacter::Jump()
 	Super::Jump();
 }
 
-void AEcoscapePlayerCharacter::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PrevCustomMode)
+void AEcoscapeFPPlayerCharacter::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PrevCustomMode)
 {
 	if (!bPressedJump)
 	{
@@ -156,7 +170,7 @@ void AEcoscapePlayerCharacter::OnMovementModeChanged(EMovementMode PrevMovementM
 	MovementModeChangedDelegate.Broadcast(this, PrevMovementMode, PrevCustomMode);
 }
 
-void AEcoscapePlayerCharacter::StopJumping()
+void AEcoscapeFPPlayerCharacter::StopJumping()
 {
 	if (!bDeferJumpStop)
 	{
@@ -164,7 +178,7 @@ void AEcoscapePlayerCharacter::StopJumping()
 	}
 }
 
-void AEcoscapePlayerCharacter::OnJumped_Implementation()
+void AEcoscapeFPPlayerCharacter::OnJumped_Implementation()
 {
 	const int32 JumpBoost = CVarJumpBoost->GetInt();
 	if (MovementPtr->IsOnLadder())
@@ -229,7 +243,7 @@ void AEcoscapePlayerCharacter::OnJumped_Implementation()
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
-void AEcoscapePlayerCharacter::ToggleNoClip()
+void AEcoscapeFPPlayerCharacter::ToggleNoClip()
 {
 	MovementPtr->ToggleNoClip();
 }
@@ -261,7 +275,7 @@ void APBPlayerCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfH
 }
 #endif
 
-bool AEcoscapePlayerCharacter::CanJumpInternal_Implementation() const
+bool AEcoscapeFPPlayerCharacter::CanJumpInternal_Implementation() const
 {
 	// UE-COPY: ACharacter::CanJumpInternal_Implementation()
 
@@ -303,7 +317,7 @@ bool AEcoscapePlayerCharacter::CanJumpInternal_Implementation() const
 }
 
 // ReSharper disable once CppPassValueParameterByConstReference
-void AEcoscapePlayerCharacter::Move(FVector Direction, const float Value)
+void AEcoscapeFPPlayerCharacter::Move(FVector Direction, const float Value)
 {
 	if (!FMath::IsNearlyZero(Value))
 	{
@@ -312,7 +326,7 @@ void AEcoscapePlayerCharacter::Move(FVector Direction, const float Value)
 	}
 }
 
-void AEcoscapePlayerCharacter::Turn(const bool bIsPure, float Rate)
+void AEcoscapeFPPlayerCharacter::Turn(const bool bIsPure, float Rate)
 {
 	if (!bIsPure)
 	{
@@ -323,7 +337,7 @@ void AEcoscapePlayerCharacter::Turn(const bool bIsPure, float Rate)
 	AddControllerYawInput(Rate);
 }
 
-void AEcoscapePlayerCharacter::LookUp(const bool bIsPure, float Rate)
+void AEcoscapeFPPlayerCharacter::LookUp(const bool bIsPure, float Rate)
 {
 	if (!bIsPure)
 	{
@@ -334,7 +348,7 @@ void AEcoscapePlayerCharacter::LookUp(const bool bIsPure, float Rate)
 	AddControllerPitchInput(Rate);
 }
 
-void AEcoscapePlayerCharacter::RecalculateBaseEyeHeight()
+void AEcoscapeFPPlayerCharacter::RecalculateBaseEyeHeight()
 {
 	const ACharacter* DefaultCharacter = GetClass()->GetDefaultObject<ACharacter>();
 	const float OldUnscaledHalfHeight = DefaultCharacter->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight();
@@ -346,7 +360,7 @@ void AEcoscapePlayerCharacter::RecalculateBaseEyeHeight()
 	BaseEyeHeight = FMath::Lerp(DefaultCharacter->BaseEyeHeight, CrouchedEyeHeight, SimpleSpline(CurrentAlpha));
 }
 
-bool AEcoscapePlayerCharacter::CanCrouch() const
+bool AEcoscapeFPPlayerCharacter::CanCrouch() const
 {
 	return !GetCharacterMovement()->bCheatFlying && Super::CanCrouch() && !MovementPtr->IsOnLadder();
 }

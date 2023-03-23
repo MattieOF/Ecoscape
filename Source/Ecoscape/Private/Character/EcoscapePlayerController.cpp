@@ -6,6 +6,7 @@
 
 #include "Character/EcoscapePlayerController.h"
 
+#include "EcoscapeLog.h"
 #include "Kismet/GameplayStatics.h"
 
 AEcoscapePlayerController::AEcoscapePlayerController()
@@ -18,7 +19,11 @@ void AEcoscapePlayerController::BeginPlay()
 	Super::BeginPlay();
 
 	// Get character
-	EcoscapeCharacter = Cast<AEcoscapePlayerCharacter>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
+	FPCharacter = Cast<AEcoscapeFPPlayerCharacter>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
+	TDCharacter = GetWorld()->SpawnActor<AEcoscapeTDCharacter>(FVector(0, 0, 1000), FRotator::ZeroRotator);
+
+	// Switch the view.
+	SetView(EPSFirstPerson, true);
 
 	// Setup input
 	InputComponent->BindAxis("MoveForward", this, &AEcoscapePlayerController::OnMoveForward);
@@ -30,49 +35,105 @@ void AEcoscapePlayerController::BeginPlay()
 	InputComponent->BindAction("Jump", IE_Released, this, &AEcoscapePlayerController::OnJumpReleased);
 	InputComponent->BindAction("Crouch", IE_Pressed, this, &AEcoscapePlayerController::OnCrouchPressed);
 	InputComponent->BindAction("Crouch", IE_Released, this, &AEcoscapePlayerController::OnCrouchReleased);
+	InputComponent->BindAction("SwitchView", IE_Pressed, this, &AEcoscapePlayerController::OnSwitchView);
 }
 
-void AEcoscapePlayerController::OnMoveForward(float Value)
+void AEcoscapePlayerController::OnMoveForward(const float Value)
 {
-	EcoscapeCharacter->AddMovementInput(EcoscapeCharacter->GetActorForwardVector(), Value);
+	CurrentPawn->AddMovementInput(CurrentView == EPSFirstPerson ? CurrentPawn->GetActorForwardVector() : FVector::ForwardVector, Value);
 }
 
-void AEcoscapePlayerController::OnMoveRight(float Value)
+void AEcoscapePlayerController::OnMoveRight(const float Value)
 {
-	EcoscapeCharacter->AddMovementInput(EcoscapeCharacter->GetActorRightVector(), Value);
+	CurrentPawn->AddMovementInput(CurrentView == EPSFirstPerson ? CurrentPawn->GetActorRightVector() : FVector::RightVector, Value);
+}	
+
+void AEcoscapePlayerController::OnLookUp(const float Value)
+{
+	CurrentPawn->AddControllerPitchInput(Value);
 }
 
-void AEcoscapePlayerController::OnLookUp(float Value)
+void AEcoscapePlayerController::OnTurn(const float Value)
 {
-	EcoscapeCharacter->AddControllerPitchInput(Value);
-}
-
-void AEcoscapePlayerController::OnTurn(float Value)
-{
-	EcoscapeCharacter->AddControllerYawInput(Value);
+	CurrentPawn->AddControllerYawInput(Value);
 }
 
 void AEcoscapePlayerController::OnJumpPressed()
 {
-	EcoscapeCharacter->Jump();
+	if (CurrentView == EPSFirstPerson)
+		FPCharacter->Jump();
 }
 
 void AEcoscapePlayerController::OnJumpReleased()
 {
-	EcoscapeCharacter->StopJumping();
+	if (CurrentView == EPSFirstPerson)
+		FPCharacter->StopJumping();
 }
 
 void AEcoscapePlayerController::OnCrouchPressed()
 {
-	EcoscapeCharacter->Crouch();
+	if (CurrentView == EPSFirstPerson)
+		FPCharacter->Crouch();
 }
 
 void AEcoscapePlayerController::OnCrouchReleased()
 {
-	EcoscapeCharacter->UnCrouch();
+	if (CurrentView == EPSFirstPerson)
+		FPCharacter->UnCrouch();
 }
 
-void AEcoscapePlayerController::Tick(float DeltaTime)
+void AEcoscapePlayerController::OnSwitchView()
+{
+	if (CurrentSwitchViewCooldown > 0)
+		return;
+	
+	SetView(static_cast<EEcoscapePlayerView>(!CurrentView), false);
+	
+	CurrentSwitchViewCooldown = SwitchViewCooldown;
+}
+
+void AEcoscapePlayerController::SetView(const EEcoscapePlayerView NewView, const bool bInstant, const float BlendTime)
+{
+	// Set variables
+	APawn* PreviousPawn = CurrentPawn;
+	CurrentView = NewView;
+
+	// Possess pawn
+	if (CurrentView == EPSFirstPerson)
+		Possess(FPCharacter);
+	else if (CurrentView == EPSTopDown)
+		Possess(TDCharacter);
+	else
+		UE_LOG(LogEcoscape, Error, TEXT("Invalid player view: %i!"), static_cast<int>(CurrentView));
+
+	// Update view target
+	CurrentPawn = GetPawn();
+	SetViewTarget(PreviousPawn);
+	SetViewTargetWithBlend(CurrentPawn, BlendTime, VTBlend_Cubic, 3, true);
+
+	// Call blueprint events
+	OnEcoscapePlayerViewChanged(CurrentView, CurrentPawn, bInstant ? 0 : BlendTime);
+}
+
+void AEcoscapePlayerController::SetMouseEnabled(const bool NewState)
+{
+	bShowMouseCursor = NewState;
+	bEnableClickEvents = NewState;
+	bEnableMouseOverEvents = NewState;
+}
+
+void AEcoscapePlayerController::CenterMouse()
+{
+	int ViewportWidth, ViewportHeight;
+	GetViewportSize(ViewportWidth, ViewportHeight);
+	SetMouseLocation(ViewportWidth / 2, ViewportHeight / 2);
+}
+
+void AEcoscapePlayerController::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	// Tick cooldowns
+	if (CurrentSwitchViewCooldown > 0)
+		CurrentSwitchViewCooldown = FMath::Max(CurrentSwitchViewCooldown - DeltaTime, 0);
 }

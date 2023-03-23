@@ -8,7 +8,7 @@
 
 #include "Runtime/Launch/Resources/Version.h"
 
-#include "EcoscapePlayerMovement.generated.h"
+#include "EcoscapeFPPlayerMovement.generated.h"
 
 #define LADDER_MOUNT_TIMEOUT 0.2f
 
@@ -21,7 +21,7 @@
 class USoundCue;
 
 UCLASS()
-class ECOSCAPE_API UEcoscapePlayerMovement : public UCharacterMovementComponent
+class ECOSCAPE_API UEcoscapeFPPlayerMovement : public UCharacterMovementComponent
 {
 	GENERATED_BODY()
 
@@ -82,7 +82,7 @@ protected:
 
 	/** The Ecoscape player character */
 	UPROPERTY()
-	class AEcoscapePlayerCharacter* EcoscapeCharacter;
+	class AEcoscapeFPPlayerCharacter* EcoscapeCharacter;
 
 	/** The target ground speed when running. */
 	UPROPERTY(Category = "Character Movement: Walking", EditAnywhere, BlueprintReadWrite, meta = (ClampMin = "0", UIMin = "0"))
@@ -138,7 +138,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Movement (General Settings)")
 	uint32 bShowPos : 1;
 
-	UEcoscapePlayerMovement();
+	UEcoscapeFPPlayerMovement();
 
 	virtual void InitializeComponent() override;
 	virtual void OnRegister() override;

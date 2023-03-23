@@ -1,6 +1,6 @@
 // Copyright Project Borealis
 
-#include "Character/EcoscapePlayerMovement.h"
+#include "..\..\Public\Character\EcoscapeFPPlayerMovement.h"
 
 #include "Components/CapsuleComponent.h"
 #include "Engine/Engine.h"
@@ -13,7 +13,7 @@
 #include "Sound/SoundCue.h"
 
 #include "Sound/PBMoveStepSound.h"
-#include "Character/EcoscapePlayerCharacter.h"
+#include "Character/EcoscapeFPPlayerCharacter.h"
 
 static TAutoConsoleVariable<int32> CVarShowPos(TEXT("cl.ShowPos"), 0, TEXT("Show position and movement information.\n"), ECVF_Default);
 
@@ -29,7 +29,7 @@ constexpr float GVertical_Slope_Normal_Z = 0.001f;	 // Slope is vertical if Abs(
 constexpr float DesiredGravity = -1143.0f;
 
 // Purpose: override default player movement
-UEcoscapePlayerMovement::UEcoscapePlayerMovement()
+UEcoscapeFPPlayerMovement::UEcoscapeFPPlayerMovement()
 {
 	// We have our own air movement handling, so we can allow for full air
 	// control through UE's logic
@@ -137,13 +137,13 @@ UEcoscapePlayerMovement::UEcoscapePlayerMovement()
 	bMaintainHorizontalGroundVelocity = true;
 }
 
-void UEcoscapePlayerMovement::InitializeComponent()
+void UEcoscapeFPPlayerMovement::InitializeComponent()
 {
 	Super::InitializeComponent();
-	EcoscapeCharacter = Cast<AEcoscapePlayerCharacter>(GetOwner());
+	EcoscapeCharacter = Cast<AEcoscapeFPPlayerCharacter>(GetOwner());
 }
 
-void UEcoscapePlayerMovement::OnRegister()
+void UEcoscapeFPPlayerMovement::OnRegister()
 {
 	Super::OnRegister();
 
@@ -153,7 +153,7 @@ void UEcoscapePlayerMovement::OnRegister()
 	}
 }
 
-void UEcoscapePlayerMovement::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UEcoscapeFPPlayerMovement::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {	
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	PlayMoveSound(DeltaTime);
@@ -188,7 +188,7 @@ void UEcoscapePlayerMovement::TickComponent(float DeltaTime, enum ELevelTick Tic
 	bCrouchFrameTolerated = IsCrouching();
 }
 
-bool UEcoscapePlayerMovement::DoJump(bool bClientSimulation)
+bool UEcoscapeFPPlayerMovement::DoJump(bool bClientSimulation)
 {
 	// UE-COPY: UCharacterMovementComponent::DoJump(bool bReplayingMoves)
 
@@ -223,22 +223,22 @@ float GetFrictionFromHit(const FHitResult& Hit)
 	return SurfaceFriction;
 }
 
-void UEcoscapePlayerMovement::TwoWallAdjust(FVector& Delta, const FHitResult& Hit, const FVector& OldHitNormal) const
+void UEcoscapeFPPlayerMovement::TwoWallAdjust(FVector& Delta, const FHitResult& Hit, const FVector& OldHitNormal) const
 {
 	Super::TwoWallAdjust(Delta, Hit, OldHitNormal);
 }
 
-float UEcoscapePlayerMovement::SlideAlongSurface(const FVector& Delta, float Time, const FVector& Normal, FHitResult& Hit, bool bHandleImpact)
+float UEcoscapeFPPlayerMovement::SlideAlongSurface(const FVector& Delta, float Time, const FVector& Normal, FHitResult& Hit, bool bHandleImpact)
 {
 	return Super::SlideAlongSurface(Delta, Time, Normal, Hit, bHandleImpact);
 }
 
-FVector UEcoscapePlayerMovement::ComputeSlideVector(const FVector& Delta, const float Time, const FVector& Normal, const FHitResult& Hit) const
+FVector UEcoscapeFPPlayerMovement::ComputeSlideVector(const FVector& Delta, const float Time, const FVector& Normal, const FHitResult& Hit) const
 {
 	return Super::ComputeSlideVector(Delta, Time, Normal, Hit);
 }
 
-FVector UEcoscapePlayerMovement::HandleSlopeBoosting(const FVector& SlideResult, const FVector& Delta, const float Time, const FVector& Normal, const FHitResult& Hit) const
+FVector UEcoscapeFPPlayerMovement::HandleSlopeBoosting(const FVector& SlideResult, const FVector& Delta, const float Time, const FVector& Normal, const FHitResult& Hit) const
 {
 	if (bOnLadder || bCheatFlying)
 	{
@@ -263,7 +263,7 @@ FVector UEcoscapePlayerMovement::HandleSlopeBoosting(const FVector& SlideResult,
 	return (Delta - BounceCoefficient * Delta.ProjectOnToNormal(ImpactNormal)) * Time;
 }
 
-bool UEcoscapePlayerMovement::ShouldCatchAir(const FFindFloorResult& OldFloor, const FFindFloorResult& NewFloor)
+bool UEcoscapeFPPlayerMovement::ShouldCatchAir(const FFindFloorResult& OldFloor, const FFindFloorResult& NewFloor)
 {
 	// Get surface friction
 	const float OldSurfaceFriction = GetFrictionFromHit(OldFloor.HitResult);
@@ -296,18 +296,18 @@ bool UEcoscapePlayerMovement::ShouldCatchAir(const FFindFloorResult& OldFloor, c
 	return Super::ShouldCatchAir(OldFloor, NewFloor);
 }
 
-bool UEcoscapePlayerMovement::IsWithinEdgeTolerance(const FVector& CapsuleLocation, const FVector& TestImpactPoint, const float CapsuleRadius) const
+bool UEcoscapeFPPlayerMovement::IsWithinEdgeTolerance(const FVector& CapsuleLocation, const FVector& TestImpactPoint, const float CapsuleRadius) const
 {
 	return Super::IsWithinEdgeTolerance(CapsuleLocation, TestImpactPoint, CapsuleRadius);
 }
 
-bool UEcoscapePlayerMovement::ShouldCheckForValidLandingSpot(float DeltaTime, const FVector& Delta, const FHitResult& Hit) const
+bool UEcoscapeFPPlayerMovement::ShouldCheckForValidLandingSpot(float DeltaTime, const FVector& Delta, const FHitResult& Hit) const
 {
 	// TODO: check for flat base valid landing spots? at the moment this check is too generous for the capsule hemisphere
 	return !bUseFlatBaseForFloorChecks && Super::ShouldCheckForValidLandingSpot(DeltaTime, Delta, Hit);
 }
 
-bool UEcoscapePlayerMovement::IsValidLandingSpot(const FVector& CapsuleLocation, const FHitResult& Hit) const
+bool UEcoscapeFPPlayerMovement::IsValidLandingSpot(const FVector& CapsuleLocation, const FHitResult& Hit) const
 {
 	if (!Hit.bBlockingHit)
 	{
@@ -385,7 +385,7 @@ bool UEcoscapePlayerMovement::IsValidLandingSpot(const FVector& CapsuleLocation,
 	return true;
 }
 
-void UEcoscapePlayerMovement::TraceCharacterFloor(FHitResult& OutHit) const
+void UEcoscapeFPPlayerMovement::TraceCharacterFloor(FHitResult& OutHit) const
 {
 	FCollisionQueryParams CapsuleParams(SCENE_QUERY_STAT(CharacterFloorTrace), false, CharacterOwner);
 	FCollisionResponseParams ResponseParam;
@@ -412,7 +412,7 @@ void UEcoscapePlayerMovement::TraceCharacterFloor(FHitResult& OutHit) const
 	);
 }
 
-void UEcoscapePlayerMovement::OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode)
+void UEcoscapeFPPlayerMovement::OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode)
 {
 	// Reset step side if we are changing modes
 	StepSide = false;
@@ -432,7 +432,7 @@ void UEcoscapePlayerMovement::OnMovementModeChanged(EMovementMode PreviousMoveme
 	Super::OnMovementModeChanged(PreviousMovementMode, PreviousCustomMode);
 }
 
-float UEcoscapePlayerMovement::GetCameraRoll()
+float UEcoscapeFPPlayerMovement::GetCameraRoll()
 {
 	if (RollSpeed == 0.0f || RollAngle == 0.0f)
 	{
@@ -452,7 +452,7 @@ float UEcoscapePlayerMovement::GetCameraRoll()
 	return Side * Sign;
 }
 
-void UEcoscapePlayerMovement::SetNoClip(bool bNoClip)
+void UEcoscapeFPPlayerMovement::SetNoClip(bool bNoClip)
 {
 	// We need to defer movement in case we set this outside of main game thread loop, since character movement resets movement back in tick.
 	if (bNoClip)
@@ -472,12 +472,12 @@ void UEcoscapePlayerMovement::SetNoClip(bool bNoClip)
 	bHasDeferredMovementMode = true;
 }
 
-void UEcoscapePlayerMovement::ToggleNoClip()
+void UEcoscapeFPPlayerMovement::ToggleNoClip()
 {
 	SetNoClip(!bCheatFlying);
 }
 
-void UEcoscapePlayerMovement::ApplyVelocityBraking(float DeltaTime, float Friction, float BrakingDeceleration)
+void UEcoscapeFPPlayerMovement::ApplyVelocityBraking(float DeltaTime, float Friction, float BrakingDeceleration)
 {
 	// UE4-COPY: void UCharacterMovementComponent::ApplyVelocityBraking(float DeltaTime, float Friction, float BrakingDeceleration)
 	if (Velocity.IsNearlyZero(0.1f) || !HasValidData() || HasAnimRootMotion() || DeltaTime < MIN_TICK_TIME)
@@ -533,19 +533,19 @@ void UEcoscapePlayerMovement::ApplyVelocityBraking(float DeltaTime, float Fricti
 	}
 }
 
-bool UEcoscapePlayerMovement::ShouldLimitAirControl(float DeltaTime, const FVector& FallAcceleration) const
+bool UEcoscapeFPPlayerMovement::ShouldLimitAirControl(float DeltaTime, const FVector& FallAcceleration) const
 {
 	return false;
 }
 
-FVector UEcoscapePlayerMovement::NewFallVelocity(const FVector& InitialVelocity, const FVector& Gravity, float DeltaTime) const
+FVector UEcoscapeFPPlayerMovement::NewFallVelocity(const FVector& InitialVelocity, const FVector& Gravity, float DeltaTime) const
 {
 	FVector FallVel = Super::NewFallVelocity(InitialVelocity, Gravity, DeltaTime);
 	FallVel.Z = FMath::Clamp(FallVel.Z, -AxisSpeedLimit, AxisSpeedLimit);
 	return FallVel;
 }
 
-void UEcoscapePlayerMovement::UpdateCharacterStateBeforeMovement(float DeltaSeconds)
+void UEcoscapeFPPlayerMovement::UpdateCharacterStateBeforeMovement(float DeltaSeconds)
 {
 	Super::UpdateCharacterStateBeforeMovement(DeltaSeconds);
 	Velocity.Z = FMath::Clamp(Velocity.Z, -AxisSpeedLimit, AxisSpeedLimit);
@@ -553,7 +553,7 @@ void UEcoscapePlayerMovement::UpdateCharacterStateBeforeMovement(float DeltaSeco
 
 }
 
-void UEcoscapePlayerMovement::UpdateCharacterStateAfterMovement(float DeltaSeconds)
+void UEcoscapeFPPlayerMovement::UpdateCharacterStateAfterMovement(float DeltaSeconds)
 {
 	Super::UpdateCharacterStateAfterMovement(DeltaSeconds);
 	Velocity.Z = FMath::Clamp(Velocity.Z, -AxisSpeedLimit, AxisSpeedLimit);
@@ -561,7 +561,7 @@ void UEcoscapePlayerMovement::UpdateCharacterStateAfterMovement(float DeltaSecon
 	UpdateCrouching(DeltaSeconds, true);
 }
 
-void UEcoscapePlayerMovement::UpdateSurfaceFriction(bool bIsSliding)
+void UEcoscapeFPPlayerMovement::UpdateSurfaceFriction(bool bIsSliding)
 {
 	if (!IsFalling() && CurrentFloor.IsWalkableFloor())
 	{
@@ -582,7 +582,7 @@ void UEcoscapePlayerMovement::UpdateSurfaceFriction(bool bIsSliding)
 	}
 }
 
-void UEcoscapePlayerMovement::UpdateCrouching(float DeltaTime, bool bOnlyUncrouch)
+void UEcoscapeFPPlayerMovement::UpdateCrouching(float DeltaTime, bool bOnlyUncrouch)
 {
 	if (CharacterOwner->GetLocalRole() == ROLE_SimulatedProxy)
 	{
@@ -629,7 +629,7 @@ void UEcoscapePlayerMovement::UpdateCrouching(float DeltaTime, bool bOnlyUncrouc
 	}
 }
 
-UPBMoveStepSound* UEcoscapePlayerMovement::GetMoveStepSoundBySurface(EPhysicalSurface SurfaceType) const
+UPBMoveStepSound* UEcoscapeFPPlayerMovement::GetMoveStepSoundBySurface(EPhysicalSurface SurfaceType) const
 {
 	if (const TSubclassOf<UPBMoveStepSound>* GotSound = EcoscapeCharacter->GetMoveStepSound(TEnumAsByte<EPhysicalSurface>(SurfaceType)))
 	{
@@ -640,7 +640,7 @@ UPBMoveStepSound* UEcoscapePlayerMovement::GetMoveStepSoundBySurface(EPhysicalSu
 }
 
 
-void UEcoscapePlayerMovement::PlayMoveSound(const float DeltaTime)
+void UEcoscapeFPPlayerMovement::PlayMoveSound(const float DeltaTime)
 {
 	if (!bShouldPlayMoveSounds)
 	{
@@ -784,7 +784,7 @@ void UEcoscapePlayerMovement::PlayMoveSound(const float DeltaTime)
 	}
 }
 
-void UEcoscapePlayerMovement::PlayJumpSound(const FHitResult& Hit, bool bJumped)
+void UEcoscapeFPPlayerMovement::PlayJumpSound(const FHitResult& Hit, bool bJumped)
 {
 	if (!bShouldPlayMoveSounds)
 	{
@@ -868,7 +868,7 @@ void UEcoscapePlayerMovement::PlayJumpSound(const FHitResult& Hit, bool bJumped)
 	}
 }
 
-void UEcoscapePlayerMovement::PhysFalling(float deltaTime, int32 Iterations)
+void UEcoscapeFPPlayerMovement::PhysFalling(float deltaTime, int32 Iterations)
 {
 	SCOPE_CYCLE_COUNTER(STAT_CharPhysFalling);
 	CSV_SCOPED_TIMING_STAT_EXCLUSIVE(CharPhysFalling);
@@ -1178,7 +1178,7 @@ void UEcoscapePlayerMovement::PhysFalling(float deltaTime, int32 Iterations)
 	}
 }
 
-void UEcoscapePlayerMovement::CalcVelocity(float DeltaTime, float Friction, bool bFluid, float BrakingDeceleration)
+void UEcoscapeFPPlayerMovement::CalcVelocity(float DeltaTime, float Friction, bool bFluid, float BrakingDeceleration)
 {
 	// UE4-COPY: void UCharacterMovementComponent::CalcVelocity(float DeltaTime, float Friction, bool bFluid, float BrakingDeceleration)
 
@@ -1355,7 +1355,7 @@ void UEcoscapePlayerMovement::CalcVelocity(float DeltaTime, float Friction, bool
 #endif
 }
 
-void UEcoscapePlayerMovement::Crouch(bool bClientSimulation)
+void UEcoscapeFPPlayerMovement::Crouch(bool bClientSimulation)
 {
 	// TODO: replicate to the client simulation that we are in a crouch transition so they can do the resize too.
 	if (bClientSimulation)
@@ -1366,7 +1366,7 @@ void UEcoscapePlayerMovement::Crouch(bool bClientSimulation)
 	bIsInCrouchTransition = true;
 }
 
-void UEcoscapePlayerMovement::DoCrouchResize(float TargetTime, float DeltaTime, bool bClientSimulation)
+void UEcoscapeFPPlayerMovement::DoCrouchResize(float TargetTime, float DeltaTime, bool bClientSimulation)
 {
 	// UE4-COPY: void UCharacterMovementComponent::Crouch(bool bClientSimulation)
 
@@ -1462,7 +1462,7 @@ void UEcoscapePlayerMovement::DoCrouchResize(float TargetTime, float DeltaTime, 
 	}
 }
 
-void UEcoscapePlayerMovement::UnCrouch(bool bClientSimulation)
+void UEcoscapeFPPlayerMovement::UnCrouch(bool bClientSimulation)
 {
 	// TODO: replicate to the client simulation that we are in a crouch transition so they can do the resize too.
 	if (bClientSimulation)
@@ -1473,7 +1473,7 @@ void UEcoscapePlayerMovement::UnCrouch(bool bClientSimulation)
 	bIsInCrouchTransition = true;
 }
 
-void UEcoscapePlayerMovement::DoUnCrouchResize(float TargetTime, float DeltaTime, bool bClientSimulation)
+void UEcoscapeFPPlayerMovement::DoUnCrouchResize(float TargetTime, float DeltaTime, bool bClientSimulation)
 {
 	// UE4-COPY: void UCharacterMovementComponent::UnCrouch(bool bClientSimulation)
 
@@ -1675,7 +1675,7 @@ void UEcoscapePlayerMovement::DoUnCrouchResize(float TargetTime, float DeltaTime
 	}
 }
 
-bool UEcoscapePlayerMovement::CanAttemptJump() const
+bool UEcoscapeFPPlayerMovement::CanAttemptJump() const
 {
 	bool bCanAttemptJump = IsJumpAllowed();
 	if (IsMovingOnGround())
@@ -1691,7 +1691,7 @@ bool UEcoscapePlayerMovement::CanAttemptJump() const
 	return bCanAttemptJump;
 }
 
-float UEcoscapePlayerMovement::GetMaxSpeed() const
+float UEcoscapeFPPlayerMovement::GetMaxSpeed() const
 {
 	if (bCheatFlying)
 	{
