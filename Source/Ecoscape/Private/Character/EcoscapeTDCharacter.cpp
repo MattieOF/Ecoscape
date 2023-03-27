@@ -54,12 +54,28 @@ void AEcoscapeTDCharacter::OnToolUsed()
 			const TArray<AActor*> IgnoredActors;
 			if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, IgnoredActors))
 			{
-				APlacedItem* Item = APlacedItem::SpawnItem(GetWorld(), TestItem, Hit.Location, FVector::OneVector, FRotator::ZeroRotator);
+				APlacedItem* Item = APlacedItem::SpawnItem(GetWorld(), TestItem, Hit.Location, FVector::OneVector, FRotator(0, PlacedItemRotation, 0));
 				Item->AddActorWorldOffset(FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(Item))); // Move it so the bottom of the mesh is on the ground
 				OnItemPlaced(Item->GetActorLocation(), Item);
 			}
 		}
 		break;
+	default: UE_LOG(LogEcoscape, Error, TEXT("Attempted to use unimplemented tool: %i"), static_cast<int>(CurrentTool)); break;
+	}
+}
+
+void AEcoscapeTDCharacter::OnToolAltUsed()
+{
+	switch (CurrentTool)
+	{
+	case ETPlaceObjects:
+		{
+			PlacedItemRotation += 90;
+			PlacedItemRotation = FMath::Fmod(PlacedItemRotation, 360);
+			if (ItemPreview)
+				ItemPreview->SetTargetRotation(PlacedItemRotation);	
+			break;
+		}
 	default: UE_LOG(LogEcoscape, Error, TEXT("Attempted to use unimplemented tool: %i"), static_cast<int>(CurrentTool)); break;
 	}
 }

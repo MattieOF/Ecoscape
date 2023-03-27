@@ -17,6 +17,21 @@ APlaceableItemPreview::APlaceableItemPreview()
 	RootComponent = MainMesh;
 }
 
+void APlaceableItemPreview::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	
+	// Update rotation
+	if (CurrentRotationAlpha < 1)
+	{
+		CurrentRotationAlpha += (1 - CurrentRotationAlpha) * 10 * DeltaSeconds;
+		if (1 - CurrentRotationAlpha < 0.02)
+			CurrentRotationAlpha = 1;
+
+		SetActorRotation(FMath::Lerp(GetActorRotation(), FRotator(0, TargetItemRotation, 0), CurrentRotationAlpha));
+	}
+}
+
 void APlaceableItemPreview::SetItem(UPlaceableItemData* Item)
 {
 	MainMesh->SetStaticMesh(Item->Mesh);
@@ -34,7 +49,7 @@ void APlaceableItemPreview::SetPosition(FVector NewPosition)
 	ComponentQueryParams.AddIgnoredActor(MainMesh->GetOwner());
 	TArray<FOverlapResult> OverlapResults;
 	GetWorld()->ComponentOverlapMulti(OverlapResults, MainMesh,
-		MainMesh->GetComponentLocation(), MainMesh->GetComponentRotation(),
+		MainMesh->GetComponentLocation(), FRotator(0, TargetItemRotation, 0),
 		ComponentQueryParams, FCollisionObjectQueryParams::AllObjects);
 	
 	bIsValidPlacement = true;
@@ -52,4 +67,10 @@ void APlaceableItemPreview::SetPosition(FVector NewPosition)
 		UEcoscapeStatics::SetAllMaterials(MainMesh, ValidMaterial);
 	else
 		UEcoscapeStatics::SetAllMaterials(MainMesh, InvalidMaterial);
+}
+
+void APlaceableItemPreview::SetTargetRotation(float NewValue)
+{
+	TargetItemRotation = NewValue;
+	CurrentRotationAlpha = 0;
 }

@@ -15,6 +15,8 @@ class ECOSCAPE_API APlaceableItemPreview : public AActor
 public:
 	APlaceableItemPreview();
 
+	virtual void Tick(float DeltaSeconds) override;
+
 	UFUNCTION(BlueprintCallable)
 	void SetItem(UPlaceableItemData* Item);
 
@@ -26,6 +28,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TEnumAsByte<ECollisionChannel> BlockingChannel;
+
+	UFUNCTION(BlueprintCallable)
+	void SetTargetRotation(float NewValue);
 	
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -39,4 +44,9 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsValidPlacement = false;
+
+	float CurrentRotationAlpha = 1;
+
+	UPROPERTY(BlueprintReadWrite)
+	float TargetItemRotation = 0;
 };

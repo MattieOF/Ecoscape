@@ -59,6 +59,7 @@ protected:
 
 	void OnSwitchView();
 	void OnUseTool();
+	void OnUseAltTool();
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnEcoscapePlayerViewChanged(EEcoscapePlayerView NewState, APawn* NewPawn, float Time = 0.5f);

@@ -48,6 +48,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void OnToolUsed();
 
+	UFUNCTION(BlueprintCallable)
+	void OnToolAltUsed();
+
 	/**
 	 * @brief Called when a placeable item is placed by the player. Used to implement cosmetic events like sound and particles
 	 * @param Location Location of the placed item
@@ -104,6 +107,9 @@ protected:
 
 	UPROPERTY()
 	APlaceableItemPreview* ItemPreview;
+
+	UPROPERTY(BlueprintReadOnly)
+	float PlacedItemRotation = 0;
 
 	UPROPERTY(BlueprintReadOnly)
 	float TargetHeight = 0;
