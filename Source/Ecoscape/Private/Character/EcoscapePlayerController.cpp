@@ -131,6 +131,11 @@ void AEcoscapePlayerController::SetView(const EEcoscapePlayerView NewView, const
 
 void AEcoscapePlayerController::SetMouseEnabled(const bool NewState)
 {
+	if (NewState)
+		SetInputMode(FInputModeGameAndUI());
+	else
+		SetInputMode(FInputModeGameOnly());
+	
 	bShowMouseCursor = NewState;
 	bEnableClickEvents = NewState;
 	bEnableMouseOverEvents = NewState;
