@@ -20,7 +20,7 @@ void AEcoscapePlayerController::BeginPlay()
 
 	// Get character
 	FPCharacter = Cast<AEcoscapeFPPlayerCharacter>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
-	TDCharacter = GetWorld()->SpawnActor<AEcoscapeTDCharacter>(FVector(0, 0, 1000), FRotator::ZeroRotator);
+	TDCharacter = GetWorld()->SpawnActor<AEcoscapeTDCharacter>(TopDownCharacterClass, FVector(0, 0, 2000), FRotator::ZeroRotator);
 
 	// Switch the view.
 	SetView(EPSFirstPerson, true);
@@ -116,7 +116,7 @@ void AEcoscapePlayerController::SetView(const EEcoscapePlayerView NewView, const
 	// Update view target
 	CurrentPawn = GetPawn();
 	SetViewTarget(PreviousPawn);
-	SetViewTargetWithBlend(CurrentPawn, BlendTime, VTBlend_Cubic, 3, true);
+	SetViewTargetWithBlend(CurrentPawn, BlendTime, VTBlend_Cubic, 2, true);
 
 	// Call blueprint events
 	OnEcoscapePlayerViewChanged(CurrentView, CurrentPawn, bInstant ? 0 : BlendTime);

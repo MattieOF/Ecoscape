@@ -9,7 +9,7 @@ DEFINE_LOG_CATEGORY(LogEcoscape)
 
 IMPLEMENT_PRIMARY_GAME_MODULE( FEcoscapeModule, Ecoscape, "Ecoscape" );
 
-#define LOCTEXT_NAMESPACE "MyGameEditor"
+#define LOCTEXT_NAMESPACE "Ecoscape"
 
 void FEcoscapeModule::StartupModule()
 {

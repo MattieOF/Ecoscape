@@ -3,6 +3,7 @@
 #include "Character/EcoscapeTDCharacter.h"
 
 #include "EcoscapeLog.h"
+#include "EcoscapeStatics.h"
 #include "Character/EcoscapePlayerController.h"
 
 AEcoscapeTDCharacter::AEcoscapeTDCharacter()
@@ -12,6 +13,21 @@ AEcoscapeTDCharacter::AEcoscapeTDCharacter()
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetWorldRotation(FRotator(-80, 0, 0));
 	RootComponent = Camera;
+}
+
+void AEcoscapeTDCharacter::SetCurrentTool(EEcoscapeTool NewTool)
+{
+	CurrentTool = NewTool;
+
+	// Create or destroy item preview
+	if (CurrentTool != ETPlaceObjects && ItemPreview)
+	{
+		ItemPreview->Destroy();
+		ItemPreview = nullptr;
+	} else if (CurrentTool == ETPlaceObjects)
+	{
+		SetItemPreview(TestItem);
+	}
 }
 
 void AEcoscapeTDCharacter::AddMovementInput(FVector WorldDirection, float ScaleValue, bool bForce)
@@ -34,6 +50,10 @@ void AEcoscapeTDCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
+	if (!bIsPossessed)
+		return;
+	
+	// Animate zoom height
 	FVector Location = GetActorLocation();
 	if (Location.Z != TargetHeight)
 	{
@@ -41,16 +61,54 @@ void AEcoscapeTDCharacter::Tick(float DeltaSeconds)
 		if (FMath::Abs(Diff) < 1)
 			Location.Z = TargetHeight;
 		else
-			Location.Z += -Diff * 0.15f;
+			Location.Z += -Diff * 10.f * DeltaSeconds;
 		SetActorLocation(Location);	
+	}
+
+	// Do tool logic
+	switch (CurrentTool)
+	{
+	case ETPlaceObjects:
+		FHitResult Hit;
+		const TArray<AActor*> IgnoredActors;
+		if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, IgnoredActors))
+			ItemPreview->SetPosition(Hit.Location + FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(ItemPreview)));
+		break;
 	}
 }
 
 void AEcoscapeTDCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
+
+	// Set possessed flag
+	bIsPossessed = true;
+	
+	// Enable mouse
 	if (AEcoscapePlayerController* PlayerController = Cast<AEcoscapePlayerController>(NewController))
 		PlayerController->SetMouseEnabled(true);
 	else
 		UE_LOG(LogEcoscape, Error, TEXT("Ecoscape pawn possessed by non-ecoscape controller!"));
+	
+	// Call set tool with our current tool so that we recreate item preview or anything else we need to do
+	SetCurrentTool(CurrentTool);
+}
+
+void AEcoscapeTDCharacter::UnPossessed()
+{
+	bIsPossessed = false;
+	ItemPreview->Destroy();
+	ItemPreview = nullptr;
+}
+
+void AEcoscapeTDCharacter::CreateItemPreview()
+{
+	ItemPreview = GetWorld()->SpawnActor<APlaceableItemPreview>(ItemPreviewClass, FVector(0, 0, 0), FRotator::ZeroRotator);
+}
+
+void AEcoscapeTDCharacter::SetItemPreview(UPlaceableItemData* ItemData)
+{
+	if (!ItemPreview)
+		CreateItemPreview();
+	ItemPreview->SetItem(ItemData);
 }

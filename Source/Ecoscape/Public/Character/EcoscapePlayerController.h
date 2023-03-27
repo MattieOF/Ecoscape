@@ -39,6 +39,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void CenterMouse();
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AEcoscapeTDCharacter> TopDownCharacterClass = AEcoscapeTDCharacter::StaticClass();
 	
 protected:
 	virtual void BeginPlay() override;
