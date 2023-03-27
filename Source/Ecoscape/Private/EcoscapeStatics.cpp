@@ -3,6 +3,7 @@
 #include "EcoscapeStatics.h"
 
 #include "EngineUtils.h"
+#include "Engine/PostProcessVolume.h"
 #include "Kismet/GameplayStatics.h"
 
 FVector2D UEcoscapeStatics::ClampVector2D(FVector2D Vector, FVector2D Min, FVector2D Max)
@@ -119,4 +120,10 @@ void UEcoscapeStatics::SetAllMaterials(UStaticMeshComponent* MeshComponent, UMat
 {
 	for (int i = 0; i < MeshComponent->GetNumMaterials(); i++)
 		MeshComponent->SetMaterial(i, Material);
+}
+
+void UEcoscapeStatics::SetOutlinesEnabled(UObject* WorldContext, bool NewOutlinesEnabled, FName OutlineVolumeTag)
+{
+	if (const auto OutlineVolume = GetFirstActorWithTag(WorldContext, OutlineVolumeTag))
+		Cast<APostProcessVolume>(OutlineVolume)->bEnabled = NewOutlinesEnabled;
 }

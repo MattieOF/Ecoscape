@@ -10,6 +10,10 @@ APlacedItem::APlacedItem()
 	
 	MainMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Main Mesh"));
 	MainMesh->SetCollisionResponseToChannel(ECC_BLOCKS_ITEM_PLACEMENT, ECR_Block);
+	MainMesh->ComponentTags.Add("Outline");
+
+	Outline = CreateDefaultSubobject<UOutlineComponent>(TEXT("Outline"));
+	
 	RootComponent = MainMesh;
 }
 
@@ -27,10 +31,27 @@ APlacedItem* APlacedItem::SpawnItem(UWorld* World, UPlaceableItemData* ItemData,
 	return PlacedItem;
 }
 
+void APlacedItem::OnMouseOver() const
+{
+	Outline->ShowOutline();
+}
+
+void APlacedItem::OnMouseLeave() const
+{
+	Outline->HideOutline();
+}
+
 void APlacedItem::BeginPlay()
 {
 	Super::BeginPlay();
 
+	FScriptDelegate MouseOver;
+	MouseOver.BindUFunction(this, "OnMouseOver");
+	MainMesh->OnBeginCursorOver.Add(MouseOver);
+	FScriptDelegate MouseLeave;
+	MouseLeave.BindUFunction(this, "OnMouseLeave");
+	MainMesh->OnEndCursorOver.Add(MouseLeave);
+	
 	if (ItemData != nullptr)
 		SetItemData(ItemData);
 }

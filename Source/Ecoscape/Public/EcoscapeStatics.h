@@ -69,4 +69,14 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	static void SetAllMaterials(UStaticMeshComponent* MeshComponent, UMaterialInterface* Material);
+
+	/**
+	 * @brief Enables or disables all outlines by enabling or disabling the outline post process volume.
+	 * @param WorldContext World context object
+	 * @param NewOutlinesEnabled If the outlines should be enabled or not
+	 * @param OutlineVolumeTag Tag on the outline post process volume, by default "OutlinePPVolume".
+	 * Only the volume should have this tag, as only 1 actor with this tag is considered.
+	 */
+	UFUNCTION(BlueprintCallable, meta=(WorldContext="WorldContext"))
+	static void SetOutlinesEnabled(UObject* WorldContext, bool NewOutlinesEnabled, FName OutlineVolumeTag = "OutlinePPVolume");
 };
