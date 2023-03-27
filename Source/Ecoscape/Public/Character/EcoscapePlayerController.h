@@ -15,6 +15,8 @@ enum EEcoscapePlayerView
 	EPSTopDown       UMETA(DisplayName = "Top Down")
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerViewChanged, EEcoscapePlayerView, NewView);
+
 UCLASS()
 class ECOSCAPE_API AEcoscapePlayerController : public APlayerController
 {
@@ -45,6 +47,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AEcoscapeTDCharacter> TopDownCharacterClass = AEcoscapeTDCharacter::StaticClass();
+
+	UPROPERTY(BlueprintAssignable)
+	FOnPlayerViewChanged OnPlayerViewChanged;
 	
 protected:
 	virtual void BeginPlay() override;

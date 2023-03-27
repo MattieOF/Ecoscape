@@ -152,6 +152,7 @@ void AEcoscapePlayerController::SetView(const EEcoscapePlayerView NewView, const
 	SetViewTargetWithBlend(CurrentPawn, BlendTime, VTBlend_Cubic, 2, true);
 
 	// Call blueprint events
+	OnPlayerViewChanged.Broadcast(NewView);
 	OnEcoscapePlayerViewChanged(CurrentView, CurrentPawn, bInstant ? 0 : BlendTime);
 }
 
