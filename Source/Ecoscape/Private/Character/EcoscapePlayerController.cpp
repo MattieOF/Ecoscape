@@ -36,9 +36,12 @@ void AEcoscapePlayerController::BeginPlay()
 	InputComponent->BindAction("Jump", IE_Released, this, &AEcoscapePlayerController::OnJumpReleased);
 	InputComponent->BindAction("Crouch", IE_Pressed, this, &AEcoscapePlayerController::OnCrouchPressed);
 	InputComponent->BindAction("Crouch", IE_Released, this, &AEcoscapePlayerController::OnCrouchReleased);
+	InputComponent->BindAction("Modifier", IE_Pressed, this, &AEcoscapePlayerController::OnModifierPressed);
+	InputComponent->BindAction("Modifier", IE_Released, this, &AEcoscapePlayerController::OnModifierReleased);
 	InputComponent->BindAction("SwitchView", IE_Pressed, this, &AEcoscapePlayerController::OnSwitchView);
 	InputComponent->BindAction("UseTool", IE_Pressed, this, &AEcoscapePlayerController::OnUseTool);
 	InputComponent->BindAction("UseAltTool", IE_Pressed, this, &AEcoscapePlayerController::OnUseAltTool);
+	InputComponent->BindAction("ResetTool", IE_Pressed, this, &AEcoscapePlayerController::OnResetTool);
 }
 
 void AEcoscapePlayerController::OnMoveForward(const float Value)
@@ -91,6 +94,16 @@ void AEcoscapePlayerController::OnCrouchReleased()
 		FPCharacter->UnCrouch();
 }
 
+void AEcoscapePlayerController::OnModifierPressed()
+{
+	bModifierPressed = true;	
+}
+
+void AEcoscapePlayerController::OnModifierReleased()
+{
+	bModifierPressed = false;
+}
+
 void AEcoscapePlayerController::OnSwitchView()
 {
 	if (CurrentSwitchViewCooldown > 0)
@@ -111,6 +124,12 @@ void AEcoscapePlayerController::OnUseAltTool()
 {
 	if (CurrentView == EPSTopDown)
 		TDCharacter->OnToolAltUsed();
+}
+
+void AEcoscapePlayerController::OnResetTool()
+{
+	if (CurrentView == EPSTopDown)
+		TDCharacter->ResetTool();
 }
 
 void AEcoscapePlayerController::SetView(const EEcoscapePlayerView NewView, const bool bInstant, const float BlendTime)

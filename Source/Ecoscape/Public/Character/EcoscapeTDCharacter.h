@@ -8,6 +8,8 @@
 #include "World/PlaceableItemPreview.h"
 #include "EcoscapeTDCharacter.generated.h"
 
+class AEcoscapePlayerController;
+
 UENUM(BlueprintType)
 enum EEcoscapeTool
 {
@@ -30,14 +32,14 @@ public:
 		return Cast<AEcoscapeTDCharacter>(UGameplayStatics::GetPlayerPawn(WorldContext, Index));
 	}
 
-	UFUNCTION(BlueprintCallable, BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Tools")
 	FORCEINLINE EEcoscapeTool GetCurrentTool() const { return CurrentTool; }
 
 	/**
 	 * @brief Used to switch the currently used tool. Will do any extra logic, such as creating an item preview actor
 	 * @param NewTool Tool to switch to
 	 */
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "Tools")
 	void SetCurrentTool(EEcoscapeTool NewTool);
 	
 	virtual void AddMovementInput(FVector WorldDirection, float ScaleValue, bool bForce) override;
@@ -45,76 +47,85 @@ public:
 	/**
 	 * @brief Called by the player controller when a tool is used
 	 */
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "Tools")
 	void OnToolUsed();
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "Tools")
 	void OnToolAltUsed();
+
+	UFUNCTION(BlueprintCallable, Category = "Tools")
+	void ResetTool(bool bInstant = false);
 
 	/**
 	 * @brief Called when a placeable item is placed by the player. Used to implement cosmetic events like sound and particles
 	 * @param Location Location of the placed item
 	 * @param Item The placed item object
 	 */
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintImplementableEvent, Category = "Tools")
 	void OnItemPlaced(FVector Location, APlacedItem* Item);
 
 	/**
 	 * @brief Called when the player attempts to place an item, but it fails
 	 */
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintImplementableEvent, Category = "Tools")
 	void OnFailedPlacementAttempt();
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "Movement")
 	void AddScrollInput(float Value);
 
 	/**
 	 * @brief Speed the player moves
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float Speed = 10;
 
 	/**
 	 * @brief Sensitivity for scroll-wheel zoom
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float ZoomSensitivity = 75;
 
 	/**
 	 * @brief Bounds of the height the player camera can be at
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	FVector2D HeightBounds = FVector2D(800, 2500);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tools")
+	FVector2D ItemScaleBounds = FVector2D(0.5, 2.5);
 
 	/**
 	 * @brief Class of APlaceableItemPreview to use when previewing placeable items
 	 */
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Tools")
 	TSubclassOf<APlaceableItemPreview> ItemPreviewClass = APlaceableItemPreview::StaticClass();
 
 	/**
 	 * @brief Collision channel blocked by objects that can have items placed on
 	 */
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Tools")
 	TEnumAsByte<ECollisionChannel> FloorChannel;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Tools")
 	UPlaceableItemData* TestItem;
 
 protected:
 	UPROPERTY(BlueprintReadOnly)
 	UCameraComponent* Camera;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly, Category = "Tools")
 	APlaceableItemPreview* ItemPreview;
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, Category = "Tools")
 	float PlacedItemRotation = 0;
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, Category = "Tools")
+	float PlacedItemScale = 1;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	float TargetHeight = 0;
 	
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, Category = "Tools")
 	TEnumAsByte<EEcoscapeTool> CurrentTool = ETNone;
 
 	UPROPERTY(BlueprintReadWrite)
@@ -128,6 +139,12 @@ protected:
 
 	virtual void UnPossessed() override;
 
+	UFUNCTION(BlueprintCallable)
 	void CreateItemPreview();
+
+	UFUNCTION(BlueprintCallable)
 	void SetItemPreview(UPlaceableItemData* ItemData);
+
+	UPROPERTY()
+	AEcoscapePlayerController* EcoscapePlayerController;
 };

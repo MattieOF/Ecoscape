@@ -54,7 +54,7 @@ void AEcoscapeTDCharacter::OnToolUsed()
 			const TArray<AActor*> IgnoredActors;
 			if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, IgnoredActors))
 			{
-				APlacedItem* Item = APlacedItem::SpawnItem(GetWorld(), TestItem, Hit.Location, FVector::OneVector, FRotator(0, PlacedItemRotation, 0));
+				APlacedItem* Item = APlacedItem::SpawnItem(GetWorld(), TestItem, Hit.Location, FVector(PlacedItemScale), FRotator(0, PlacedItemRotation, 0));
 				Item->AddActorWorldOffset(FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(Item))); // Move it so the bottom of the mesh is on the ground
 				OnItemPlaced(Item->GetActorLocation(), Item);
 			}
@@ -80,9 +80,30 @@ void AEcoscapeTDCharacter::OnToolAltUsed()
 	}
 }
 
+void AEcoscapeTDCharacter::ResetTool(bool bInstant)
+{
+	switch (CurrentTool)
+	{
+	case ETPlaceObjects:
+		{
+			PlacedItemRotation = 0;
+			ItemPreview->SetTargetRotation(PlacedItemRotation, bInstant);
+			PlacedItemScale = 1;
+			ItemPreview->SetTargetScale(PlacedItemScale, bInstant);
+			break;
+		}
+	default: UE_LOG(LogEcoscape, Error, TEXT("Attempted to use unimplemented tool: %i"), static_cast<int>(CurrentTool)); break;
+	}
+}
+
 void AEcoscapeTDCharacter::AddScrollInput(float Value)
 {
-	TargetHeight = FMath::Clamp(TargetHeight + -Value * ZoomSensitivity, HeightBounds.X, HeightBounds.Y);
+	if (CurrentTool == ETPlaceObjects && EcoscapePlayerController->IsModifierHeld())
+	{
+		PlacedItemScale = FMath::Clamp(PlacedItemScale += Value * 0.2f, ItemScaleBounds.X, ItemScaleBounds.Y);
+		ItemPreview->SetTargetScale(PlacedItemScale);
+	} else
+		TargetHeight = FMath::Clamp(TargetHeight + -Value * ZoomSensitivity, HeightBounds.X, HeightBounds.Y);
 }
 
 void AEcoscapeTDCharacter::BeginPlay()
@@ -131,7 +152,10 @@ void AEcoscapeTDCharacter::PossessedBy(AController* NewController)
 	
 	// Enable mouse
 	if (AEcoscapePlayerController* PlayerController = Cast<AEcoscapePlayerController>(NewController))
+	{
 		PlayerController->SetMouseEnabled(true);
+		EcoscapePlayerController = PlayerController;
+	}
 	else
 		UE_LOG(LogEcoscape, Error, TEXT("Ecoscape pawn possessed by non-ecoscape controller!"));
 	
@@ -153,6 +177,8 @@ void AEcoscapeTDCharacter::UnPossessed()
 void AEcoscapeTDCharacter::CreateItemPreview()
 {
 	ItemPreview = GetWorld()->SpawnActor<APlaceableItemPreview>(ItemPreviewClass, FVector(0, 0, 0), FRotator::ZeroRotator);
+	ItemPreview->SetTargetRotation(PlacedItemRotation, true);
+	ItemPreview->SetTargetScale(PlacedItemScale, true);
 }
 
 void AEcoscapeTDCharacter::SetItemPreview(UPlaceableItemData* ItemData)

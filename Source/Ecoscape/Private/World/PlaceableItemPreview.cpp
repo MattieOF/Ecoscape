@@ -17,7 +17,7 @@ APlaceableItemPreview::APlaceableItemPreview()
 	RootComponent = MainMesh;
 }
 
-void APlaceableItemPreview::Tick(float DeltaSeconds)
+void APlaceableItemPreview::Tick(const float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	
@@ -30,6 +30,17 @@ void APlaceableItemPreview::Tick(float DeltaSeconds)
 
 		SetActorRotation(FMath::Lerp(GetActorRotation(), FRotator(0, TargetItemRotation, 0), CurrentRotationAlpha));
 	}
+
+	// Update scale
+	if (CurrentScaleAlpha < 1)
+	{
+		CurrentScaleAlpha += (1 - CurrentScaleAlpha) * 10 * DeltaSeconds;
+		if (1 - CurrentScaleAlpha < 0.02)
+			CurrentScaleAlpha = 1;
+
+		const float Scale = FMath::InterpEaseOut(static_cast<float>(GetActorScale().X), TargetItemScale, CurrentScaleAlpha, 2);
+		SetActorScale3D(FVector(Scale));
+	}
 }
 
 void APlaceableItemPreview::SetItem(UPlaceableItemData* Item)
@@ -38,20 +49,28 @@ void APlaceableItemPreview::SetItem(UPlaceableItemData* Item)
 	UEcoscapeStatics::SetAllMaterials(MainMesh, InvalidMaterial);
 }
 
-void APlaceableItemPreview::SetPosition(FVector NewPosition)
+void APlaceableItemPreview::SetPosition(const FVector NewPosition)
 {
 	SCOPE_CYCLE_COUNTER(STAT_MovePreview);
 	
 	SetActorLocation(NewPosition);
 
 	// Check to see if position is valid or not
+	// First, set the scale to target scale, so we check against that instead of the lerped one.
+	const float PreviousScale = GetActorScale().X;
+	SetActorScale3D(FVector(TargetItemScale));
+	
 	FComponentQueryParams ComponentQueryParams;
 	ComponentQueryParams.AddIgnoredActor(MainMesh->GetOwner());
 	TArray<FOverlapResult> OverlapResults;
 	GetWorld()->ComponentOverlapMulti(OverlapResults, MainMesh,
 		MainMesh->GetComponentLocation(), FRotator(0, TargetItemRotation, 0),
 		ComponentQueryParams, FCollisionObjectQueryParams::AllObjects);
-	
+
+	// Reset scale
+	SetActorScale3D(FVector(PreviousScale));
+
+	// Check that the placement is valid; i.e no overlaps with objects that block placement
 	bIsValidPlacement = true;
 	for (const auto Item : OverlapResults)
 	{
@@ -69,8 +88,14 @@ void APlaceableItemPreview::SetPosition(FVector NewPosition)
 		UEcoscapeStatics::SetAllMaterials(MainMesh, InvalidMaterial);
 }
 
-void APlaceableItemPreview::SetTargetRotation(float NewValue)
+void APlaceableItemPreview::SetTargetRotation(const float NewValue, const bool bInstant)
 {
 	TargetItemRotation = NewValue;
-	CurrentRotationAlpha = 0;
+	CurrentRotationAlpha = bInstant ? .99f : 0;
+}
+
+void APlaceableItemPreview::SetTargetScale(const float NewValue, const bool bInstant)
+{
+	TargetItemScale = NewValue;
+	CurrentScaleAlpha = bInstant ? .99f : 0;
 }

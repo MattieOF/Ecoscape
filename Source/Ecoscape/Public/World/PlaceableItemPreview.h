@@ -30,7 +30,10 @@ public:
 	TEnumAsByte<ECollisionChannel> BlockingChannel;
 
 	UFUNCTION(BlueprintCallable)
-	void SetTargetRotation(float NewValue);
+	void SetTargetRotation(float NewValue, bool bInstant = false);
+
+	UFUNCTION(BlueprintCallable)
+	void SetTargetScale(float NewValue, bool bInstant = false);
 	
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -46,7 +49,11 @@ protected:
 	bool bIsValidPlacement = false;
 
 	float CurrentRotationAlpha = 1;
+	float CurrentScaleAlpha = 1;
 
 	UPROPERTY(BlueprintReadWrite)
 	float TargetItemRotation = 0;
+
+	UPROPERTY(BlueprintReadWrite)
+	float TargetItemScale = 1;
 };

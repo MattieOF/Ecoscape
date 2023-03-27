@@ -30,6 +30,9 @@ public:
 	}
 	
 	virtual void Tick(float DeltaTime) override;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE bool IsModifierHeld() { return bModifierPressed; }
 	
 	UFUNCTION(BlueprintCallable)
 	void SetView(EEcoscapePlayerView NewView, bool bInstant = false, float BlendTime = 0.5f);
@@ -57,9 +60,13 @@ protected:
 	void OnCrouchPressed();
 	void OnCrouchReleased();
 
+	void OnModifierPressed();
+	void OnModifierReleased();
+
 	void OnSwitchView();
 	void OnUseTool();
 	void OnUseAltTool();
+	void OnResetTool();
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnEcoscapePlayerViewChanged(EEcoscapePlayerView NewState, APawn* NewPawn, float Time = 0.5f);
@@ -81,4 +88,6 @@ protected:
 	
 private:
 	float CurrentSwitchViewCooldown = 0;
+
+	bool bModifierPressed = false;
 };

@@ -2,6 +2,7 @@
 	<s:String x:Key="/Default/CodeStyle/Naming/CppNaming/Abbreviations/=EPS/@EntryIndexedValue">EPS</s:String>
 	<s:String x:Key="/Default/CodeStyle/Naming/CppNaming/Abbreviations/=PB/@EntryIndexedValue">PB</s:String>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=abcdefghijklmnopqrstuvwxyz/@EntryIndexedValue">True</s:Boolean>
+	
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=airaccelerate/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=Borealis/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=Bunnyhop/@EntryIndexedValue">True</s:Boolean>

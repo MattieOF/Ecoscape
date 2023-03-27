@@ -19,7 +19,7 @@ void APlacedItem::SetItemData(UPlaceableItemData* NewItem)
 	MainMesh->SetStaticMesh(NewItem->Mesh);
 }
 
-APlacedItem* APlacedItem::SpawnItem(UWorld* World, UPlaceableItemData* ItemData, FVector Position, FVector Scale, FRotator Rotation)
+APlacedItem* APlacedItem::SpawnItem(UWorld* World, UPlaceableItemData* ItemData, const FVector Position, const FVector Scale, const FRotator Rotation)
 {
 	APlacedItem* PlacedItem = World->SpawnActor<APlacedItem>(ItemData->PlacedItemClass, Position, Rotation);
 	PlacedItem->SetActorScale3D(Scale);
