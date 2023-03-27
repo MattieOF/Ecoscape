@@ -20,6 +20,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE UPlaceableItemData* GetItemData() { return ItemData; }
+
+	UFUNCTION(BlueprintCallable, meta=(WorldContext=World))
+	static APlacedItem* SpawnItem(UWorld* World, UPlaceableItemData* ItemData, 
+		FVector Position, FVector Scale = FVector(1, 1, 1), FRotator Rotation = FRotator::ZeroRotator);
 	
 protected:
 	virtual void BeginPlay() override;

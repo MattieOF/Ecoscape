@@ -37,6 +37,7 @@ void AEcoscapePlayerController::BeginPlay()
 	InputComponent->BindAction("Crouch", IE_Pressed, this, &AEcoscapePlayerController::OnCrouchPressed);
 	InputComponent->BindAction("Crouch", IE_Released, this, &AEcoscapePlayerController::OnCrouchReleased);
 	InputComponent->BindAction("SwitchView", IE_Pressed, this, &AEcoscapePlayerController::OnSwitchView);
+	InputComponent->BindAction("UseTool", IE_Pressed, this, &AEcoscapePlayerController::OnUseTool);
 }
 
 void AEcoscapePlayerController::OnMoveForward(const float Value)
@@ -97,6 +98,12 @@ void AEcoscapePlayerController::OnSwitchView()
 	SetView(static_cast<EEcoscapePlayerView>(!CurrentView), false);
 	
 	CurrentSwitchViewCooldown = SwitchViewCooldown;
+}
+
+void AEcoscapePlayerController::OnUseTool()
+{
+	if (CurrentView == EPSTopDown)
+		TDCharacter->OnToolUsed();
 }
 
 void AEcoscapePlayerController::SetView(const EEcoscapePlayerView NewView, const bool bInstant, const float BlendTime)

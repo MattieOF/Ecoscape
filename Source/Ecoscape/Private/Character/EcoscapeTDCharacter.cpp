@@ -5,6 +5,7 @@
 #include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
 #include "Character/EcoscapePlayerController.h"
+#include "World/PlacedItem.h"
 
 AEcoscapeTDCharacter::AEcoscapeTDCharacter()
 {
@@ -33,6 +34,34 @@ void AEcoscapeTDCharacter::SetCurrentTool(EEcoscapeTool NewTool)
 void AEcoscapeTDCharacter::AddMovementInput(FVector WorldDirection, float ScaleValue, bool bForce)
 {
 	AddActorWorldOffset(WorldDirection * ScaleValue * Speed);
+}
+
+void AEcoscapeTDCharacter::OnToolUsed()
+{
+	switch (CurrentTool)
+	{
+	case ETPlaceObjects:
+		{
+			// Check position is valid
+			if (!ItemPreview || !ItemPreview->IsValidPlacement())
+			{
+				OnFailedPlacementAttempt();
+				break;
+			}
+
+			// Actually place the item
+			FHitResult Hit;
+			const TArray<AActor*> IgnoredActors;
+			if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, IgnoredActors))
+			{
+				APlacedItem* Item = APlacedItem::SpawnItem(GetWorld(), TestItem, Hit.Location, FVector::OneVector, FRotator::ZeroRotator);
+				Item->AddActorWorldOffset(FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(Item))); // Move it so the bottom of the mesh is on the ground
+				OnItemPlaced(Item->GetActorLocation(), Item);
+			}
+		}
+		break;
+	default: UE_LOG(LogEcoscape, Error, TEXT("Attempted to use unimplemented tool: %i"), static_cast<int>(CurrentTool)); break;
+	}
 }
 
 void AEcoscapeTDCharacter::AddScrollInput(float Value)
@@ -97,8 +126,12 @@ void AEcoscapeTDCharacter::PossessedBy(AController* NewController)
 void AEcoscapeTDCharacter::UnPossessed()
 {
 	bIsPossessed = false;
-	ItemPreview->Destroy();
-	ItemPreview = nullptr;
+
+	if (ItemPreview)
+	{
+		ItemPreview->Destroy();
+		ItemPreview = nullptr;
+	}
 }
 
 void AEcoscapeTDCharacter::CreateItemPreview()

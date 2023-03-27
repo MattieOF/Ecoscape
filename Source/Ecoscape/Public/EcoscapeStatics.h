@@ -6,6 +6,9 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "EcoscapeStatics.generated.h"
 
+#define ECC_BLOCKS_ITEM_PLACEMENT ECC_GameTraceChannel1
+#define ECC_ITEM_PLACEABLE_ON     ECC_GameTraceChannel3
+
 /**
  * Utility functions for Ecoscape
  */

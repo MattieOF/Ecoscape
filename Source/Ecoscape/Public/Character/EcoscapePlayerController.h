@@ -58,6 +58,7 @@ protected:
 	void OnCrouchReleased();
 
 	void OnSwitchView();
+	void OnUseTool();
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnEcoscapePlayerViewChanged(EEcoscapePlayerView NewState, APawn* NewPawn, float Time = 0.5f);
