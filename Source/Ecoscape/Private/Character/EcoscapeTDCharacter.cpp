@@ -4,7 +4,6 @@
 
 #include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
-#include "Landscape.h"
 #include "Character/EcoscapePlayerController.h"
 #include "World/PlacedItem.h"
 
@@ -47,9 +46,6 @@ void AEcoscapeTDCharacter::OnToolUsed()
 			const TArray<AActor*> IgnoredActors;
 			if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, IgnoredActors))
 			{
-				ALandscape* Landscape = Cast<ALandscape>(Hit.GetActor());
-				if (!Landscape)
-					return;
 				
 			}
 		}
@@ -154,11 +150,22 @@ void AEcoscapeTDCharacter::Tick(float DeltaSeconds)
 	switch (CurrentTool)
 	{
 	case ETPlaceObjects:
-		FHitResult Hit;
-		const TArray<AActor*> IgnoredActors;
-		if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, IgnoredActors))
-			ItemPreview->UpdateWithHitInfo(Hit);
+		{
+			FHitResult Hit;
+			const TArray<AActor*> IgnoredActors;
+			if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, IgnoredActors))
+				ItemPreview->UpdateWithHitInfo(Hit);
+		}
 		break;
+	case ETDestroyObjects:
+		{
+		}
+		break;
+	case ETSculpt:
+		{
+		}
+		break;
+	default: UE_LOG(LogEcoscape, Error, TEXT("Ticking unimplemented tool: %i"), static_cast<int>(CurrentTool)); break;
 	}
 }
 
