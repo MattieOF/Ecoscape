@@ -79,4 +79,18 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, meta=(WorldContext="WorldContext"))
 	static void SetOutlinesEnabled(UObject* WorldContext, bool NewOutlinesEnabled, FName OutlineVolumeTag = "OutlinePPVolume");
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static FORCEINLINE float AngleBetweenDirectionsRad(FVector A, FVector B)
+	{
+		A.Normalize();
+		B.Normalize();
+		return FMath::Acos(FVector::DotProduct(A, B));
+	};
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+    static FORCEINLINE float AngleBetweenDirectionsDeg(FVector A, FVector B)
+    {
+    	return FMath::RadiansToDegrees(AngleBetweenDirectionsRad(A, B));
+    };
 };

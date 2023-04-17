@@ -4,6 +4,7 @@
 
 #include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
+#include "Landscape.h"
 #include "Character/EcoscapePlayerController.h"
 #include "World/PlacedItem.h"
 
@@ -40,6 +41,19 @@ void AEcoscapeTDCharacter::OnToolUsed()
 {
 	switch (CurrentTool)
 	{
+	case ETSculpt:
+		{
+			FHitResult Hit;
+			const TArray<AActor*> IgnoredActors;
+			if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, IgnoredActors))
+			{
+				ALandscape* Landscape = Cast<ALandscape>(Hit.GetActor());
+				if (!Landscape)
+					return;
+				
+			}
+		}
+		break;
 	case ETPlaceObjects:
 		{
 			// Check position is valid
@@ -58,6 +72,11 @@ void AEcoscapeTDCharacter::OnToolUsed()
 				Item->AddActorWorldOffset(FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(Item))); // Move it so the bottom of the mesh is on the ground
 				OnItemPlaced(Item->GetActorLocation(), Item);
 			}
+		}
+		break;
+	case ETDestroyObjects:
+		{
+			
 		}
 		break;
 	default: UE_LOG(LogEcoscape, Error, TEXT("Attempted to use unimplemented tool: %i"), static_cast<int>(CurrentTool)); break;
@@ -100,7 +119,7 @@ void AEcoscapeTDCharacter::AddScrollInput(float Value)
 {
 	if (CurrentTool == ETPlaceObjects && EcoscapePlayerController->IsModifierHeld())
 	{
-		PlacedItemScale = FMath::Clamp(PlacedItemScale += Value * 0.2f, ItemScaleBounds.X, ItemScaleBounds.Y);
+		PlacedItemScale = FMath::Clamp(PlacedItemScale += Value * 0.2f, TestItem->ScaleBounds.X, TestItem->ScaleBounds.Y);
 		ItemPreview->SetTargetScale(PlacedItemScale);
 	} else
 		TargetHeight = FMath::Clamp(TargetHeight + -Value * ZoomSensitivity, HeightBounds.X, HeightBounds.Y);
@@ -138,7 +157,7 @@ void AEcoscapeTDCharacter::Tick(float DeltaSeconds)
 		FHitResult Hit;
 		const TArray<AActor*> IgnoredActors;
 		if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, IgnoredActors))
-			ItemPreview->SetPosition(Hit.Location + FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(ItemPreview)));
+			ItemPreview->UpdateWithHitInfo(Hit);
 		break;
 	}
 }
@@ -165,6 +184,8 @@ void AEcoscapeTDCharacter::PossessedBy(AController* NewController)
 
 void AEcoscapeTDCharacter::UnPossessed()
 {
+	Super::UnPossessed();
+	
 	bIsPossessed = false;
 
 	if (ItemPreview)

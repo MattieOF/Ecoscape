@@ -28,4 +28,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TSubclassOf<APlacedItem> PlacedItemClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FVector2D ScaleBounds = FVector2D(0.5, 1.75);
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float MaxAngle = 40;
 };

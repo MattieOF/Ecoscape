@@ -14,8 +14,9 @@ UENUM(BlueprintType)
 enum EEcoscapeTool
 {
 	ETNone            UMETA(DisplayName = "None"),
+	ETSculpt          UMETA(DisplayName = "Sculpt"),
 	ETPlaceObjects    UMETA(DisplayName = "Place Objects"),
-	ETDestroyObjects  UMETA(DisplayName = "Destroy Objects")
+	ETDestroyObjects  UMETA(DisplayName = "Destroy Objects"),
 };
 
 UCLASS()

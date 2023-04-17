@@ -90,6 +90,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SwitchViewCooldown = 0.5f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float SprintSpeedModifier = 2;
 	
 private:
 	float CurrentSwitchViewCooldown = 0;

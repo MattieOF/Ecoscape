@@ -21,7 +21,7 @@ public:
 	void SetItem(UPlaceableItemData* Item);
 
 	UFUNCTION(BlueprintCallable)
-	void SetPosition(FVector NewPosition);
+	void UpdateWithHitInfo(FHitResult Hit);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE bool IsValidPlacement() const { return bIsValidPlacement; }
@@ -44,6 +44,9 @@ protected:
 	
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* InvalidMaterial;
+
+	UPROPERTY()
+	UPlaceableItemData* CurrentItem;
 
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsValidPlacement = false;

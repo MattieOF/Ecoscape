@@ -45,21 +45,23 @@ void APlaceableItemPreview::Tick(const float DeltaSeconds)
 
 void APlaceableItemPreview::SetItem(UPlaceableItemData* Item)
 {
+	CurrentItem = Item;
 	MainMesh->SetStaticMesh(Item->Mesh);
 	UEcoscapeStatics::SetAllMaterials(MainMesh, InvalidMaterial);
 }
 
-void APlaceableItemPreview::SetPosition(const FVector NewPosition)
+void APlaceableItemPreview::UpdateWithHitInfo(FHitResult Hit)
 {
 	SCOPE_CYCLE_COUNTER(STAT_MovePreview);
 	
-	SetActorLocation(NewPosition);
+	SetActorLocation(Hit.Location + FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(this)));
 
 	// Check to see if position is valid or not
 	// First, set the scale to target scale, so we check against that instead of the lerped one.
 	const float PreviousScale = GetActorScale().X;
 	SetActorScale3D(FVector(TargetItemScale));
-	
+
+	// Get any overlapping components
 	FComponentQueryParams ComponentQueryParams;
 	ComponentQueryParams.AddIgnoredActor(MainMesh->GetOwner());
 	TArray<FOverlapResult> OverlapResults;
@@ -70,7 +72,7 @@ void APlaceableItemPreview::SetPosition(const FVector NewPosition)
 	// Reset scale
 	SetActorScale3D(FVector(PreviousScale));
 
-	// Check that the placement is valid; i.e no overlaps with objects that block placement
+	// Check that there are no overlaps with objects that block placement
 	bIsValidPlacement = true;
 	for (const auto Item : OverlapResults)
 	{
@@ -80,6 +82,10 @@ void APlaceableItemPreview::SetPosition(const FVector NewPosition)
 			break;
 		}
 	}
+
+	// Next, check that the normal is within range
+	if (UEcoscapeStatics::AngleBetweenDirectionsDeg(FVector(0, 0, 1), Hit.ImpactNormal) > CurrentItem->MaxAngle)
+		bIsValidPlacement = false;
 	
 	// Update preview material
 	if (bIsValidPlacement)

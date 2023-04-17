@@ -46,12 +46,12 @@ void AEcoscapePlayerController::BeginPlay()
 
 void AEcoscapePlayerController::OnMoveForward(const float Value)
 {
-	CurrentPawn->AddMovementInput(CurrentView == EPSFirstPerson ? CurrentPawn->GetActorForwardVector() : FVector::ForwardVector, Value);
+	CurrentPawn->AddMovementInput(CurrentView == EPSFirstPerson ? CurrentPawn->GetActorForwardVector() : FVector::ForwardVector, bModifierPressed ? Value * SprintSpeedModifier : Value);
 }
 
 void AEcoscapePlayerController::OnMoveRight(const float Value)
 {
-	CurrentPawn->AddMovementInput(CurrentView == EPSFirstPerson ? CurrentPawn->GetActorRightVector() : FVector::RightVector, Value);
+	CurrentPawn->AddMovementInput(CurrentView == EPSFirstPerson ? CurrentPawn->GetActorRightVector() : FVector::RightVector, bModifierPressed ? Value * SprintSpeedModifier : Value);
 }	
 
 void AEcoscapePlayerController::OnLookUp(const float Value)
