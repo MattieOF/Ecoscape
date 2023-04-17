@@ -4,6 +4,7 @@
 
 #include "EcoscapeStatics.h"
 #include "EcoscapeStats.h"
+#include "Kismet/KismetMathLibrary.h"
 
 DECLARE_CYCLE_STAT(TEXT("Move Item Preview"), STAT_MovePreview, STATGROUP_Ecoscape);
 
@@ -28,7 +29,8 @@ void APlaceableItemPreview::Tick(const float DeltaSeconds)
 		if (1 - CurrentRotationAlpha < 0.02)
 			CurrentRotationAlpha = 1;
 
-		SetActorRotation(FMath::Lerp(GetActorRotation(), FRotator(0, TargetItemRotation, 0), CurrentRotationAlpha));
+		const auto CurrentRotation = GetActorRotation();
+		SetActorRotation(FMath::Lerp(CurrentRotation, FRotator(CurrentRotation.Pitch, TargetItemRotation, CurrentRotation.Roll), CurrentRotationAlpha));
 	}
 
 	// Update scale
@@ -54,7 +56,12 @@ void APlaceableItemPreview::UpdateWithHitInfo(FHitResult Hit)
 {
 	SCOPE_CYCLE_COUNTER(STAT_MovePreview);
 	
-	SetActorLocation(Hit.Location + FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(this)));
+	SetActorLocation(Hit.Location + FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(this) + CurrentItem->ZOffset));
+
+	// auto CurrentRotation = GetActorRotation();
+	// auto Rotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), GetActorLocation() + Hit.ImpactNormal);
+	// Rotation.Yaw = CurrentRotation.Yaw;
+	// SetActorRotation(Rotation);
 
 	// Check to see if position is valid or not
 	// First, set the scale to target scale, so we check against that instead of the lerped one.

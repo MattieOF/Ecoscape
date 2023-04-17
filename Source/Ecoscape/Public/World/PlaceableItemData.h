@@ -34,4 +34,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float MaxAngle = 40;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float ZOffset = 0;
 };

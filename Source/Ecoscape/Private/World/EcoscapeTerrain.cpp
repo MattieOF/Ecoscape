@@ -2,8 +2,10 @@
 
 #include "World/EcoscapeTerrain.h"
 
+#include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
 #include "ProceduralMeshComponent.h"
+#include "Serialization/BufferArchive.h"
 
 AEcoscapeTerrain::AEcoscapeTerrain()
 {
@@ -25,6 +27,28 @@ void AEcoscapeTerrain::Tick(float DeltaSeconds)
 {
 }
 
+void AEcoscapeTerrain::SerialiseTerrain()
+{
+	// Serialise with buffer archive
+	FBufferArchive BinarySaveArchive;
+	BinarySaveArchive << Verticies;
+	BinarySaveArchive << Triangles;
+	BinarySaveArchive << UV0;
+
+	// Save to disk
+	const FString Path = *FString::Printf(TEXT("%lsSaves/Terrain.esl"), *FPaths::ProjectSavedDir());
+	const bool SaveResult = FFileHelper::SaveArrayToFile(BinarySaveArchive, *Path);
+	if (!SaveResult)
+	{
+		UE_LOG(LogEcoscape, Error, TEXT("Failed to save terrain to %s!"), *Path);
+		return;
+	}
+	
+	// Empty buffer
+	BinarySaveArchive.FlushCache();
+	BinarySaveArchive.Empty();
+}
+
 void AEcoscapeTerrain::ResetMeshData()
 {
 	Verticies.Empty();
@@ -39,10 +63,13 @@ void AEcoscapeTerrain::GenerateVerticies()
 		for (int y = 0; y <= Height; y++)
 		{
 			// TODO: ensure that it's never an integer
-			float Z = FMath::PerlinNoise2D(FVector2D(NoiseOffset + x * NoiseScale + 0.1, NoiseOffset + y * NoiseScale + 0.1));
+			float Z = (FMath::PerlinNoise2D(FVector2D(PrimaryOctaveSeed + x * NoiseScale + 0.1, PrimaryOctaveSeed + y * NoiseScale + 0.1)) * HeightScale)
+			          + (FMath::PerlinNoise2D(FVector2D(SecondaryOctaveSeed + x * (NoiseScale * 4) + 0.1, SecondaryOctaveSeed + y * (NoiseScale * 4) + 0.1)) * HeightScale / 3)
+			          + (FMath::PerlinNoise2D(FVector2D(TertiaryOctaveSeed + x * (NoiseScale / 2) + 0.1, TertiaryOctaveSeed + y * (NoiseScale / 2) + 0.1)) * HeightScale * 2.5);
 			
-			Verticies.Add(FVector(x * Scale, y * Scale, Z * HeightScale));
+			Verticies.Add(FVector(x * Scale, y * Scale, Z));
 			UV0.Add(FVector2D(x * UVScale, y * UVScale));
+			VertexColors.Add(FColor::MakeRandomColor());
 		}
 	}
 }
@@ -70,13 +97,15 @@ void AEcoscapeTerrain::GenerateIndicies()
 
 void AEcoscapeTerrain::CreateMesh() const
 {
-	ProceduralMeshComponent->CreateMeshSection(0, Verticies, Triangles, TArray<FVector>(), UV0, TArray<FColor>(), TArray<FProcMeshTangent>(), true);
+	ProceduralMeshComponent->CreateMeshSection(0, Verticies, Triangles, TArray<FVector>(), UV0, VertexColors, TArray<FProcMeshTangent>(), true);
 	ProceduralMeshComponent->SetMaterial(0, Material);
 }
 
 void AEcoscapeTerrain::Regenerate()
 {
-	NoiseOffset = FMath::RandRange(0.0f, 10000.0f);
+	PrimaryOctaveSeed   = FMath::RandRange(0.0f, 100000.0f);
+	SecondaryOctaveSeed = FMath::RandRange(0.0f, 100000.0f);
+	TertiaryOctaveSeed  = FMath::RandRange(0.0f, 100000.0f);
 	
 	ResetMeshData();
 	GenerateVerticies();
