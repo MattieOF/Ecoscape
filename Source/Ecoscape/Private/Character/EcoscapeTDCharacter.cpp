@@ -47,7 +47,11 @@ void AEcoscapeTDCharacter::OnToolUsed()
 			const TArray<AActor*> IgnoredActors;
 			if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, IgnoredActors))
 			{
-				
+				AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(Hit.GetActor());
+				if (!Terrain)
+					return;
+				int Vertex = Terrain->GetClosestVertex(Hit.ImpactPoint);
+				Terrain->AddVertexColour(Vertex, FColor(0, 10, 0));
 			}
 		}
 		break;

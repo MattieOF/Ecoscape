@@ -53,6 +53,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int GetClosestVertex(FVector Position);
+
+	UFUNCTION(BlueprintCallable)
+	void AddVertexColour(int Index, FColor AddedColor);
 	
 protected:
 	virtual void BeginPlay() override;

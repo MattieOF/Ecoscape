@@ -168,6 +168,18 @@ int AEcoscapeTerrain::GetClosestVertex(FVector Position)
 	return (X * (Width + 1)) + Y;
 }
 
+void AEcoscapeTerrain::AddVertexColour(int Index, FColor AddedColor)
+{
+	if (Index < 0 || Index >= Verticies.Num())
+	{
+		UE_LOG(LogEcoscape, Error, TEXT("AEcoscapeTerrain::AddVertexColour called with out of range index %i (range is 0..%i)"), Index, Verticies.Num());
+		return;	
+	}
+
+	VertexColors[Index] += AddedColor;
+	ProceduralMeshComponent->UpdateMeshSection(0, Verticies, TArray<FVector>(), UV0, VertexColors, TArray<FProcMeshTangent>());
+}
+
 #if WITH_EDITOR
 void AEcoscapeTerrain::DrawVerticies()
 {
