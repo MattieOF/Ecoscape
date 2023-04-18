@@ -3,10 +3,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "FastNoise.h"
 #include "GameFramework/Actor.h"
 #include "EcoscapeTerrain.generated.h"
 
 class UProceduralMeshComponent;
+
+UENUM(BlueprintType)
+enum ENoiseType
+{
+	ENTPerlin    UMETA(DisplayName = "Perlin"),
+	ENTSimplex   UMETA(DisplayName = "Simplex")
+};
 
 USTRUCT(BlueprintType)
 struct FTerrainNoiseLayer
@@ -15,12 +23,19 @@ struct FTerrainNoiseLayer
 
 public:
 	UPROPERTY(EditAnywhere)
-	float Scale = .1f;
+	TEnumAsByte<ENoiseType> NoiseType = ENTPerlin;
+	
+	UPROPERTY(EditAnywhere)
+	float CoordinateScale = .1f;
 
+	UPROPERTY(EditAnywhere)
+	float HeightScale = 100.0f;
+	
 	UPROPERTY(EditAnywhere)
 	float Seed = 0;
 
-	
+	UPROPERTY(EditAnywhere)
+	float Offset = .1f;
 };
 
 UCLASS()
@@ -54,18 +69,21 @@ protected:
 	int Width = 50;
 	UPROPERTY(EditAnywhere)
 	int Height = 50;
-	UPROPERTY(EditAnywhere, meta=(ClampMin=1))
-	float Scale = 100;
-	UPROPERTY(EditAnywhere, meta=(ClampMin=0.0001))
-	float UVScale = 100;
+	
+	/**
+	 * @brief Distance in units between each vertex
+	 */
 	UPROPERTY(EditAnywhere)
-	float HeightScale = 100;
-	UPROPERTY(EditAnywhere)
-	float NoiseScale = 0.1f;
+	float Scale = 150;
 
-	float PrimaryOctaveSeed = 0;
-	float SecondaryOctaveSeed = 0;
-	float TertiaryOctaveSeed = 0;
+	/**
+	 * @brief UV scale
+	 */
+	UPROPERTY(EditAnywhere, meta=(ClampMin=0.0001))
+	float UVScale = 1;
+	
+	UPROPERTY(EditAnywhere)
+	TArray<FTerrainNoiseLayer> NoiseLayers;
 	
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* Material;
@@ -73,9 +91,12 @@ protected:
 	// Mesh data
 	UPROPERTY()
 	TArray<FVector> Verticies;
+	UPROPERTY()
 	TArray<FColor> VertexColors;
 	UPROPERTY()
 	TArray<int> Triangles;
 	UPROPERTY()
 	TArray<FVector2D> UV0;
+
+	FastNoiseLite Noise;
 };

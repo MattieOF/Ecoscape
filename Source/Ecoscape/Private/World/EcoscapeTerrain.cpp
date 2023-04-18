@@ -6,6 +6,7 @@
 #include "EcoscapeStatics.h"
 #include "ProceduralMeshComponent.h"
 #include "Serialization/BufferArchive.h"
+#include "World/FastNoise.h"
 
 AEcoscapeTerrain::AEcoscapeTerrain()
 {
@@ -34,6 +35,7 @@ void AEcoscapeTerrain::SerialiseTerrain()
 	BinarySaveArchive << Verticies;
 	BinarySaveArchive << Triangles;
 	BinarySaveArchive << UV0;
+	BinarySaveArchive << VertexColors;
 
 	// Save to disk
 	const FString Path = *FString::Printf(TEXT("%lsSaves/Terrain.esl"), *FPaths::ProjectSavedDir());
@@ -50,10 +52,11 @@ void AEcoscapeTerrain::SerialiseTerrain()
 }
 
 void AEcoscapeTerrain::ResetMeshData()
-{
+{	
 	Verticies.Empty();
 	Triangles.Empty();
 	UV0.Empty();
+	VertexColors.Empty();
 }
 
 void AEcoscapeTerrain::GenerateVerticies()
@@ -63,13 +66,30 @@ void AEcoscapeTerrain::GenerateVerticies()
 		for (int y = 0; y <= Height; y++)
 		{
 			// TODO: ensure that it's never an integer
-			float Z = (FMath::PerlinNoise2D(FVector2D(PrimaryOctaveSeed + x * NoiseScale + 0.1, PrimaryOctaveSeed + y * NoiseScale + 0.1)) * HeightScale)
-			          + (FMath::PerlinNoise2D(FVector2D(SecondaryOctaveSeed + x * (NoiseScale * 4) + 0.1, SecondaryOctaveSeed + y * (NoiseScale * 4) + 0.1)) * HeightScale / 3)
-			          + (FMath::PerlinNoise2D(FVector2D(TertiaryOctaveSeed + x * (NoiseScale / 2) + 0.1, TertiaryOctaveSeed + y * (NoiseScale / 2) + 0.1)) * HeightScale * 2.5);
+			float Z = 0;
+			for (const auto& [NoiseType, CoordinateScale, HeightScale, Seed, Offset] : NoiseLayers)
+			{
+				switch (NoiseType)
+				{
+				case ENTPerlin:
+					Noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+					break;
+				case ENTSimplex:
+					Noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+					break;
+				default:
+					UE_LOG(LogEcoscape, Error, TEXT("Invalid noise type: %i"), static_cast<int>(NoiseType));
+					break;
+				}
+
+				Noise.SetSeed(Seed);
+
+				Z += Noise.GetNoise(x * CoordinateScale, y * CoordinateScale) * HeightScale;
+			}
 			
 			Verticies.Add(FVector(x * Scale, y * Scale, Z));
 			UV0.Add(FVector2D(x * UVScale, y * UVScale));
-			VertexColors.Add(FColor::MakeRandomColor());
+			VertexColors.Add(FColor(64,41,5));
 		}
 	}
 }
@@ -103,9 +123,9 @@ void AEcoscapeTerrain::CreateMesh() const
 
 void AEcoscapeTerrain::Regenerate()
 {
-	PrimaryOctaveSeed   = FMath::RandRange(0.0f, 100000.0f);
-	SecondaryOctaveSeed = FMath::RandRange(0.0f, 100000.0f);
-	TertiaryOctaveSeed  = FMath::RandRange(0.0f, 100000.0f);
+	// Reroll noise seeds	
+	for (FTerrainNoiseLayer& Layer : NoiseLayers)
+		Layer.Seed = FMath::RandRange(0.0f, 1000000.0f);
 	
 	ResetMeshData();
 	GenerateVerticies();
