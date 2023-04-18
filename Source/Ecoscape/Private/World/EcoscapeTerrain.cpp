@@ -4,9 +4,13 @@
 
 #include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
+#include "EcoscapeStats.h"
 #include "ProceduralMeshComponent.h"
 #include "Serialization/BufferArchive.h"
 #include "World/FastNoise.h"
+
+DECLARE_CYCLE_STAT(TEXT("Terrain: Generate"), STAT_GenTerrain, STATGROUP_EcoscapeTerrain);
+DECLARE_CYCLE_STAT(TEXT("Terrain: Get Nearest Vertex"), STAT_GetNearestVert, STATGROUP_Ecoscape);
 
 AEcoscapeTerrain::AEcoscapeTerrain()
 {
@@ -144,19 +148,24 @@ void AEcoscapeTerrain::CreateMesh() const
 
 int AEcoscapeTerrain::GetClosestVertex(FVector Position)
 {
+	SCOPE_CYCLE_COUNTER(STAT_GetNearestVert);
+	
 	const FVector ActorLoc = GetActorLocation();
 	const float OriginX = ActorLoc.X;
 	const float EndX = OriginX + (Width * Scale);
 	const float OriginY = ActorLoc.Y;
 	const float EndY = OriginY + (Height * Scale);
 
-	const float XAlpha = FMath::Clamp((EndX - Position.X) / (EndX - OriginX), 0, 1);
-	const float YAlpha = FMath::Clamp((EndY - Position.Y) / (EndY - OriginY), 0, 1);
+	const float XAlpha = FMath::Clamp((Position.X - OriginX) / (EndX - OriginX), 0, 1);
+	const float YAlpha = FMath::Clamp((Position.Y - OriginY) / (EndY - OriginY), 0, 1);
 
-	const int X = FMath::Floor(Width  * XAlpha);
-	const int Y = FMath::Floor(Height * YAlpha);
+	const int X = FMath::RoundToInt(Width  * XAlpha);
+	const int Y = FMath::RoundToInt(Height * YAlpha);
 
-	return (X * Width) + Y;
+	// DrawDebugSphere(GetWorld(), ActorLoc + FVector(Width * Scale * XAlpha, Height * Scale * YAlpha, 300), 20.0f, 6, FColor::Red);
+	// DrawDebugSphere(GetWorld(), ActorLoc + FVector(Scale * X, Scale * Y, 500), 20.0f, 6, FColor::Red);
+	
+	return (X * (Width + 1)) + Y;
 }
 
 #if WITH_EDITOR
@@ -165,10 +174,18 @@ void AEcoscapeTerrain::DrawVerticies()
 	for (int i = 0; i < Verticies.Num(); i++)
 		DrawDebugSphere(GetWorld(), GetVertexPositionWorld(i), 20.0f, 8, FColor::Red, false, 5);
 }
+
+void AEcoscapeTerrain::DrawIndicies()
+{
+	for (int i = 0; i < Verticies.Num(); i++)
+		DrawDebugString(GetWorld(), GetVertexPositionWorld(i) + FVector(0, 0, 100), FString::FromInt(i), nullptr, FColor::White, 3);
+}
 #endif
 
 void AEcoscapeTerrain::Regenerate()
 {
+	SCOPE_CYCLE_COUNTER(STAT_GenTerrain);
+	
 	// Reroll noise seeds	
 	for (FTerrainNoiseLayer& Layer : NoiseLayers)
 		Layer.Seed = FMath::RandRange(0.0f, 1000000.0f);

@@ -70,6 +70,9 @@ protected:
 #if WITH_EDITOR
 	UFUNCTION(BlueprintCallable, CallInEditor)
 	void DrawVerticies();
+	
+	UFUNCTION(BlueprintCallable, CallInEditor)
+	void DrawIndicies();
 #endif
 
 	UFUNCTION(BlueprintCallable, CallInEditor)
