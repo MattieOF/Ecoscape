@@ -94,3 +94,13 @@ public:
     	return FMath::RadiansToDegrees(AngleBetweenDirectionsRad(A, B));
     };
 };
+
+FORCEINLINE FColor operator-(const FColor& LHS, const FColor& RHS)
+{
+	FColor Result;
+	Result.R = static_cast<uint8>(FMath::Clamp(static_cast<int32>(LHS.R) - static_cast<int32>(RHS.R), 0, 255));
+	Result.G = static_cast<uint8>(FMath::Clamp(static_cast<int32>(LHS.G) - static_cast<int32>(RHS.G), 0, 255));
+	Result.B = static_cast<uint8>(FMath::Clamp(static_cast<int32>(LHS.B) - static_cast<int32>(RHS.B), 0, 255));
+	Result.A = static_cast<uint8>(FMath::Clamp(static_cast<int32>(LHS.A) - static_cast<int32>(RHS.A), 0, 255));
+	return Result;
+}

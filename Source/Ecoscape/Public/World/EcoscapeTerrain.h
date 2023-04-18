@@ -81,6 +81,9 @@ protected:
 	 */
 	UPROPERTY(EditAnywhere, meta=(ClampMin=0.0001))
 	float UVScale = 1;
+
+	UPROPERTY(EditAnywhere)
+	FVector2D ColorOffsetRange = FVector2D(-30, 15);
 	
 	UPROPERTY(EditAnywhere)
 	TArray<FTerrainNoiseLayer> NoiseLayers;
@@ -97,6 +100,10 @@ protected:
 	TArray<int> Triangles;
 	UPROPERTY()
 	TArray<FVector2D> UV0;
+	UPROPERTY()
+	TArray<FVector> ColorOffsets;
 
+	float ColorOffsetSeed = 0;
+	
 	FastNoiseLite Noise;
 };

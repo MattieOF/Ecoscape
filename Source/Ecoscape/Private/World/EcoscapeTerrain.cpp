@@ -36,6 +36,7 @@ void AEcoscapeTerrain::SerialiseTerrain()
 	BinarySaveArchive << Triangles;
 	BinarySaveArchive << UV0;
 	BinarySaveArchive << VertexColors;
+	BinarySaveArchive << ColorOffsets;
 
 	// Save to disk
 	const FString Path = *FString::Printf(TEXT("%lsSaves/Terrain.esl"), *FPaths::ProjectSavedDir());
@@ -57,6 +58,7 @@ void AEcoscapeTerrain::ResetMeshData()
 	Triangles.Empty();
 	UV0.Empty();
 	VertexColors.Empty();
+	ColorOffsets.Empty();
 }
 
 void AEcoscapeTerrain::GenerateVerticies()
@@ -86,10 +88,29 @@ void AEcoscapeTerrain::GenerateVerticies()
 
 				Z += Noise.GetNoise(x * CoordinateScale, y * CoordinateScale) * HeightScale;
 			}
+
 			
 			Verticies.Add(FVector(x * Scale, y * Scale, Z));
 			UV0.Add(FVector2D(x * UVScale, y * UVScale));
-			VertexColors.Add(FColor(64,41,5));
+			
+			Noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+			Noise.SetSeed(ColorOffsetSeed);
+			
+			float Value = Noise.GetNoise((x + 0.1f) * 5.0f, (y + 0.1f) * 5.0f);
+			Value = (Value + 1) / 2;
+			Value = FMath::Lerp(ColorOffsetRange.X, ColorOffsetRange.Y, Value);
+			ColorOffsets.Add(FVector(Value));
+			bool bNegative = Value < 0;
+			Value = FMath::Abs(Value);
+			FColor ColorOffset = FColor(static_cast<int>(Value), static_cast<int>(Value), static_cast<int>(Value), 255);
+			
+			FColor VertexColor = FColor(64,41,5, 255);
+			if (bNegative)
+				VertexColor = VertexColor - ColorOffset;
+			else
+				VertexColor += ColorOffset;
+			VertexColor.A = 255;
+			VertexColors.Add(VertexColor);
 		}
 	}
 }
@@ -126,6 +147,7 @@ void AEcoscapeTerrain::Regenerate()
 	// Reroll noise seeds	
 	for (FTerrainNoiseLayer& Layer : NoiseLayers)
 		Layer.Seed = FMath::RandRange(0.0f, 1000000.0f);
+	ColorOffsetSeed = FMath::RandRange(0.0f, 1000000.0f);
 	
 	ResetMeshData();
 	GenerateVerticies();
