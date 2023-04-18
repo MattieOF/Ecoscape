@@ -100,7 +100,7 @@ void AEcoscapeTerrain::GenerateVerticies()
 			Value = (Value + 1) / 2;
 			Value = FMath::Lerp(ColorOffsetRange.X, ColorOffsetRange.Y, Value);
 			ColorOffsets.Add(FVector(Value));
-			bool bNegative = Value < 0;
+			const bool bNegative = Value < 0;
 			Value = FMath::Abs(Value);
 			FColor ColorOffset = FColor(static_cast<int>(Value), static_cast<int>(Value), static_cast<int>(Value), 255);
 			
@@ -141,6 +141,31 @@ void AEcoscapeTerrain::CreateMesh() const
 	ProceduralMeshComponent->CreateMeshSection(0, Verticies, Triangles, TArray<FVector>(), UV0, VertexColors, TArray<FProcMeshTangent>(), true);
 	ProceduralMeshComponent->SetMaterial(0, Material);
 }
+
+int AEcoscapeTerrain::GetClosestVertex(FVector Position)
+{
+	const FVector ActorLoc = GetActorLocation();
+	const float OriginX = ActorLoc.X;
+	const float EndX = OriginX + (Width * Scale);
+	const float OriginY = ActorLoc.Y;
+	const float EndY = OriginY + (Height * Scale);
+
+	const float XAlpha = FMath::Clamp((EndX - Position.X) / (EndX - OriginX), 0, 1);
+	const float YAlpha = FMath::Clamp((EndY - Position.Y) / (EndY - OriginY), 0, 1);
+
+	const int X = FMath::Floor(Width  * XAlpha);
+	const int Y = FMath::Floor(Height * YAlpha);
+
+	return (X * Width) + Y;
+}
+
+#if WITH_EDITOR
+void AEcoscapeTerrain::DrawVerticies()
+{
+	for (int i = 0; i < Verticies.Num(); i++)
+		DrawDebugSphere(GetWorld(), GetVertexPositionWorld(i), 20.0f, 8, FColor::Red, false, 5);
+}
+#endif
 
 void AEcoscapeTerrain::Regenerate()
 {

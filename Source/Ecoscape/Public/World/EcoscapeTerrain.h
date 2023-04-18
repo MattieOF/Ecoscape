@@ -46,6 +46,14 @@ class ECOSCAPE_API AEcoscapeTerrain : public AActor
 public:
 	AEcoscapeTerrain();
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE FVector GetVertexPositionLocal(int Index) { return Verticies[Index]; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE FVector GetVertexPositionWorld(int Index) { return GetActorLocation() + GetVertexPositionLocal(Index); }
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	int GetClosestVertex(FVector Position);
+	
 protected:
 	virtual void BeginPlay() override;
 
@@ -58,6 +66,11 @@ protected:
 	void GenerateVerticies();
 	void GenerateIndicies();
 	void CreateMesh() const;
+
+#if WITH_EDITOR
+	UFUNCTION(BlueprintCallable, CallInEditor)
+	void DrawVerticies();
+#endif
 
 	UFUNCTION(BlueprintCallable, CallInEditor)
 	void Regenerate();

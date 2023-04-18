@@ -5,6 +5,7 @@
 #include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
 #include "Character/EcoscapePlayerController.h"
+#include "World/EcoscapeTerrain.h"
 #include "World/PlacedItem.h"
 
 AEcoscapeTDCharacter::AEcoscapeTDCharacter()
@@ -144,6 +145,20 @@ void AEcoscapeTDCharacter::Tick(float DeltaSeconds)
 		else
 			Location.Z += -Diff * 10.f * DeltaSeconds;
 		SetActorLocation(Location);	
+	}
+
+	{
+		FHitResult Hit;
+		const TArray<AActor*> IgnoredActors;
+		if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, IgnoredActors))
+		{
+			if (AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(Hit.GetActor()))
+			{
+				int Index = Terrain->GetClosestVertex(Hit.ImpactPoint);
+				FVector VertexPos = Terrain->GetVertexPositionWorld(Index);
+				DrawDebugSphere(GetWorld(), VertexPos, 20, 6, FColor::Red);
+			}
+		}
 	}
 
 	// Do tool logic
