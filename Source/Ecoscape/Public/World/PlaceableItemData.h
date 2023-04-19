@@ -17,6 +17,8 @@ class ECOSCAPE_API UPlaceableItemData : public UDataAsset
 	GENERATED_BODY()
 
 public:
+	UPlaceableItemData();
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText Name;
 
@@ -37,4 +39,13 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float ZOffset = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float ColourRange = 150 * 6;
+
+	UPROPERTY(BlueprintReadOnly)
+	float ColourRangeSquared;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FLinearColor LandColour;
 };

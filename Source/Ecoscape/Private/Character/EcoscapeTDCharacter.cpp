@@ -74,6 +74,18 @@ void AEcoscapeTDCharacter::OnToolUsed()
 				APlacedItem* Item = APlacedItem::SpawnItem(GetWorld(), TestItem, Hit.Location, FVector(PlacedItemScale), FRotator(0, PlacedItemRotation, 0));
 				Item->AddActorWorldOffset(FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(Item) + TestItem->ZOffset)); // Move it so the bottom of the mesh is on the ground
 				OnItemPlaced(Item->GetActorLocation(), Item);
+
+				if (AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(Hit.GetActor()))
+				{
+					Terrain->PlacedItems.Add(Item);
+					auto Verts = Terrain->GetVerticiesInSphere(Hit.ImpactPoint, TestItem->ColourRange * PlacedItemScale, true);
+					for (auto& [Vertex, _] : Verts)
+					{
+						DrawDebugSphere(GetWorld(), Terrain->GetVertexPositionWorld(Vertex), 20, 6, FColor::Red, false, 2.5f);
+						Terrain->CalculateVertColour(Vertex);
+					}
+					Terrain->FlushMesh();
+				}
 			}
 		}
 		break;

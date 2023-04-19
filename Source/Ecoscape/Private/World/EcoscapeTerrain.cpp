@@ -5,7 +5,7 @@
 #include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
 #include "EcoscapeStats.h"
-#include "ProceduralMeshComponent.h"
+#include "KismetProceduralMeshLibrary.h"
 #include "Serialization/BufferArchive.h"
 #include "World/FastNoise.h"
 
@@ -40,6 +40,8 @@ void AEcoscapeTerrain::SerialiseTerrain(FArchive& Archive)
 	Archive << Triangles;
 	Archive << UV0;
 	Archive << VertexColors;
+	Archive << Normals;
+	Archive << Tangents;
 	Archive << ColorOffsets;
 }
 
@@ -106,6 +108,8 @@ void AEcoscapeTerrain::ResetMeshData()
 	Verticies.Empty();
 	Triangles.Empty();
 	UV0.Empty();
+	Normals.Empty();
+	Tangents.Empty();
 	VertexColors.Empty();
 	ColorOffsets.Empty();
 }
@@ -151,7 +155,7 @@ void AEcoscapeTerrain::GenerateVerticies()
 			FVector Offset = FVector(Value);
 			ColorOffsets.Add(Offset);
 			
-			FColor VertexColor = FColor(64,41,5, 255);
+			FColor VertexColor = DirtColour;
 			VertexColor = UEcoscapeStatics::AddToColor(VertexColor, Offset);
 			VertexColors.Add(VertexColor);
 		}
@@ -166,12 +170,12 @@ void AEcoscapeTerrain::GenerateIndicies()
 	{
 		for (int Y = 0; Y < Height; ++Y)
 		{
-			Triangles.Add(Vertex);//Bottom left corner
-			Triangles.Add(Vertex + 1);//Bottom right corner
-			Triangles.Add(Vertex + Height + 1);//Top left corner
-			Triangles.Add(Vertex + 1);//Bottom right corner
-			Triangles.Add(Vertex + Height + 2);//Top right corner
-			Triangles.Add(Vertex + Height + 1);//Top left corner
+			Triangles.Add(Vertex); // Bottom left corner
+			Triangles.Add(Vertex + 1); // Bottom right corner
+			Triangles.Add(Vertex + Height + 1); // Top left corner
+			Triangles.Add(Vertex + 1); // Bottom right corner
+			Triangles.Add(Vertex + Height + 2); // Top right corner
+			Triangles.Add(Vertex + Height + 1); // Top left corner
 
 			++Vertex;
 		}
@@ -179,10 +183,32 @@ void AEcoscapeTerrain::GenerateIndicies()
 	}
 }
 
+void AEcoscapeTerrain::GenerateNormals()
+{
+	UKismetProceduralMeshLibrary::CalculateTangentsForMesh(Verticies, Triangles, UV0, Normals, Tangents);
+}
+
 void AEcoscapeTerrain::CreateMesh() const
 {
-	ProceduralMeshComponent->CreateMeshSection(0, Verticies, Triangles, TArray<FVector>(), UV0, VertexColors, TArray<FProcMeshTangent>(), true);
+	ProceduralMeshComponent->CreateMeshSection(0, Verticies, Triangles, Normals, UV0, VertexColors, Tangents, true);
 	ProceduralMeshComponent->SetMaterial(0, Material);
+}
+
+void AEcoscapeTerrain::CalculateVertColour(int Index, bool Flush)
+{
+	const FVector Position = GetVertexPositionWorld(Index);
+	VertexColors[Index] = DirtColour;
+	for (APlacedItem* Item : PlacedItems)
+	{
+		const float DistanceSquared = FVector::DistSquared(Position, Item->GetActorLocation());
+		const auto Data = Item->GetItemData();
+		// Only using the X scale here. Assumes uniform scale
+		VertexColors[Index] += Data->LandColour.ToFColor(false) * FMath::Clamp(1 - (DistanceSquared / Data->ColourRangeSquared), 0, 1);
+	}
+	VertexColors[Index] = UEcoscapeStatics::AddToColor(VertexColors[Index], ColorOffsets[Index]);
+	
+	if (Flush)
+		FlushMesh();
 }
 
 int AEcoscapeTerrain::GetClosestVertex(FVector Position)
@@ -263,12 +289,12 @@ void AEcoscapeTerrain::AddVertexColour(int Index, FColor AddedColor, bool Flush)
 
 	VertexColors[Index] += AddedColor;
 	if (Flush)
-		ProceduralMeshComponent->UpdateMeshSection(0, Verticies, TArray<FVector>(), UV0, VertexColors, TArray<FProcMeshTangent>());
+		ProceduralMeshComponent->UpdateMeshSection(0, Verticies, Normals, UV0, VertexColors, Tangents);
 }
 
 void AEcoscapeTerrain::FlushMesh()
 {
-	ProceduralMeshComponent->UpdateMeshSection(0, Verticies, TArray<FVector>(), UV0, VertexColors, TArray<FProcMeshTangent>());
+	ProceduralMeshComponent->UpdateMeshSection(0, Verticies, Normals, UV0, VertexColors, Tangents);
 }
 
 #if WITH_EDITOR
@@ -297,5 +323,6 @@ void AEcoscapeTerrain::Regenerate()
 	ResetMeshData();
 	GenerateVerticies();
 	GenerateIndicies();
+	GenerateNormals();
 	CreateMesh();
 }

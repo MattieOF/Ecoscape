@@ -4,10 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "FastNoise.h"
+#include "PlacedItem.h"
 #include "GameFramework/Actor.h"
+#include "ProceduralMeshComponent.h"
 #include "EcoscapeTerrain.generated.h"
 
-class UProceduralMeshComponent;
+FORCEINLINE FArchive& operator<<(FArchive& LHS, FProcMeshTangent& RHS)
+{
+	LHS << RHS.TangentX;
+	LHS << RHS.bFlipTangentY;
+	return LHS;
+}
 
 UENUM(BlueprintType)
 enum ENoiseType
@@ -59,6 +66,14 @@ class ECOSCAPE_API AEcoscapeTerrain : public AActor
 public:
 	AEcoscapeTerrain();
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FColor DirtColour  = FColor(64,41,5, 255);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FColor GrassColour = FColor(25, 255, 10, 255);
+
+	UPROPERTY()
+	TArray<APlacedItem*> PlacedItems;
+
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE FVector GetVertexPositionLocal(int Index) { return Verticies[Index]; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -75,6 +90,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void AddVertexColour(int Index, FColor AddedColor, bool Flush = true);
+
+	UFUNCTION(BlueprintCallable)
+	void CalculateVertColour(int Index, bool Flush = false);
 
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE void FlushMesh();
@@ -103,6 +121,7 @@ protected:
 	void ResetMeshData();
 	void GenerateVerticies();
 	void GenerateIndicies();
+	FORCEINLINE void GenerateNormals();
 	void CreateMesh() const;
 
 #if WITH_EDITOR
@@ -116,7 +135,7 @@ protected:
 	UFUNCTION(BlueprintCallable, CallInEditor)
 	void Regenerate();
 	
-	UPROPERTY()
+	UPROPERTY(EditAnywhere)
 	UProceduralMeshComponent* ProceduralMeshComponent;
 
 	UPROPERTY(EditAnywhere)
@@ -154,6 +173,10 @@ protected:
 	TArray<int> Triangles;
 	UPROPERTY()
 	TArray<FVector2D> UV0;
+	UPROPERTY()
+	TArray<FVector> Normals;
+	UPROPERTY()
+	TArray<FProcMeshTangent> Tangents;
 	UPROPERTY()
 	TArray<FVector> ColorOffsets;
 

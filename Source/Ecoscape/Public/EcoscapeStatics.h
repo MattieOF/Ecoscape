@@ -19,6 +19,15 @@ FORCEINLINE FColor operator-(const FColor& LHS, const FColor& RHS)
 	return Result;
 }
 
+FORCEINLINE FColor operator*(const FColor& LHS, const float RHS)
+{
+	FColor Result = LHS;
+	Result.R *= RHS;
+	Result.G *= RHS;
+	Result.B *= RHS;
+	return Result;
+}
+
 /**
  * Utility functions for Ecoscape
  */
