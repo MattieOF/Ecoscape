@@ -32,15 +32,20 @@ void AEcoscapeTerrain::Tick(float DeltaSeconds)
 {
 }
 
-void AEcoscapeTerrain::SerialiseTerrain(FString Filename)
+void AEcoscapeTerrain::SerialiseTerrain(FArchive& Archive)
+{
+	Archive << Verticies;
+	Archive << Triangles;
+	Archive << UV0;
+	Archive << VertexColors;
+	Archive << ColorOffsets;
+}
+
+bool AEcoscapeTerrain::SerialiseTerrainToFile(FString Filename)
 {
 	// Serialise with buffer archive
 	FBufferArchive BinarySaveArchive;
-	BinarySaveArchive << Verticies;
-	BinarySaveArchive << Triangles;
-	BinarySaveArchive << UV0;
-	BinarySaveArchive << VertexColors;
-	BinarySaveArchive << ColorOffsets;
+	SerialiseTerrain(BinarySaveArchive);
 
 	// Save to disk
 	const FString Path = *FString::Printf(TEXT("%lsSaves/%s"), *FPaths::ProjectSavedDir(), *Filename);
@@ -48,17 +53,51 @@ void AEcoscapeTerrain::SerialiseTerrain(FString Filename)
 	if (!SaveResult)
 	{
 		UE_LOG(LogEcoscape, Error, TEXT("Failed to save terrain to %s!"), *Path);
-		return;
+		return false;
 	}
 	
 	// Empty buffer
 	BinarySaveArchive.FlushCache();
 	BinarySaveArchive.Empty();
+
+	return true;
 }
 
-void AEcoscapeTerrain::DeserialiseTerrain(FString Filename)
+bool AEcoscapeTerrain::DeserialiseTerrainFromFile(FString Filename)
 {
+	TArray<uint8> BinaryArray;
+
+	// Load and verify file
+	const FString Path = *FString::Printf(TEXT("%lsSaves/%ls"), *FPaths::ProjectSavedDir(), *Filename);
+	const bool LoadFileResult = FFileHelper::LoadFileToArray(BinaryArray, *Path);
+	if (!LoadFileResult)
+	{
+		UE_LOG(LogEcoscape, Error, TEXT("In Ecoscape Terrain loader, failed to open file %s!"), *Path);
+		return false;
+	}
+	if (BinaryArray.Num() <= 0)
+	{
+		UE_LOG(LogEcoscape, Error, TEXT("In Ecoscape Terrain loader, file %s is empty!"), *Path);
+		return false;
+	}
+
+	// Create binary loader
+	FMemoryReader BinaryLoader = FMemoryReader(BinaryArray, true);
+	BinaryLoader.Seek(0);
 	
+	// Do the loading
+	ResetMeshData();
+	SerialiseTerrain(BinaryLoader);
+
+	// Recreate terrain from loaded data
+	CreateMesh();
+
+	// Empty buffer
+	BinaryLoader.FlushCache();
+	BinaryArray.Empty();
+	BinaryLoader.Close();
+
+	return true;
 }
 
 void AEcoscapeTerrain::ResetMeshData()
@@ -108,17 +147,11 @@ void AEcoscapeTerrain::GenerateVerticies()
 			float Value = Noise.GetNoise((x + 0.1f) * 5.0f, (y + 0.1f) * 5.0f);
 			Value = (Value + 1) / 2;
 			Value = FMath::Lerp(ColorOffsetRange.X, ColorOffsetRange.Y, Value);
-			ColorOffsets.Add(FVector(Value));
-			const bool bNegative = Value < 0;
-			Value = FMath::Abs(Value);
-			FColor ColorOffset = FColor(static_cast<int>(Value), static_cast<int>(Value), static_cast<int>(Value), 255);
+			FVector Offset = FVector(Value);
+			ColorOffsets.Add(Offset);
 			
 			FColor VertexColor = FColor(64,41,5, 255);
-			if (bNegative)
-				VertexColor = VertexColor - ColorOffset;
-			else
-				VertexColor += ColorOffset;
-			VertexColor.A = 255;
+			VertexColor = UEcoscapeStatics::AddToColor(VertexColor, Offset);
 			VertexColors.Add(VertexColor);
 		}
 	}

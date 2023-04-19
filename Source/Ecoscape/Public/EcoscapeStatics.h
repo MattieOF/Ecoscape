@@ -9,6 +9,16 @@
 #define ECC_BLOCKS_ITEM_PLACEMENT ECC_GameTraceChannel1
 #define ECC_ITEM_PLACEABLE_ON     ECC_GameTraceChannel3
 
+FORCEINLINE FColor operator-(const FColor& LHS, const FColor& RHS)
+{
+	FColor Result;
+	Result.R = static_cast<uint8>(FMath::Clamp(static_cast<int32>(LHS.R) - static_cast<int32>(RHS.R), 0, 255));
+	Result.G = static_cast<uint8>(FMath::Clamp(static_cast<int32>(LHS.G) - static_cast<int32>(RHS.G), 0, 255));
+	Result.B = static_cast<uint8>(FMath::Clamp(static_cast<int32>(LHS.B) - static_cast<int32>(RHS.B), 0, 255));
+	Result.A = static_cast<uint8>(FMath::Clamp(static_cast<int32>(LHS.A) - static_cast<int32>(RHS.A), 0, 255));
+	return Result;
+}
+
 /**
  * Utility functions for Ecoscape
  */
@@ -93,14 +103,28 @@ public:
     {
     	return FMath::RadiansToDegrees(AngleBetweenDirectionsRad(A, B));
     };
-};
 
-FORCEINLINE FColor operator-(const FColor& LHS, const FColor& RHS)
-{
-	FColor Result;
-	Result.R = static_cast<uint8>(FMath::Clamp(static_cast<int32>(LHS.R) - static_cast<int32>(RHS.R), 0, 255));
-	Result.G = static_cast<uint8>(FMath::Clamp(static_cast<int32>(LHS.G) - static_cast<int32>(RHS.G), 0, 255));
-	Result.B = static_cast<uint8>(FMath::Clamp(static_cast<int32>(LHS.B) - static_cast<int32>(RHS.B), 0, 255));
-	Result.A = static_cast<uint8>(FMath::Clamp(static_cast<int32>(LHS.A) - static_cast<int32>(RHS.A), 0, 255));
-	return Result;
-}
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static FORCEINLINE FColor AddToColor(FColor Color, FVector Value)
+	{
+		const bool RNeg = Value.X < 0, GNeg = Value.Y < 0, BNeg = Value.Z < 0;
+		const FColor R = FColor(FMath::Abs(Value.X), 0, 0),
+		             G = FColor(0, FMath::Abs(Value.Y), 0),
+		             B = FColor(0, 0, FMath::Abs(Value.Z));
+		
+		if (RNeg)
+			Color = Color - R;
+		else
+			Color += R;
+		if (GNeg)
+			Color = Color - G;
+		else
+			Color += G;
+		if (BNeg)
+			Color = Color - B;
+		else
+			Color += B;
+
+		return Color;
+	}
+};

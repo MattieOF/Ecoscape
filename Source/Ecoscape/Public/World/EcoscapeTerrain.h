@@ -62,10 +62,21 @@ protected:
 
 	virtual void Tick(float DeltaSeconds) override;
 
+	// -----------------------
+	// Serialisation functions
+	// -----------------------
+	void SerialiseTerrain(FArchive& Archive);
 	UFUNCTION(BlueprintCallable, CallInEditor)
-	void SerialiseTerrain(FString Filename = "Terrain.esl");
+	bool SerialiseTerrainToFile(FString Filename = "Terrain.esl");
 	UFUNCTION(BlueprintCallable, CallInEditor)
-	void DeserialiseTerrain(FString Filename = "Terrain.esl");
+	bool DeserialiseTerrainFromFile(FString Filename = "Terrain.esl");
+#if WITH_EDITOR
+	// These two functions are for buttons in the inspector to test serialisation
+	UFUNCTION(BlueprintCallable, CallInEditor)
+	void SerialiseTerrainToTestFile() { SerialiseTerrainToFile(); }
+	UFUNCTION(BlueprintCallable, CallInEditor)
+	void DeserialiseTerrainFromTestFile() { DeserialiseTerrainFromFile(); }
+#endif
 
 	void ResetMeshData();
 	void GenerateVerticies();
