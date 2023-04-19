@@ -63,7 +63,9 @@ protected:
 	virtual void Tick(float DeltaSeconds) override;
 
 	UFUNCTION(BlueprintCallable, CallInEditor)
-	void SerialiseTerrain();
+	void SerialiseTerrain(FString Filename = "Terrain.esl");
+	UFUNCTION(BlueprintCallable, CallInEditor)
+	void DeserialiseTerrain(FString Filename = "Terrain.esl");
 
 	void ResetMeshData();
 	void GenerateVerticies();

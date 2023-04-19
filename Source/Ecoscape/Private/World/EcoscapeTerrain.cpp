@@ -32,7 +32,7 @@ void AEcoscapeTerrain::Tick(float DeltaSeconds)
 {
 }
 
-void AEcoscapeTerrain::SerialiseTerrain()
+void AEcoscapeTerrain::SerialiseTerrain(FString Filename)
 {
 	// Serialise with buffer archive
 	FBufferArchive BinarySaveArchive;
@@ -43,7 +43,7 @@ void AEcoscapeTerrain::SerialiseTerrain()
 	BinarySaveArchive << ColorOffsets;
 
 	// Save to disk
-	const FString Path = *FString::Printf(TEXT("%lsSaves/Terrain.esl"), *FPaths::ProjectSavedDir());
+	const FString Path = *FString::Printf(TEXT("%lsSaves/%s"), *FPaths::ProjectSavedDir(), *Filename);
 	const bool SaveResult = FFileHelper::SaveArrayToFile(BinarySaveArchive, *Path);
 	if (!SaveResult)
 	{
@@ -54,6 +54,11 @@ void AEcoscapeTerrain::SerialiseTerrain()
 	// Empty buffer
 	BinarySaveArchive.FlushCache();
 	BinarySaveArchive.Empty();
+}
+
+void AEcoscapeTerrain::DeserialiseTerrain(FString Filename)
+{
+	
 }
 
 void AEcoscapeTerrain::ResetMeshData()
