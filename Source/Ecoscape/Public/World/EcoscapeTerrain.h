@@ -17,6 +17,19 @@ enum ENoiseType
 };
 
 USTRUCT(BlueprintType)
+struct FVertexOverlapInfo
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int Index;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	float Distance;
+};
+
+USTRUCT(BlueprintType)
 struct FTerrainNoiseLayer
 {
 	GENERATED_BODY()
@@ -52,13 +65,19 @@ public:
 	FORCEINLINE FVector GetVertexPositionWorld(int Index) { return GetActorLocation() + GetVertexPositionLocal(Index); }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE float GetScale() { return Scale; }
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int GetClosestVertex(FVector Position);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	TArray<int> GetVerticiesInSphere(FVector Position, float Radius, bool CheckZ = false);
+	TArray<FVertexOverlapInfo> GetVerticiesInSphere(FVector Position, float Radius, bool CheckZ = false);
 
 	UFUNCTION(BlueprintCallable)
-	void AddVertexColour(int Index, FColor AddedColor);
+	void AddVertexColour(int Index, FColor AddedColor, bool Flush = true);
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE void FlushMesh();
 	
 protected:
 	virtual void BeginPlay() override;

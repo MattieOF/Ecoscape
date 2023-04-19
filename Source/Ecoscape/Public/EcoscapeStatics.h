@@ -129,7 +129,7 @@ public:
 	}
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FORCEINLINE float MapFloat(const float Value, const float Start1, const float End1, const float Start2, const float End2)
+	static FORCEINLINE float MapFloat(const float Value, const float Start1, const float End1, const float Start2, const float End2)
 	{
 		return Start2 + (End2 - Start2) * ((Value - Start1) / (End1 - Start1));
 	}

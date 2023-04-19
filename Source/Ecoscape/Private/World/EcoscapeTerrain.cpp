@@ -207,13 +207,13 @@ int AEcoscapeTerrain::GetClosestVertex(FVector Position)
 	return (X * (Width + 1)) + Y;
 }
 
-TArray<int> AEcoscapeTerrain::GetVerticiesInSphere(FVector Position, float Radius, bool CheckZ)
+TArray<FVertexOverlapInfo> AEcoscapeTerrain::GetVerticiesInSphere(FVector Position, float Radius, bool CheckZ)
 {
 	SCOPE_CYCLE_COUNTER(STAT_VertsInSphere);
 
-	DrawDebugSphere(GetWorld(), Position, Radius, 30, FColor::Red);
+	// DrawDebugSphere(GetWorld(), Position, Radius, 30, FColor::Red);
 	
-	TArray<int> Indicies;
+	TArray<FVertexOverlapInfo> Indicies;
 
 	const int RootVertex = GetClosestVertex(Position);
 	const int IndexRadius = (Radius / Scale) + 1; // Add 1 so verts that should be inside but aren't due to offsets from the root vertex method are included.
@@ -225,7 +225,7 @@ TArray<int> AEcoscapeTerrain::GetVerticiesInSphere(FVector Position, float Radiu
 		{
 			const float Dist = CheckZ ? FVector::Dist(Position, GetVertexPositionWorld(RootVertex)) : FVector::DistXY(Position, GetVertexPositionWorld(RootVertex));
 			if (Dist <= Radius)
-				Indicies.Add(RootVertex);
+				Indicies.Add(FVertexOverlapInfo { RootVertex, Dist });
 			if (!CheckZ && Dist > Radius)
 				return Indicies;
 			continue;
@@ -243,7 +243,7 @@ TArray<int> AEcoscapeTerrain::GetVerticiesInSphere(FVector Position, float Radiu
 
 				const float Dist = CheckZ ? FVector::Dist(Position, GetVertexPositionWorld(Index)) : FVector::DistXY(Position, GetVertexPositionWorld(Index));
 				if (Dist <= Radius)
-					Indicies.Add(Index);
+					Indicies.Add(FVertexOverlapInfo { Index, Dist });
 			}
 		}
 	}
@@ -251,7 +251,7 @@ TArray<int> AEcoscapeTerrain::GetVerticiesInSphere(FVector Position, float Radiu
 	return Indicies;
 }
 
-void AEcoscapeTerrain::AddVertexColour(int Index, FColor AddedColor)
+void AEcoscapeTerrain::AddVertexColour(int Index, FColor AddedColor, bool Flush)
 {
 	SCOPE_CYCLE_COUNTER(STAT_AddVertColor);
 	
@@ -262,6 +262,12 @@ void AEcoscapeTerrain::AddVertexColour(int Index, FColor AddedColor)
 	}
 
 	VertexColors[Index] += AddedColor;
+	if (Flush)
+		ProceduralMeshComponent->UpdateMeshSection(0, Verticies, TArray<FVector>(), UV0, VertexColors, TArray<FProcMeshTangent>());
+}
+
+void AEcoscapeTerrain::FlushMesh()
+{
 	ProceduralMeshComponent->UpdateMeshSection(0, Verticies, TArray<FVector>(), UV0, VertexColors, TArray<FProcMeshTangent>());
 }
 

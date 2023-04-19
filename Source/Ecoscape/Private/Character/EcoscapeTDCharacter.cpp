@@ -50,8 +50,10 @@ void AEcoscapeTDCharacter::OnToolUsed()
 				AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(Hit.GetActor());
 				if (!Terrain)
 					return;
-				int Vertex = Terrain->GetClosestVertex(Hit.ImpactPoint);
-				Terrain->AddVertexColour(Vertex, FColor(0, 10, 0));
+				auto Indicies = Terrain->GetVerticiesInSphere(Hit.ImpactPoint, 6 * Terrain->GetScale());
+				for (auto& [Vertex, Dist] : Indicies)
+					Terrain->AddVertexColour(Vertex, FColor(0, UEcoscapeStatics::MapFloat(Dist, 0, 6 * Terrain->GetScale(), 30, 0), 0), false);
+				Terrain->FlushMesh();
 			}
 		}
 		break;
@@ -151,6 +153,7 @@ void AEcoscapeTDCharacter::Tick(float DeltaSeconds)
 		SetActorLocation(Location);	
 	}
 
+#if 0
 	{
 		FHitResult Hit;
 		const TArray<AActor*> IgnoredActors;
@@ -167,6 +170,7 @@ void AEcoscapeTDCharacter::Tick(float DeltaSeconds)
 			}
 		}
 	}
+#endif
 
 	// Do tool logic
 	switch (CurrentTool)
