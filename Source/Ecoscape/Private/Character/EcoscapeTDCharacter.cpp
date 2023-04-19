@@ -158,9 +158,12 @@ void AEcoscapeTDCharacter::Tick(float DeltaSeconds)
 		{
 			if (AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(Hit.GetActor()))
 			{
-				int Index = Terrain->GetClosestVertex(Hit.ImpactPoint);
-				FVector VertexPos = Terrain->GetVertexPositionWorld(Index);
-				DrawDebugSphere(GetWorld(), VertexPos, 20, 6, FColor::Red);
+				TArray<int> Indicies = Terrain->GetVerticiesInSphere(Hit.ImpactPoint, 800);
+				for (int i : Indicies)
+				{
+					FVector VertexPos = Terrain->GetVertexPositionWorld(i);
+					DrawDebugSphere(GetWorld(), VertexPos, 20, 6, FColor::Red);
+				}
 			}
 		}
 	}

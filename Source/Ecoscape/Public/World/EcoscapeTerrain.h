@@ -54,6 +54,9 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int GetClosestVertex(FVector Position);
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	TArray<int> GetVerticiesInSphere(FVector Position, float Radius, bool CheckZ = false);
+
 	UFUNCTION(BlueprintCallable)
 	void AddVertexColour(int Index, FColor AddedColor);
 	

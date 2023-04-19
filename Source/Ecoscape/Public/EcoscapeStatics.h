@@ -99,18 +99,18 @@ public:
 	};
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-    static FORCEINLINE float AngleBetweenDirectionsDeg(FVector A, FVector B)
-    {
-    	return FMath::RadiansToDegrees(AngleBetweenDirectionsRad(A, B));
-    };
+	static FORCEINLINE float AngleBetweenDirectionsDeg(const FVector A, const FVector B)
+	{
+		return FMath::RadiansToDegrees(AngleBetweenDirectionsRad(A, B));
+	};
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	static FORCEINLINE FColor AddToColor(FColor Color, FVector Value)
+	static FORCEINLINE FColor AddToColor(FColor Color, const FVector Value)
 	{
 		const bool RNeg = Value.X < 0, GNeg = Value.Y < 0, BNeg = Value.Z < 0;
 		const FColor R = FColor(FMath::Abs(Value.X), 0, 0),
-		             G = FColor(0, FMath::Abs(Value.Y), 0),
-		             B = FColor(0, 0, FMath::Abs(Value.Z));
+					 G = FColor(0, FMath::Abs(Value.Y), 0),
+					 B = FColor(0, 0, FMath::Abs(Value.Z));
 		
 		if (RNeg)
 			Color = Color - R;
@@ -126,5 +126,11 @@ public:
 			Color += B;
 
 		return Color;
+	}
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE float MapFloat(const float Value, const float Start1, const float End1, const float Start2, const float End2)
+	{
+		return Start2 + (End2 - Start2) * ((Value - Start1) / (End1 - Start1));
 	}
 };

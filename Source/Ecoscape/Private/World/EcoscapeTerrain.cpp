@@ -10,7 +10,9 @@
 #include "World/FastNoise.h"
 
 DECLARE_CYCLE_STAT(TEXT("Terrain: Generate"), STAT_GenTerrain, STATGROUP_EcoscapeTerrain);
-DECLARE_CYCLE_STAT(TEXT("Terrain: Get Nearest Vertex"), STAT_GetNearestVert, STATGROUP_Ecoscape);
+DECLARE_CYCLE_STAT(TEXT("Terrain: Get Nearest Vertex"), STAT_GetNearestVert, STATGROUP_EcoscapeTerrain);
+DECLARE_CYCLE_STAT(TEXT("Terrain: Add Vertex Color"), STAT_AddVertColor, STATGROUP_EcoscapeTerrain);
+DECLARE_CYCLE_STAT(TEXT("Terrain: Get Verticies In Sphere"), STAT_VertsInSphere, STATGROUP_EcoscapeTerrain);
 
 AEcoscapeTerrain::AEcoscapeTerrain()
 {
@@ -58,8 +60,7 @@ bool AEcoscapeTerrain::SerialiseTerrainToFile(FString Filename)
 	
 	// Empty buffer
 	BinarySaveArchive.FlushCache();
-	BinarySaveArchive.Empty();
-
+	BinarySaveArchive.Empty(); 
 	return true;
 }
 
@@ -194,20 +195,66 @@ int AEcoscapeTerrain::GetClosestVertex(FVector Position)
 	const float OriginY = ActorLoc.Y;
 	const float EndY = OriginY + (Height * Scale);
 
+	// Using these two lines would be shorter, but I think slower, and this is quite a hot path
+	// const float XAlpha = FMath::GetMappedRangeValueUnclamped(FVector2D(ActorLoc.X, ActorLoc.X + (Width * Scale)), FVector2D(0, 1), Position.X);
+	// const float YAlpha = FMath::GetMappedRangeValueUnclamped(FVector2D(ActorLoc.Y, ActorLoc.Y + (Height * Scale)), FVector2D(0, 1), Position.Y);
 	const float XAlpha = FMath::Clamp((Position.X - OriginX) / (EndX - OriginX), 0, 1);
 	const float YAlpha = FMath::Clamp((Position.Y - OriginY) / (EndY - OriginY), 0, 1);
 
 	const int X = FMath::RoundToInt(Width  * XAlpha);
 	const int Y = FMath::RoundToInt(Height * YAlpha);
 
-	// DrawDebugSphere(GetWorld(), ActorLoc + FVector(Width * Scale * XAlpha, Height * Scale * YAlpha, 300), 20.0f, 6, FColor::Red);
-	// DrawDebugSphere(GetWorld(), ActorLoc + FVector(Scale * X, Scale * Y, 500), 20.0f, 6, FColor::Red);
-	
 	return (X * (Width + 1)) + Y;
+}
+
+TArray<int> AEcoscapeTerrain::GetVerticiesInSphere(FVector Position, float Radius, bool CheckZ)
+{
+	SCOPE_CYCLE_COUNTER(STAT_VertsInSphere);
+
+	DrawDebugSphere(GetWorld(), Position, Radius, 30, FColor::Red);
+	
+	TArray<int> Indicies;
+
+	const int RootVertex = GetClosestVertex(Position);
+	const int IndexRadius = (Radius / Scale) + 1; // Add 1 so verts that should be inside but aren't due to offsets from the root vertex method are included.
+
+	for (int CurrentRadius = 0; CurrentRadius < IndexRadius; CurrentRadius++)
+	{
+		// Special case for the root vertex. Just test distance.
+		if (CurrentRadius == 0)
+		{
+			const float Dist = CheckZ ? FVector::Dist(Position, GetVertexPositionWorld(RootVertex)) : FVector::DistXY(Position, GetVertexPositionWorld(RootVertex));
+			if (Dist <= Radius)
+				Indicies.Add(RootVertex);
+			if (!CheckZ && Dist > Radius)
+				return Indicies;
+			continue;
+		}
+
+		for (int X = -CurrentRadius; X <= CurrentRadius; X++)
+		{
+			for (int Y = -CurrentRadius; Y <= CurrentRadius; Y++)
+			{
+				int Index = RootVertex + X + (Y * (Width + 1));
+				
+				// Ensure no out of bounds indicies are given
+				if (Index < 0 || Index >= Verticies.Num())
+					continue;
+
+				const float Dist = CheckZ ? FVector::Dist(Position, GetVertexPositionWorld(Index)) : FVector::DistXY(Position, GetVertexPositionWorld(Index));
+				if (Dist <= Radius)
+					Indicies.Add(Index);
+			}
+		}
+	}
+	
+	return Indicies;
 }
 
 void AEcoscapeTerrain::AddVertexColour(int Index, FColor AddedColor)
 {
+	SCOPE_CYCLE_COUNTER(STAT_AddVertColor);
+	
 	if (Index < 0 || Index >= Verticies.Num())
 	{
 		UE_LOG(LogEcoscape, Error, TEXT("AEcoscapeTerrain::AddVertexColour called with out of range index %i (range is 0..%i)"), Index, Verticies.Num());
@@ -236,7 +283,7 @@ void AEcoscapeTerrain::Regenerate()
 {
 	SCOPE_CYCLE_COUNTER(STAT_GenTerrain);
 	
-	// Reroll noise seeds	
+	// Re-roll noise seeds	
 	for (FTerrainNoiseLayer& Layer : NoiseLayers)
 		Layer.Seed = FMath::RandRange(0.0f, 1000000.0f);
 	ColorOffsetSeed = FMath::RandRange(0.0f, 1000000.0f);
