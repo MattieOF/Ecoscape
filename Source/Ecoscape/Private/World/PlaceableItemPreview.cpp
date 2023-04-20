@@ -4,6 +4,7 @@
 
 #include "EcoscapeStatics.h"
 #include "EcoscapeStats.h"
+#include "Kismet/KismetMathLibrary.h"
 
 DECLARE_CYCLE_STAT(TEXT("Move Item Preview"), STAT_MovePreview, STATGROUP_Ecoscape);
 
@@ -55,12 +56,27 @@ void APlaceableItemPreview::UpdateWithHitInfo(FHitResult Hit)
 {
 	SCOPE_CYCLE_COUNTER(STAT_MovePreview);
 	
-	SetActorLocation(Hit.Location + FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(this) + CurrentItem->ZOffset));
+	SetActorLocation(Hit.Location + FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(this)));
 
-	// auto CurrentRotation = GetActorRotation();
-	// auto Rotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), GetActorLocation() + Hit.ImpactNormal);
-	// Rotation.Yaw = CurrentRotation.Yaw;
-	// SetActorRotation(Rotation);
+	auto CurrentRotation = GetActorRotation();
+	auto Rotation = UKismetMathLibrary::Conv_VectorToRotator(Hit.ImpactNormal);
+	
+	SetActorRotation(FRotator(0, TargetItemRotation, 0));
+	FVector UpVector = GetActorUpVector();
+	FVector NormalVector = UKismetMathLibrary::VLerp(UpVector, Hit.ImpactNormal, 0.4f);
+	GEngine->AddOnScreenDebugMessage(4573984, -1, FColor::Red, FString::Printf(TEXT("Up: %s, Normal: %s, Result: %s"), *UpVector.ToString(), *Hit.ImpactNormal.ToString(), *NormalVector.ToString()));
+	FVector RotationAxis = FVector::CrossProduct(UpVector, NormalVector);
+	RotationAxis.Normalize();
+	float DotProduct = FVector::DotProduct(UpVector, NormalVector);
+	float RotationAngle = acosf(DotProduct);
+	FQuat Quat = FQuat(RotationAxis, RotationAngle);
+	FQuat RootQuat = RootComponent->GetComponentQuat();
+	FQuat NewQuat = Quat * RootQuat;
+	Rotation = NewQuat.Rotator();
+	Rotation.Yaw = CurrentRotation.Yaw;
+	SetActorRotation(Rotation);
+
+	AddActorLocalOffset(FVector(0, 0, CurrentItem->ZOffset));
 
 	// Check to see if position is valid or not
 	// First, set the scale to target scale, so we check against that instead of the lerped one.
@@ -72,7 +88,7 @@ void APlaceableItemPreview::UpdateWithHitInfo(FHitResult Hit)
 	ComponentQueryParams.AddIgnoredActor(MainMesh->GetOwner());
 	TArray<FOverlapResult> OverlapResults;
 	GetWorld()->ComponentOverlapMulti(OverlapResults, MainMesh,
-		MainMesh->GetComponentLocation(), FRotator(0, TargetItemRotation, 0),
+		MainMesh->GetComponentLocation(), FRotator(Rotation.Pitch, TargetItemRotation, Rotation.Roll),
 		ComponentQueryParams, FCollisionObjectQueryParams::AllObjects);
 
 	// Reset scale

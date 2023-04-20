@@ -71,7 +71,8 @@ void AEcoscapeTDCharacter::OnToolUsed()
 			const TArray<AActor*> IgnoredActors;
 			if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, IgnoredActors))
 			{
-				APlacedItem* Item = APlacedItem::SpawnItem(GetWorld(), TestItem, Hit.Location, FVector(PlacedItemScale), FRotator(0, PlacedItemRotation, 0));
+				FRotator Rot = ItemPreview->GetActorRotation();
+				APlacedItem* Item = APlacedItem::SpawnItem(GetWorld(), TestItem, Hit.Location, FVector(PlacedItemScale), FRotator(Rot.Pitch, PlacedItemRotation, Rot.Roll));
 				Item->AddActorWorldOffset(FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(Item) + TestItem->ZOffset)); // Move it so the bottom of the mesh is on the ground
 				OnItemPlaced(Item->GetActorLocation(), Item);
 
@@ -103,15 +104,20 @@ void AEcoscapeTDCharacter::OnToolAltUsed()
 {
 	switch (CurrentTool)
 	{
-	case ETPlaceObjects:
-		{
-			PlacedItemRotation += 90;
-			PlacedItemRotation = FMath::Fmod(PlacedItemRotation, 360);
-			if (ItemPreview)
-				ItemPreview->SetTargetRotation(PlacedItemRotation);	
+		case ETPlaceObjects:
+			{
+				PlacedItemRotation += 90;
+				PlacedItemRotation = FMath::Fmod(PlacedItemRotation, 360);
+				if (ItemPreview)
+					ItemPreview->SetTargetRotation(PlacedItemRotation);
+			}
 			break;
-		}
-	default: UE_LOG(LogEcoscape, Error, TEXT("Attempted to use unimplemented tool: %i"), static_cast<int>(CurrentTool)); break;
+		case ETSculpt:
+			{
+				
+			}
+			break;
+		default: UE_LOG(LogEcoscape, Error, TEXT("Attempted to use unimplemented tool: %i"), static_cast<int>(CurrentTool)); break;
 	}
 }
 
