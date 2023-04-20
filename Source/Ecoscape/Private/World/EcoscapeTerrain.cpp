@@ -2,10 +2,13 @@
 
 #include "World/EcoscapeTerrain.h"
 
+#include "EcoscapeGameInstance.h"
 #include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
 #include "EcoscapeStats.h"
+#include "IDetailTreeNode.h"
 #include "KismetProceduralMeshLibrary.h"
+#include "Compression/lz4.h"
 #include "Serialization/BufferArchive.h"
 #include "World/FastNoise.h"
 
@@ -36,6 +39,7 @@ void AEcoscapeTerrain::Tick(float DeltaSeconds)
 
 void AEcoscapeTerrain::SerialiseTerrain(FArchive& Archive)
 {
+	// Save/load mesh information
 	Archive << Verticies;
 	Archive << Triangles;
 	Archive << UV0;
@@ -43,6 +47,50 @@ void AEcoscapeTerrain::SerialiseTerrain(FArchive& Archive)
 	Archive << Normals;
 	Archive << Tangents;
 	Archive << ColorOffsets;
+
+	// Save/load placed items
+	int Count = PlacedItems.Num();
+	Archive << Count;
+
+	if (Archive.IsSaving())
+	{
+		for (APlacedItem* Item : PlacedItems)
+		{
+			FTransform Transform = Item->GetActorTransform();
+			Archive << Transform;
+			FString ItemName = Item->GetItemData()->GetName();
+			Archive << ItemName;
+		}
+	} else
+	{
+		// Destroy all placed items and empty array
+		for (APlacedItem* Item : PlacedItems)
+			Item->Destroy();
+		PlacedItems.Empty();
+
+		PlacedItems.Reserve(Count);
+
+		UEcoscapeGameInstance* GameInstance = UEcoscapeGameInstance::GetEcoscapeGameInstance(GetWorld());
+		for (int i = 0; i < Count; i++)
+		{
+			// Get serialised values
+			FTransform Transform;
+			FString    Item;
+			Archive << Transform;
+			Archive << Item;
+
+			if (!GameInstance->ItemTypes.Contains(Item))
+			{
+				UE_LOG(LogEcoscape, Error, TEXT("Non-existent item type %s found in terrain save!"), *Item);
+				continue;
+			}
+			UPlaceableItemData* ItemData = GameInstance->ItemTypes[Item];
+			
+			APlacedItem* NewItem = GetWorld()->SpawnActor<APlacedItem>(ItemData->PlacedItemClass, Transform);
+			NewItem->SetItemData(ItemData);
+			PlacedItems.Add(NewItem);
+		}
+	}
 }
 
 bool AEcoscapeTerrain::SerialiseTerrainToFile(FString Filename)
@@ -203,7 +251,11 @@ void AEcoscapeTerrain::CalculateVertColour(int Index, bool Flush)
 		const float DistanceSquared = FVector::DistSquared(Position, Item->GetActorLocation());
 		const auto Data = Item->GetItemData();
 		// Only using the X scale here. Assumes uniform scale
-		VertexColors[Index] += Data->LandColour.ToFColor(false) * FMath::Clamp(1 - (DistanceSquared / Data->ColourRangeSquared), 0, 1);
+		const FColor Remainder = Data->MaxLandColour.ToFColor(false) - VertexColors[Index];
+		const FColor Offset = UEcoscapeStatics::ClampColor(
+			Data->LandColour.ToFColor(false) * FMath::Clamp(1 - (DistanceSquared / Data->ColourRangeSquared), 0, 1),
+			FColor(0, 0, 0), Remainder);
+		VertexColors[Index] += Offset;
 	}
 	VertexColors[Index] = UEcoscapeStatics::AddToColor(VertexColors[Index], ColorOffsets[Index]);
 	
@@ -321,6 +373,9 @@ void AEcoscapeTerrain::Regenerate()
 	ColorOffsetSeed = FMath::RandRange(0.0f, 1000000.0f);
 	
 	ResetMeshData();
+	for (APlacedItem* Item : PlacedItems)
+		Item->Destroy();
+	PlacedItems.Empty();
 	GenerateVerticies();
 	GenerateIndicies();
 	GenerateNormals();

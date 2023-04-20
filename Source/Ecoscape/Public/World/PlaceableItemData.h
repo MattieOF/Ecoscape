@@ -19,33 +19,36 @@ class ECOSCAPE_API UPlaceableItemData : public UDataAsset
 public:
 	UPlaceableItemData();
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Basic Details")
 	FText Name;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(MultiLine=true))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(MultiLine=true), Category="Basic Details")
 	FText Description;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
 	UStaticMesh* Mesh;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
 	TSubclassOf<APlacedItem> PlacedItemClass;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
 	FVector2D ScaleBounds = FVector2D(0.5, 1.75);
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
 	float MaxAngle = 40;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
 	float ZOffset = 0;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Colour")
 	float ColourRange = 150 * 6;
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, Category="Colour")
 	float ColourRangeSquared;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Colour")
 	FLinearColor LandColour;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Colour")
+	FLinearColor MaxLandColour;
 };

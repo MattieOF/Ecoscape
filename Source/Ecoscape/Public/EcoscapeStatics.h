@@ -142,4 +142,15 @@ public:
 	{
 		return Start2 + (End2 - Start2) * ((Value - Start1) / (End1 - Start1));
 	}
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static FORCEINLINE FColor ClampColor(FColor Value, FColor Min, FColor Max)
+	{
+		FColor Result;
+		Result.R = FMath::Clamp(Value.R, Min.R, Max.R);
+		Result.G = FMath::Clamp(Value.G, Min.G, Max.G);
+		Result.B = FMath::Clamp(Value.B, Min.B, Max.B);
+		Result.A = FMath::Clamp(Value.A, Min.A, Max.A);
+		return Result;
+	}
 };

@@ -110,6 +110,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Tools")
 	UPlaceableItemData* TestItem;
 
+	UPROPERTY(EditAnywhere, Category = "Debugd")
+	bool bDrawDebug = false;
+	
 protected:
 	UPROPERTY(BlueprintReadOnly)
 	UCameraComponent* Camera;

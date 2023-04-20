@@ -81,7 +81,8 @@ void AEcoscapeTDCharacter::OnToolUsed()
 					auto Verts = Terrain->GetVerticiesInSphere(Hit.ImpactPoint, TestItem->ColourRange * PlacedItemScale, true);
 					for (auto& [Vertex, _] : Verts)
 					{
-						DrawDebugSphere(GetWorld(), Terrain->GetVertexPositionWorld(Vertex), 20, 6, FColor::Red, false, 2.5f);
+						if (bDrawDebug)
+							DrawDebugSphere(GetWorld(), Terrain->GetVertexPositionWorld(Vertex), 20, 6, FColor::Red, false, 2.5f);
 						Terrain->CalculateVertColour(Vertex);
 					}
 					Terrain->FlushMesh();
