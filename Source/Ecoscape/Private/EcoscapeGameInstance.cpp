@@ -2,7 +2,9 @@
 
 #include "EcoscapeGameInstance.h"
 
+#include "EcoscapeLog.h"
 #include "AssetRegistry/AssetRegistryModule.h"
+#include "Character/EcoscapePlayerController.h"
 #include "World/EcoscapeTerrain.h"
 
 void UEcoscapeGameInstance::Init()
@@ -30,6 +32,22 @@ void UEcoscapeGameInstance::Init()
 	}
 }
 
+AEcoscapeTerrain* UEcoscapeGameInstance::GetTerrain(FString TerrainName)
+{
+	TArray<AActor*> Terrains;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEcoscapeTerrain::StaticClass(), Terrains);
+
+	for (AActor* TerrainActor : Terrains)
+	{
+		AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(TerrainActor);
+		if (Terrain->DebugName == TerrainName)
+			return Terrain;
+	}
+	
+	UE_LOG(LogEcoscape, Error, TEXT("In UEcoscapeGameInstance::GetTerrain, failed to find terrain named %s"), *TerrainName);
+	return nullptr;
+}
+
 void UEcoscapeGameInstance::SaveTerrain(const FString& TerrainName, const FString& Filename) const
 {
 	TArray<AActor*> Terrains;
@@ -41,6 +59,7 @@ void UEcoscapeGameInstance::SaveTerrain(const FString& TerrainName, const FStrin
 		if (Terrain->DebugName != TerrainName)
 			continue;
 		Terrain->SerialiseTerrainToFile(Filename);
+		UE_LOG(LogEcoscape, Log, TEXT("Saved terrain %s to %s"), *TerrainName, *Filename);
 	}
 }
 
@@ -55,5 +74,27 @@ void UEcoscapeGameInstance::LoadTerrain(const FString& TerrainName, const FStrin
 		if (Terrain->DebugName != TerrainName)
 			continue;
 		Terrain->DeserialiseTerrainFromFile(Filename);
+		AEcoscapePlayerController* Player = AEcoscapePlayerController::GetEcoscapePlayerController(GetWorld());
+		if (Player->GetCurrentTerrain() == Terrain)
+			Player->GoToTerrain(Terrain); // Reposition player on new terrain
+		UE_LOG(LogEcoscape, Log, TEXT("Loaded terrain %s from %s"), *TerrainName, *Filename);
+	}
+}
+
+void UEcoscapeGameInstance::RegenerateTerrain(const FString& TerrainName) const
+{
+	TArray<AActor*> Terrains;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEcoscapeTerrain::StaticClass(), Terrains);
+
+	for (AActor* TerrainActor : Terrains)
+	{
+		AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(TerrainActor);
+		if (Terrain->DebugName != TerrainName)
+			continue;
+		Terrain->Regenerate();
+		AEcoscapePlayerController* Player = AEcoscapePlayerController::GetEcoscapePlayerController(GetWorld());
+		if (Player->GetCurrentTerrain() == Terrain)
+			Player->GoToTerrain(Terrain); // Reposition player on new terrain
+		UE_LOG(LogEcoscape, Log, TEXT("Regenerated terrain %s"), *TerrainName);
 	}
 }

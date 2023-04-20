@@ -86,6 +86,9 @@ public:
 	FORCEINLINE float GetScale() { return Scale; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FVector GetCenterPosition();
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int GetClosestVertex(FVector Position);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -99,6 +102,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE void FlushMesh();
+	
+	UFUNCTION(BlueprintCallable, CallInEditor)
+	void Regenerate();
 	
 	// -----------------------
 	// Serialisation functions
@@ -134,9 +140,6 @@ protected:
 	UFUNCTION(BlueprintCallable, CallInEditor)
 	void DrawIndicies();
 #endif
-
-	UFUNCTION(BlueprintCallable, CallInEditor)
-	void Regenerate();
 	
 	UPROPERTY(EditAnywhere)
 	UProceduralMeshComponent* ProceduralMeshComponent;

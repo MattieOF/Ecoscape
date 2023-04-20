@@ -8,6 +8,8 @@
 #include "GameFramework/PlayerController.h"
 #include "EcoscapePlayerController.generated.h"
 
+class AEcoscapeTerrain;
+
 UENUM(BlueprintType)
 enum EEcoscapePlayerView
 {
@@ -35,6 +37,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE bool IsModifierHeld() { return bModifierPressed; }
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE AEcoscapeTerrain* GetCurrentTerrain() { return CurrentTerrain; }
 	
 	UFUNCTION(BlueprintCallable)
 	void SetView(EEcoscapePlayerView NewView, bool bInstant = false, float BlendTime = 0.5f);
@@ -50,6 +55,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnPlayerViewChanged OnPlayerViewChanged;
+
+	UFUNCTION(BlueprintCallable)
+	void GoToTerrain(AEcoscapeTerrain* Terrain);
 	
 protected:
 	virtual void BeginPlay() override;
@@ -93,6 +101,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SprintSpeedModifier = 2;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float TopDownSpawnHeight = 2000;
+	
+	UPROPERTY(BlueprintReadOnly)
+	AEcoscapeTerrain* CurrentTerrain;
 	
 private:
 	float CurrentSwitchViewCooldown = 0;

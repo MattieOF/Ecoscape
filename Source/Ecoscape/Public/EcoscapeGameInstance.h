@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
+#include "World/EcoscapeTerrain.h"
 #include "World/PlaceableItemData.h"
 #include "EcoscapeGameInstance.generated.h"
 
@@ -28,8 +29,13 @@ public:
 		return Cast<UEcoscapeGameInstance>(UGameplayStatics::GetGameInstance(WorldContext));
 	}
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	AEcoscapeTerrain* GetTerrain(FString TerrainName);
+
 	UFUNCTION(Exec)
 	void SaveTerrain(const FString& TerrainName, const FString& Filename) const;
 	UFUNCTION(Exec)
 	void LoadTerrain(const FString& TerrainName, const FString& Filename) const;
+	UFUNCTION(Exec)
+	void RegenerateTerrain(const FString& TerrainName) const;
 };

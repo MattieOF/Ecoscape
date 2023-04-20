@@ -6,12 +6,26 @@
 
 #include "Character/EcoscapePlayerController.h"
 
+#include "EcoscapeGameInstance.h"
 #include "EcoscapeLog.h"
+#include "EcoscapeStatics.h"
 #include "Kismet/GameplayStatics.h"
 
 AEcoscapePlayerController::AEcoscapePlayerController()
 {
 	PrimaryActorTick.bCanEverTick = true;
+}
+
+void AEcoscapePlayerController::GoToTerrain(AEcoscapeTerrain* Terrain)
+{
+	if (!FPCharacter || !TDCharacter)
+		return;
+	
+	CurrentTerrain = Terrain;
+	FVector TerrainCenter = Terrain->GetCenterPosition();
+	FPCharacter->SetActorLocation(TerrainCenter + FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(FPCharacter)));
+	TerrainCenter.Z = TopDownSpawnHeight;
+	TDCharacter->SetActorLocation(TerrainCenter);
 }
 
 void AEcoscapePlayerController::BeginPlay()
@@ -20,7 +34,8 @@ void AEcoscapePlayerController::BeginPlay()
 
 	// Get character
 	FPCharacter = Cast<AEcoscapeFPPlayerCharacter>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
-	TDCharacter = GetWorld()->SpawnActor<AEcoscapeTDCharacter>(TopDownCharacterClass, FVector(0, 0, 2000), FRotator::ZeroRotator);
+	TDCharacter = GetWorld()->SpawnActor<AEcoscapeTDCharacter>(TopDownCharacterClass, FVector(0, 0, TopDownSpawnHeight), FRotator::ZeroRotator);
+	GoToTerrain(UEcoscapeGameInstance::GetEcoscapeGameInstance(GetWorld())->GetTerrain("Forest"));
 
 	// Switch the view.
 	SetView(EPSFirstPerson, true);

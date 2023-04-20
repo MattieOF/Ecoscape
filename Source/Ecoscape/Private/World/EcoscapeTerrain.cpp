@@ -261,6 +261,15 @@ void AEcoscapeTerrain::CalculateVertColour(int Index, bool Flush)
 		FlushMesh();
 }
 
+// TODO: Maybe add a faster approximate function?
+FVector AEcoscapeTerrain::GetCenterPosition()
+{
+	const FVector Center = GetActorLocation() + FVector((Width * Scale) / 2, (Height * Scale) / 2, 3000);
+	FHitResult Hit;
+	GetWorld()->LineTraceSingleByChannel(Hit, Center, Center + (FVector::DownVector * 4000), ECC_WorldStatic);
+	return Hit.ImpactPoint;
+}
+
 int AEcoscapeTerrain::GetClosestVertex(FVector Position)
 {
 	SCOPE_CYCLE_COUNTER(STAT_GetNearestVert);
