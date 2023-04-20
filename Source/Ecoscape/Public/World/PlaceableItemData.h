@@ -52,3 +52,19 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Colour")
 	FLinearColor MaxLandColour;
 };
+
+/**
+ * Data asset containing a list of placeable item data, allowing for one selection to result in a random selection of one of many item types.
+ */
+UCLASS()
+class ECOSCAPE_API UItemDataList : public UDataAsset
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TArray<UPlaceableItemData*> Options;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	UPlaceableItemData* GetRandomItem();
+};
