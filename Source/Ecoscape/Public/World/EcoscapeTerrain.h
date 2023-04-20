@@ -101,7 +101,7 @@ public:
 	void CalculateVertColour(int Index, bool Flush = false);
 
 	UFUNCTION(BlueprintCallable)
-	FORCEINLINE void FlushMesh();
+	void FlushMesh();
 	
 	UFUNCTION(BlueprintCallable, CallInEditor)
 	void Regenerate();
