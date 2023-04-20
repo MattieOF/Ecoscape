@@ -28,6 +28,22 @@ void AEcoscapePlayerController::GoToTerrain(AEcoscapeTerrain* Terrain)
 	TDCharacter->SetActorLocation(TerrainCenter);
 }
 
+void AEcoscapePlayerController::GoToCursor()
+{
+	if (CurrentView != EPSTopDown)
+	{
+		UE_LOG(LogEcoscape, Error, TEXT("You must be in top down mode to use GoToCursor!"));
+		return;
+	}
+	
+	FHitResult Hit;
+	if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(this), ECC_WorldStatic, true, Hit, TArray<AActor*>()))
+	{
+		FPCharacter->SetActorLocation(Hit.ImpactPoint + FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(FPCharacter)));
+		SetView(EPSFirstPerson, true);
+	}
+}
+
 void AEcoscapePlayerController::BeginPlay()
 {
 	Super::BeginPlay();

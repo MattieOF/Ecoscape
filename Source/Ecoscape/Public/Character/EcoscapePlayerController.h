@@ -58,6 +58,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void GoToTerrain(AEcoscapeTerrain* Terrain);
+
+	UFUNCTION(Exec)
+	void GoToCursor();
 	
 protected:
 	virtual void BeginPlay() override;
