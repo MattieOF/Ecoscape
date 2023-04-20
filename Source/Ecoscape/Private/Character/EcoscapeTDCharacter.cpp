@@ -194,6 +194,8 @@ void AEcoscapeTDCharacter::Tick(float DeltaSeconds)
 	// Do tool logic
 	switch (CurrentTool)
 	{
+	case ETNone:
+		break;
 	case ETPlaceObjects:
 		{
 			FHitResult Hit;
