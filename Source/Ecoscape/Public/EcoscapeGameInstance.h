@@ -27,4 +27,9 @@ public:
 	{
 		return Cast<UEcoscapeGameInstance>(UGameplayStatics::GetGameInstance(WorldContext));
 	}
+
+	UFUNCTION(Exec)
+	void SaveTerrain(const FString& TerrainName, const FString& Filename) const;
+	UFUNCTION(Exec)
+	void LoadTerrain(const FString& TerrainName, const FString& Filename) const;
 };

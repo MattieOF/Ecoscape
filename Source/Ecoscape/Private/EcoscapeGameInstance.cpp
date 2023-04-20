@@ -3,6 +3,7 @@
 #include "EcoscapeGameInstance.h"
 
 #include "AssetRegistry/AssetRegistryModule.h"
+#include "World/EcoscapeTerrain.h"
 
 void UEcoscapeGameInstance::Init()
 {
@@ -26,5 +27,33 @@ void UEcoscapeGameInstance::Init()
 	{
 		UPlaceableItemData* Item = Cast<UPlaceableItemData>(Asset.GetAsset());
 		ItemTypes.Add(Item->GetName(), Item);
+	}
+}
+
+void UEcoscapeGameInstance::SaveTerrain(const FString& TerrainName, const FString& Filename) const
+{
+	TArray<AActor*> Terrains;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEcoscapeTerrain::StaticClass(), Terrains);
+
+	for (AActor* TerrainActor : Terrains)
+	{
+		AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(TerrainActor);
+		if (Terrain->DebugName != TerrainName)
+			continue;
+		Terrain->SerialiseTerrainToFile(Filename);
+	}
+}
+
+void UEcoscapeGameInstance::LoadTerrain(const FString& TerrainName, const FString& Filename) const
+{
+	TArray<AActor*> Terrains;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEcoscapeTerrain::StaticClass(), Terrains);
+
+	for (AActor* TerrainActor : Terrains)
+	{
+		AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(TerrainActor);
+		if (Terrain->DebugName != TerrainName)
+			continue;
+		Terrain->DeserialiseTerrainFromFile(Filename);
 	}
 }

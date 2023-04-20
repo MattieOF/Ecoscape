@@ -66,6 +66,9 @@ class ECOSCAPE_API AEcoscapeTerrain : public AActor
 public:
 	AEcoscapeTerrain();
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FString DebugName = "Terrain";
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FColor DirtColour  = FColor(64,41,5, 255);
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -97,11 +100,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE void FlushMesh();
 	
-protected:
-	virtual void BeginPlay() override;
-
-	virtual void Tick(float DeltaSeconds) override;
-
 	// -----------------------
 	// Serialisation functions
 	// -----------------------
@@ -117,6 +115,11 @@ protected:
 	UFUNCTION(BlueprintCallable, CallInEditor)
 	void DeserialiseTerrainFromTestFile() { DeserialiseTerrainFromFile(); }
 #endif
+	
+protected:
+	virtual void BeginPlay() override;
+
+	virtual void Tick(float DeltaSeconds) override;
 
 	void ResetMeshData();
 	void GenerateVerticies();
