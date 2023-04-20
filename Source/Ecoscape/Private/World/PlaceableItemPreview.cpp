@@ -4,7 +4,6 @@
 
 #include "EcoscapeStatics.h"
 #include "EcoscapeStats.h"
-#include "Kismet/KismetMathLibrary.h"
 
 DECLARE_CYCLE_STAT(TEXT("Move Item Preview"), STAT_MovePreview, STATGROUP_Ecoscape);
 

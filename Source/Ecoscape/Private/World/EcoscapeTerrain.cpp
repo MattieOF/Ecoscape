@@ -6,9 +6,7 @@
 #include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
 #include "EcoscapeStats.h"
-#include "IDetailTreeNode.h"
 #include "KismetProceduralMeshLibrary.h"
-#include "Compression/lz4.h"
 #include "Serialization/BufferArchive.h"
 #include "World/FastNoise.h"
 
