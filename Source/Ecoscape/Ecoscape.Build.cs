@@ -9,6 +9,6 @@ public class Ecoscape : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "PhysicsCore" });
-		PrivateDependencyModuleNames.AddRange(new string[] { "ProceduralMeshComponent" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "ProceduralMeshComponent", "GeometryFramework", "GeometryScriptingCore" });
 	}
 }

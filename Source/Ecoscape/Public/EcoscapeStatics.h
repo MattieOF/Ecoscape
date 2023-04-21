@@ -108,13 +108,13 @@ public:
 	};
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	static FORCEINLINE float AngleBetweenDirectionsDeg(const FVector A, const FVector B)
+	static FORCEINLINE float AngleBetweenDirectionsDeg(const FVector& A, const FVector& B)
 	{
 		return FMath::RadiansToDegrees(AngleBetweenDirectionsRad(A, B));
 	};
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	static FORCEINLINE FColor AddToColor(FColor Color, const FVector Value)
+	static FORCEINLINE FColor AddToColor(FColor Color, const FVector& Value)
 	{
 		const bool RNeg = Value.X < 0, GNeg = Value.Y < 0, BNeg = Value.Z < 0;
 		const FColor R = FColor(FMath::Abs(Value.X), 0, 0),

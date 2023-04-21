@@ -92,6 +92,12 @@ public:
 	int GetClosestVertex(FVector Position);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE int GetVertexIndex(int X, int Y)
+	{
+		return (X * (Width + 1)) + Y;
+	}
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	TArray<FVertexOverlapInfo> GetVerticiesInSphere(FVector Position, float Radius, bool CheckZ = false);
 
 	UFUNCTION(BlueprintCallable)
@@ -131,6 +137,7 @@ protected:
 	void GenerateVerticies();
 	void GenerateIndicies();
 	FORCEINLINE void GenerateNormals();
+	void GenerateFence();
 	void CreateMesh() const;
 
 #if WITH_EDITOR

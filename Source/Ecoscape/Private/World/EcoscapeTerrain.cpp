@@ -9,6 +9,7 @@
 #include "KismetProceduralMeshLibrary.h"
 #include "Serialization/BufferArchive.h"
 #include "World/FastNoise.h"
+#include "World/Fence.h"
 
 DECLARE_CYCLE_STAT(TEXT("Terrain: Generate"), STAT_GenTerrain, STATGROUP_EcoscapeTerrain);
 DECLARE_CYCLE_STAT(TEXT("Terrain: Get Nearest Vertex"), STAT_GetNearestVert, STATGROUP_EcoscapeTerrain);
@@ -234,6 +235,20 @@ void AEcoscapeTerrain::GenerateNormals()
 	UKismetProceduralMeshLibrary::CalculateTangentsForMesh(Verticies, Triangles, UV0, Normals, Tangents);
 }
 
+void AEcoscapeTerrain::GenerateFence()
+{
+	int X = 3, Y = 3;
+	AFence* Fence = GetWorld()->SpawnActor<AFence>(GetVertexPositionWorld(GetVertexIndex(X, Y)), FRotator::ZeroRotator);
+	Fence->Spline->ClearSplinePoints();
+	Fence->Spline->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)));
+
+	X++;
+	for (; X < Width - 3; X++)
+		Fence->Spline->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)));
+
+	Fence->GenerateMesh();
+}
+
 void AEcoscapeTerrain::CreateMesh() const
 {
 	ProceduralMeshComponent->CreateMeshSection(0, Verticies, Triangles, Normals, UV0, VertexColors, Tangents, true);
@@ -289,7 +304,7 @@ int AEcoscapeTerrain::GetClosestVertex(FVector Position)
 	const int X = FMath::RoundToInt(Width  * XAlpha);
 	const int Y = FMath::RoundToInt(Height * YAlpha);
 
-	return (X * (Width + 1)) + Y;
+	return GetVertexIndex(X, Y);
 }
 
 TArray<FVertexOverlapInfo> AEcoscapeTerrain::GetVerticiesInSphere(FVector Position, float Radius, bool CheckZ)
@@ -386,5 +401,6 @@ void AEcoscapeTerrain::Regenerate()
 	GenerateVerticies();
 	GenerateIndicies();
 	GenerateNormals();
+	GenerateFence();
 	CreateMesh();
 }
