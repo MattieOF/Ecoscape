@@ -153,4 +153,37 @@ public:
 		Result.A = FMath::Clamp(Value.A, Min.A, Max.A);
 		return Result;
 	}
+
+	static FORCEINLINE FVector GetNonParallelVector(const FVector& Vector)
+	{
+		// find the smallest component of v (in absolute value)
+		double min_abs = abs(Vector.X);
+		int min_index = 0;
+		if (abs(Vector.Y) < min_abs) {
+			min_abs = abs(Vector.Y);
+			min_index = 1;
+		}
+		if (abs(Vector.Z) < min_abs) {
+			min_abs = abs(Vector.Z);
+			min_index = 2;
+		}
+    
+		// set the smallest component to zero
+		FVector NonCollinear = {0, 0, 0};
+		if (min_index == 0) {
+			NonCollinear.Y = Vector.Z;
+			NonCollinear.Z = -Vector.Y;
+		} else if (min_index == 1) {
+			NonCollinear.X = Vector.Z;
+			NonCollinear.Z = -Vector.X;
+		} else {
+			NonCollinear.X = Vector.Y;
+			NonCollinear.Y = -Vector.X;
+		}
+    
+		// normalize the vector
+		NonCollinear.Normalize();
+    
+		return NonCollinear;
+	}
 };

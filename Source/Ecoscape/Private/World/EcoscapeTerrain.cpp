@@ -10,6 +10,7 @@
 #include "Serialization/BufferArchive.h"
 #include "World/FastNoise.h"
 #include "World/Fence.h"
+#include "World/ProceduralFenceMesh.h"
 
 DECLARE_CYCLE_STAT(TEXT("Terrain: Generate"), STAT_GenTerrain, STATGROUP_EcoscapeTerrain);
 DECLARE_CYCLE_STAT(TEXT("Terrain: Get Nearest Vertex"), STAT_GetNearestVert, STATGROUP_EcoscapeTerrain);
@@ -238,15 +239,28 @@ void AEcoscapeTerrain::GenerateNormals()
 void AEcoscapeTerrain::GenerateFence()
 {
 	int X = 3, Y = 3;
-	AFence* Fence = GetWorld()->SpawnActor<AFence>(GetVertexPositionWorld(GetVertexIndex(X, Y)), FRotator::ZeroRotator);
-	Fence->Spline->ClearSplinePoints();
-	Fence->Spline->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)));
+	AProceduralFenceMesh* Fence = GetWorld()->SpawnActor<AProceduralFenceMesh>(GetVertexPositionWorld(GetVertexIndex(X, Y)), FRotator::ZeroRotator);
+	Fence->SplineComponent->ClearSplinePoints();
+	Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
 
-	X++;
-	for (; X < Width - 3; X++)
-		Fence->Spline->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)));
+	X += 2;
+	for (; X < Width - 3; X += 2)
+		Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+	for (; Y < Height - 3; Y += 2)
+		Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+	for (; X > 3; X -= 2)
+		Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+	for (; Y > 3; Y -= 2)
+		Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
 
-	Fence->GenerateMesh();
+	if (X != 3 || Y != 3)
+	{
+		X = 3;
+		Y = 3;
+		Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));	
+	}
+	
+	Fence->Regenerate();
 }
 
 void AEcoscapeTerrain::CreateMesh() const
