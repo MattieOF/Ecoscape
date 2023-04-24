@@ -10,6 +10,7 @@
 #include "Serialization/BufferArchive.h"
 #include "World/FastNoise.h"
 #include "World/Fence.h"
+#include "World/ProceduralFence.h"
 #include "World/ProceduralFenceMesh.h"
 
 DECLARE_CYCLE_STAT(TEXT("Terrain: Generate"), STAT_GenTerrain, STATGROUP_EcoscapeTerrain);
@@ -259,29 +260,89 @@ void AEcoscapeTerrain::GenerateNormals()
 
 void AEcoscapeTerrain::GenerateFence()
 {
-	if (FenceMesh)
-		FenceMesh->Destroy();
-	
-	int X = 3, Y = 3;
-	FenceMesh = GetWorld()->SpawnActor<AProceduralFenceMesh>(GetVertexPositionWorld(GetVertexIndex(X, Y)), FRotator::ZeroRotator);
-	FenceMesh->SplineComponent->ClearSplinePoints();
-	FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+	// This fence impl stuff is just for demonstration purposes.
+#if WITH_EDITOR
+	switch (FenceImplementation)
+	{
+	case EFIGeoScript:
+		{
+			int X = 3, Y = 3;
+			AProceduralFence* Fence = GetWorld()->SpawnActor<AProceduralFence>(GetVertexPositionWorld(GetVertexIndex(X, Y)), FRotator::ZeroRotator);
+			Fence->SplineComponent->ClearSplinePoints();
+			Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
 
-	X += 2;
-	for (; X < Width - 3; X += 2)
-		FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
-	for (; Y < Height - 3; Y += 2)
-		FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
-	for (; X > 3; X -= 2)
-		FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
-	for (; Y > 3; Y -= 2)
-		FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+			X += 2;
+			for (; X < Width - 3; X += 2)
+				Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+			for (; Y < Height - 3; Y += 2)
+				Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+			for (; X > 3; X -= 2)
+				Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+			for (; Y > 3; Y -= 2)
+				Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
 
-	X = 3;
-	Y = 3;
-	FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));	
+			X = 3;
+			Y = 3;
+			Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));	
 	
-	FenceMesh->Regenerate();
+			Fence->Generate();
+		}
+		break;
+	case EFISplineMesh:
+		{
+			int X = 3, Y = 3;
+			AFence* Fence = GetWorld()->SpawnActor<AFence>(GetVertexPositionWorld(GetVertexIndex(X, Y)), FRotator::ZeroRotator);
+			Fence->Spline->ClearSplinePoints();
+			Fence->Spline->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+
+			X += 2;
+			for (; X < Width - 3; X += 2)
+				Fence->Spline->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+			for (; Y < Height - 3; Y += 2)
+				Fence->Spline->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+			for (; X > 3; X -= 2)
+				Fence->Spline->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+			for (; Y > 3; Y -= 2)
+				Fence->Spline->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+
+			X = 3;
+			Y = 3;
+			Fence->Spline->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));	
+	
+			Fence->GenerateMesh();
+		}
+		break;
+	case EFIProc:	
+		{
+#endif
+			if (FenceMesh)
+				FenceMesh->Destroy();
+	
+			int X = 3, Y = 3;
+			FenceMesh = GetWorld()->SpawnActor<AProceduralFenceMesh>(GetVertexPositionWorld(GetVertexIndex(X, Y)), FRotator::ZeroRotator);
+			FenceMesh->SplineComponent->ClearSplinePoints();
+			FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+
+			X += 2;
+			for (; X < Width - 3; X += 2)
+				FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+			for (; Y < Height - 3; Y += 2)
+				FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+			for (; X > 3; X -= 2)
+				FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+			for (; Y > 3; Y -= 2)
+				FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+
+			X = 3;
+			Y = 3;
+			FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));	
+	
+			FenceMesh->Regenerate();
+#if WITH_EDITOR
+		}
+		break;
+	}
+#endif
 }
 
 void AEcoscapeTerrain::CreateMesh() const

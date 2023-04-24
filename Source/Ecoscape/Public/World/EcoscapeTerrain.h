@@ -24,6 +24,14 @@ enum ENoiseType
 	ENTSimplex   UMETA(DisplayName = "Simplex")
 };
 
+UENUM()
+enum EFenceImpl
+{
+	EFISplineMesh  UMETA(DisplayName = "Spline Mesh"),
+	EFIGeoScript   UMETA(DisplayName = "Geometry Script"),
+	EFIProc        UMETA(DisplayName = "Procedural")
+};
+
 USTRUCT(BlueprintType)
 struct FVertexOverlapInfo
 {
@@ -77,6 +85,9 @@ public:
 
 	UPROPERTY()
 	TArray<APlacedItem*> PlacedItems;
+
+	UPROPERTY(EditAnywhere)
+	TEnumAsByte<EFenceImpl> FenceImplementation;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE FVector GetVertexPositionLocal(int Index) { return Verticies[Index]; }

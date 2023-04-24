@@ -30,6 +30,8 @@ void AEcoscapeTDCharacter::SetCurrentTool(EEcoscapeTool NewTool)
 	{
 		SetItemPreview(TestItem);
 	}
+
+	HighlightObject(nullptr);
 }
 
 void AEcoscapeTDCharacter::AddMovementInput(FVector WorldDirection, float ScaleValue, bool bForce)
