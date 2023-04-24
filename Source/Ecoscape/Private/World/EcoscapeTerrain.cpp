@@ -403,6 +403,11 @@ int AEcoscapeTerrain::GetClosestVertex(FVector Position)
 	return GetVertexIndex(X, Y);
 }
 
+void AEcoscapeTerrain::CreateFence(FVector2D Start, FVector2D End)
+{
+	
+}
+
 TArray<FVertexOverlapInfo> AEcoscapeTerrain::GetVerticiesInSphere(FVector Position, float Radius, bool CheckZ)
 {
 	SCOPE_CYCLE_COUNTER(STAT_VertsInSphere);

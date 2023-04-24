@@ -6,6 +6,7 @@
 #include "EcoscapeStatics.h"
 #include "Character/EcoscapePlayerController.h"
 #include "World/EcoscapeTerrain.h"
+#include "World/FencePlacementPreview.h"
 #include "World/PlacedItem.h"
 
 AEcoscapeTDCharacter::AEcoscapeTDCharacter()
@@ -30,6 +31,9 @@ void AEcoscapeTDCharacter::SetCurrentTool(EEcoscapeTool NewTool)
 	{
 		SetItemPreview(TestItem);
 	}
+
+	if (NewTool == ETPlaceFence)
+		FencePlacementStage = EFPNone;
 
 	HighlightObject(nullptr);
 }
@@ -122,7 +126,16 @@ void AEcoscapeTDCharacter::OnToolUsed()
 		break;
 	case ETPlaceFence:
 		{
-			
+			if (FencePlacementStage == EFPNone)
+			{
+				// We haven't started placing yet.
+				// Take the current position and turn that into our start
+			}
+			else
+			{
+				// This is our second location.
+				// If this is valid, we can create our fence now
+			}
 		}
 		break;
 	default: UE_LOG(LogEcoscape, Error, TEXT("Attempted to use unimplemented tool: %i"), static_cast<int>(CurrentTool)); break;
@@ -143,7 +156,13 @@ void AEcoscapeTDCharacter::OnToolAltUsed()
 			break;
 		case ETPlaceFence:
 			{
-				
+				if (FencePlacementStage == EFPPlacing)
+				{
+					// We're cancelling the place
+					FencePlacementStage = EFPNone;
+					FencePlacementPreview->DisablePreview();
+					FenceStart = FVector2D::ZeroVector;
+				}
 			}
 			break;
 		default: UE_LOG(LogEcoscape, Error, TEXT("Attempted to use unimplemented tool: %i"), static_cast<int>(CurrentTool)); break;
@@ -179,7 +198,11 @@ void AEcoscapeTDCharacter::AddScrollInput(float Value)
 void AEcoscapeTDCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	
 	TargetHeight = GetActorLocation().Z;
+
+	// Make fence placement preview now
+	FencePlacementPreview = GetWorld()->SpawnActor<AFencePlacementPreview>();
 }
 
 void AEcoscapeTDCharacter::Tick(float DeltaSeconds)
@@ -240,6 +263,10 @@ void AEcoscapeTDCharacter::Tick(float DeltaSeconds)
 		break;
 	case ETPlaceFence:
 		{
+			if (FencePlacementStage == EFPPlacing)
+			{
+				// We're placing, so update the positions of the preview
+			}
 		}
 		break;
 	default: UE_LOG(LogEcoscape, Error, TEXT("Ticking unimplemented tool: %i"), static_cast<int>(CurrentTool)); break;

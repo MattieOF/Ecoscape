@@ -109,6 +109,9 @@ public:
 		return (X * (Width + 1)) + Y;
 	}
 
+	UFUNCTION(BlueprintCallable)
+	void CreateFence(FVector2D Start, FVector2D End);
+
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	TArray<FVertexOverlapInfo> GetVerticiesInSphere(FVector Position, float Radius, bool CheckZ = false);
 

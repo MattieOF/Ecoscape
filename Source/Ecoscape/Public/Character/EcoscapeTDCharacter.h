@@ -9,6 +9,7 @@
 #include "World/PlaceableItemPreview.h"
 #include "EcoscapeTDCharacter.generated.h"
 
+class AFencePlacementPreview;
 class AEcoscapePlayerController;
 
 UENUM(BlueprintType)
@@ -19,6 +20,12 @@ enum EEcoscapeTool
 	ETPlaceObjects    UMETA(DisplayName = "Place Objects"),
 	ETDestroyObjects  UMETA(DisplayName = "Destroy Objects"),
 	ETPlaceFence      UMETA(DisplayName = "Place Fence"),
+};
+
+enum EFencePlacementStage
+{
+	EFPNone,
+	EFPPlacing,
 };
 
 UCLASS()
@@ -136,6 +143,13 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, Category = "Tools")
 	AEcoscapeObject* HighlightedObject = nullptr;
+	
+	UPROPERTY()
+	AFencePlacementPreview* FencePlacementPreview;
+
+	EFencePlacementStage FencePlacementStage = EFPNone;
+
+	FVector2D FenceStart = FVector2D::ZeroVector;
 	
 	UPROPERTY(BlueprintReadWrite)
 	bool bIsPossessed = false;
