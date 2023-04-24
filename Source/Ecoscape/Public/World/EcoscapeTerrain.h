@@ -9,6 +9,7 @@
 #include "ProceduralMeshComponent.h"
 #include "EcoscapeTerrain.generated.h"
 
+class AProceduralFenceMesh;
 FORCEINLINE FArchive& operator<<(FArchive& LHS, FProcMeshTangent& RHS)
 {
 	LHS << RHS.TangentX;
@@ -136,7 +137,7 @@ protected:
 	void ResetMeshData();
 	void GenerateVerticies();
 	void GenerateIndicies();
-	FORCEINLINE void GenerateNormals();
+	void GenerateNormals();
 	void GenerateFence();
 	void CreateMesh() const;
 
@@ -161,6 +162,11 @@ protected:
 	 */
 	UPROPERTY(EditAnywhere)
 	float Scale = 150;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bEnableWater = true;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float WaterHeight = 0.5f;
 
 	/**
 	 * @brief UV scale
@@ -193,7 +199,17 @@ protected:
 	UPROPERTY()
 	TArray<FVector> ColorOffsets;
 
-	float ColorOffsetSeed = 0;
-	
+	UPROPERTY()
+	AProceduralFenceMesh* FenceMesh = nullptr;
+	UPROPERTY()
+	AActor* WaterMesh = nullptr;
+
+	// Generation stuff
 	FastNoiseLite Noise;
+	UPROPERTY(BlueprintReadOnly)
+	float ColorOffsetSeed = 0;
+	UPROPERTY(BlueprintReadOnly)
+	float LowestHeight = 0;
+	UPROPERTY(BlueprintReadOnly)
+	float AverageHeight = 0;
 };

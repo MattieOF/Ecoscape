@@ -41,22 +41,22 @@ void AEcoscapeTDCharacter::OnToolUsed()
 {
 	switch (CurrentTool)
 	{
-	case ETSculpt:
-		{
-			FHitResult Hit;
-			const TArray<AActor*> IgnoredActors;
-			if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, IgnoredActors))
-			{
-				AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(Hit.GetActor());
-				if (!Terrain)
-					return;
-				auto Indicies = Terrain->GetVerticiesInSphere(Hit.ImpactPoint, 6 * Terrain->GetScale());
-				for (auto& [Vertex, Dist] : Indicies)
-					Terrain->AddVertexColour(Vertex, FColor(0, UEcoscapeStatics::MapFloat(Dist, 0, 6 * Terrain->GetScale(), 30, 0), 0), false);
-				Terrain->FlushMesh();
-			}
-		}
-		break;
+	// case ETSculpt:
+	// 	{
+	// 		FHitResult Hit;
+	// 		const TArray<AActor*> IgnoredActors;
+	// 		if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, IgnoredActors))
+	// 		{
+	// 			AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(Hit.GetActor());
+	// 			if (!Terrain)
+	// 				return;
+	// 			auto Indicies = Terrain->GetVerticiesInSphere(Hit.ImpactPoint, 6 * Terrain->GetScale());
+	// 			for (auto& [Vertex, Dist] : Indicies)
+	// 				Terrain->AddVertexColour(Vertex, FColor(0, UEcoscapeStatics::MapFloat(Dist, 0, 6 * Terrain->GetScale(), 30, 0), 0), false);
+	// 			Terrain->FlushMesh();
+	// 		}
+	// 	}
+	// 	break;
 	case ETPlaceObjects:
 		{
 			// Check position is valid
@@ -78,6 +78,7 @@ void AEcoscapeTDCharacter::OnToolUsed()
 
 				if (AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(Hit.GetActor()))
 				{
+					Item->AssociatedTerrain = Terrain; 
 					Terrain->PlacedItems.Add(Item);
 					auto Verts = Terrain->GetVerticiesInSphere(Hit.ImpactPoint, TestItem->ColourRange * PlacedItemScale, true);
 					for (auto& [Vertex, _] : Verts)
@@ -92,6 +93,32 @@ void AEcoscapeTDCharacter::OnToolUsed()
 		}
 		break;
 	case ETDestroyObjects:
+		{
+			if (APlacedItem* Item = Cast<APlacedItem>(HighlightedObject))
+			{
+				AEcoscapeTerrain* Terrain = Item->AssociatedTerrain;
+
+				if (Terrain)
+				{
+					Terrain->PlacedItems.Remove(Item);
+					auto Verts = Terrain->GetVerticiesInSphere(Item->GetActorLocation(), TestItem->ColourRange * PlacedItemScale, true);
+					for (auto& [Vertex, _] : Verts)
+					{
+						if (bDrawDebug)
+							DrawDebugSphere(GetWorld(), Terrain->GetVertexPositionWorld(Vertex), 20, 6, FColor::Red, false, 2.5f);
+						Terrain->CalculateVertColour(Vertex);
+					}
+					Terrain->FlushMesh();
+				}
+				else
+					UE_LOG(LogEcoscape, Error, TEXT("Placed item being destroyed by TDCharacter has no associated terrain!"));
+				
+				Item->Destroy();
+				HighlightObject(nullptr);
+			}
+		}
+		break;
+	case ETPlaceFence:
 		{
 			
 		}
@@ -112,7 +139,7 @@ void AEcoscapeTDCharacter::OnToolAltUsed()
 					ItemPreview->SetTargetRotation(PlacedItemRotation);
 			}
 			break;
-		case ETSculpt:
+		case ETPlaceFence:
 			{
 				
 			}
@@ -206,9 +233,10 @@ void AEcoscapeTDCharacter::Tick(float DeltaSeconds)
 		break;
 	case ETDestroyObjects:
 		{
+			CheckHoveredObject();
 		}
 		break;
-	case ETSculpt:
+	case ETPlaceFence:
 		{
 		}
 		break;
@@ -247,6 +275,26 @@ void AEcoscapeTDCharacter::UnPossessed()
 		ItemPreview->Destroy();
 		ItemPreview = nullptr;
 	}
+	HighlightObject(nullptr);
+}
+
+void AEcoscapeTDCharacter::CheckHoveredObject()
+{
+	FHitResult Hit;
+	UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), ECC_HIGHLIGHTABLE, true, Hit, TArray<AActor*>());
+	// No need to check for null here, as passing null to HighlightObject() simply unhighlights anything and sets HighlightedObject to null
+	// Therefore, we have to be careful when using HighlightedObject
+	AEcoscapeObject* EcoscapeObject = Cast<AEcoscapeObject>(Hit.GetActor());
+	HighlightObject(EcoscapeObject);
+}
+
+void AEcoscapeTDCharacter::HighlightObject(AEcoscapeObject* Object)
+{
+	if (HighlightedObject)
+		HighlightedObject->Outline->HideOutline();
+	HighlightedObject = Object;
+	if (HighlightedObject)
+		HighlightedObject->Outline->ShowOutline();
 }
 
 void AEcoscapeTDCharacter::CreateItemPreview()

@@ -10,10 +10,9 @@ APlacedItem::APlacedItem()
 	
 	MainMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Main Mesh"));
 	MainMesh->SetCollisionResponseToChannel(ECC_BLOCKS_ITEM_PLACEMENT, ECR_Block);
+	MainMesh->SetCollisionResponseToChannel(ECC_HIGHLIGHTABLE, ECR_Block);
 	MainMesh->ComponentTags.Add("Outline");
 
-	Outline = CreateDefaultSubobject<UOutlineComponent>(TEXT("Outline"));
-	
 	RootComponent = MainMesh;
 }
 
@@ -29,16 +28,6 @@ APlacedItem* APlacedItem::SpawnItem(UWorld* World, UPlaceableItemData* ItemData,
 	PlacedItem->SetActorScale3D(Scale);
 	PlacedItem->SetItemData(ItemData);
 	return PlacedItem;
-}
-
-void APlacedItem::OnMouseOver() const
-{
-	Outline->ShowOutline();
-}
-
-void APlacedItem::OnMouseLeave() const
-{
-	Outline->HideOutline();
 }
 
 void APlacedItem::BeginPlay()

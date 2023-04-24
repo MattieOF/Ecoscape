@@ -88,6 +88,7 @@ void AEcoscapeTerrain::SerialiseTerrain(FArchive& Archive)
 			
 			APlacedItem* NewItem = GetWorld()->SpawnActor<APlacedItem>(ItemData->PlacedItemClass, Transform);
 			NewItem->SetItemData(ItemData);
+			NewItem->AssociatedTerrain = this; 
 			PlacedItems.Add(NewItem);
 		}
 	}
@@ -164,10 +165,12 @@ void AEcoscapeTerrain::ResetMeshData()
 
 void AEcoscapeTerrain::GenerateVerticies()
 {
+	int VertCount = 0;
 	for (int x = 0; x <= Width; x++)
 	{
 		for (int y = 0; y <= Height; y++)
 		{
+			VertCount++;
 			// TODO: ensure that it's never an integer
 			float Z = 0;
 			for (const auto& [NoiseType, CoordinateScale, HeightScale, Seed, Offset] : NoiseLayers)
@@ -190,6 +193,8 @@ void AEcoscapeTerrain::GenerateVerticies()
 				Z += Noise.GetNoise(x * CoordinateScale, y * CoordinateScale) * HeightScale;
 			}
 
+			AverageHeight += Z;
+			LowestHeight = FMath::Min(LowestHeight, Z);
 			
 			Verticies.Add(FVector(x * Scale, y * Scale, Z));
 			UV0.Add(FVector2D(x * UVScale, y * UVScale));
@@ -208,6 +213,8 @@ void AEcoscapeTerrain::GenerateVerticies()
 			VertexColors.Add(VertexColor);
 		}
 	}
+
+	AverageHeight /= VertCount;
 }
 
 void AEcoscapeTerrain::GenerateIndicies()
@@ -233,34 +240,48 @@ void AEcoscapeTerrain::GenerateIndicies()
 
 void AEcoscapeTerrain::GenerateNormals()
 {
-	UKismetProceduralMeshLibrary::CalculateTangentsForMesh(Verticies, Triangles, UV0, Normals, Tangents);
+	Normals.Init(FVector::ZeroVector, Verticies.Num());
+
+	for (int i = 0; i <  Triangles.Num(); i += 3)
+	{
+		const FVector P = FVector::CrossProduct(Verticies[Triangles[i + 1]] - Verticies[Triangles[i]], Verticies[Triangles[i + 2]] - Verticies[Triangles[i]]);
+		Normals[Triangles[i]] += P;
+		Normals[Triangles[i + 1]] += P;
+		Normals[Triangles[i + 2]] += P;
+	}
+
+	for (int i = 0; i < Normals.Num(); i++)
+	{
+		Normals[i].Normalize();
+		Normals[i] = -Normals[i];
+	}
 }
 
 void AEcoscapeTerrain::GenerateFence()
 {
+	if (FenceMesh)
+		FenceMesh->Destroy();
+	
 	int X = 3, Y = 3;
-	AProceduralFenceMesh* Fence = GetWorld()->SpawnActor<AProceduralFenceMesh>(GetVertexPositionWorld(GetVertexIndex(X, Y)), FRotator::ZeroRotator);
-	Fence->SplineComponent->ClearSplinePoints();
-	Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+	FenceMesh = GetWorld()->SpawnActor<AProceduralFenceMesh>(GetVertexPositionWorld(GetVertexIndex(X, Y)), FRotator::ZeroRotator);
+	FenceMesh->SplineComponent->ClearSplinePoints();
+	FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
 
 	X += 2;
 	for (; X < Width - 3; X += 2)
-		Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+		FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
 	for (; Y < Height - 3; Y += 2)
-		Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+		FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
 	for (; X > 3; X -= 2)
-		Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+		FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
 	for (; Y > 3; Y -= 2)
-		Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+		FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
 
-	if (X != 3 || Y != 3)
-	{
-		X = 3;
-		Y = 3;
-		Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));	
-	}
+	X = 3;
+	Y = 3;
+	FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));	
 	
-	Fence->Regenerate();
+	FenceMesh->Regenerate();
 }
 
 void AEcoscapeTerrain::CreateMesh() const

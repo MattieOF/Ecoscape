@@ -3,13 +3,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "EcoscapeObject.h"
 #include "OutlineComponent.h"
 #include "PlaceableItemData.h"
 #include "GameFramework/Actor.h"
 #include "PlacedItem.generated.h"
 
+class AEcoscapeTerrain;
+
 UCLASS()
-class ECOSCAPE_API APlacedItem : public AActor
+class ECOSCAPE_API APlacedItem : public AEcoscapeObject
 {
 	GENERATED_BODY()
 
@@ -26,12 +29,9 @@ public:
 	static APlacedItem* SpawnItem(UWorld* World, UPlaceableItemData* ItemData, 
 		FVector Position, FVector Scale = FVector(1, 1, 1), FRotator Rotation = FRotator::ZeroRotator);
 
-	UFUNCTION()
-	void OnMouseOver() const;
+	UPROPERTY()
+	AEcoscapeTerrain* AssociatedTerrain;
 
-	UFUNCTION()
-	void OnMouseLeave() const;
-	
 protected:
 	virtual void BeginPlay() override;
 
@@ -44,7 +44,4 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UStaticMeshComponent* MainMesh;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	UOutlineComponent* Outline;
 };

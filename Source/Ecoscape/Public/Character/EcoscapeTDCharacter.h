@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "EcoscapeObject.h"
 #include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "World/PlaceableItemPreview.h"
@@ -14,9 +15,10 @@ UENUM(BlueprintType)
 enum EEcoscapeTool
 {
 	ETNone            UMETA(DisplayName = "None"),
-	ETSculpt          UMETA(DisplayName = "Sculpt"),
+	// ETSculpt          UMETA(DisplayName = "Sculpt"),
 	ETPlaceObjects    UMETA(DisplayName = "Place Objects"),
 	ETDestroyObjects  UMETA(DisplayName = "Destroy Objects"),
+	ETPlaceFence      UMETA(DisplayName = "Place Fence"),
 };
 
 UCLASS()
@@ -132,8 +134,14 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Tools")
 	TEnumAsByte<EEcoscapeTool> CurrentTool = ETNone;
 
+	UPROPERTY(BlueprintReadWrite, Category = "Tools")
+	AEcoscapeObject* HighlightedObject = nullptr;
+	
 	UPROPERTY(BlueprintReadWrite)
 	bool bIsPossessed = false;
+
+	UPROPERTY()
+	AEcoscapePlayerController* EcoscapePlayerController;
 
 	virtual void BeginPlay() override;
 
@@ -144,11 +152,14 @@ protected:
 	virtual void UnPossessed() override;
 
 	UFUNCTION(BlueprintCallable)
+	void CheckHoveredObject();
+	
+	UFUNCTION(BlueprintCallable)
+	void HighlightObject(AEcoscapeObject* Object);
+
+	UFUNCTION(BlueprintCallable)
 	void CreateItemPreview();
 
 	UFUNCTION(BlueprintCallable)
 	void SetItemPreview(UPlaceableItemData* ItemData);
-
-	UPROPERTY()
-	AEcoscapePlayerController* EcoscapePlayerController;
 };
