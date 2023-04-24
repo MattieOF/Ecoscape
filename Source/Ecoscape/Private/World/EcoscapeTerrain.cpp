@@ -141,6 +141,7 @@ bool AEcoscapeTerrain::DeserialiseTerrainFromFile(FString Filename)
 	// Do the loading
 	ResetMeshData();
 	SerialiseTerrain(BinaryLoader);
+	GenerateFence();
 
 	// Recreate terrain from loaded data
 	CreateMesh();
