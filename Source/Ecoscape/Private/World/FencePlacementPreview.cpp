@@ -69,12 +69,14 @@ void AFencePlacementPreview::CheckValid()
 
 void AFencePlacementPreview::CreateQuad(FVector Start, FVector End)
 {
-	FVector Mid = UKismetMathLibrary::VLerp(Start, End, 0.5);
-	FVector Dir = End - Start;
-	Dir.Normalize();
-	
+	// This function is extremely specialised. Does not support diagonals for speed and complexity
+	// True if going in Y dir, false if X
+	bool YOrX = (End.X - Start.X) < (End.Y - Start.Y);
 	
 	Verticies.Append({
-		
+		Start + YOrX ? FVector(0, 20, 100) : FVector(20, 0, 100),
+		Start + YOrX ? FVector(0, -20, 100) : FVector(-20, 0, 100),
+		End + YOrX ? FVector(0, 20, 100) : FVector(20, 0, 100),
+		End + YOrX ? FVector(0, 20, 100) : FVector(20, 0, 100)
 	});
 }
