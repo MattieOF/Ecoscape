@@ -321,6 +321,8 @@ void AEcoscapeTerrain::GenerateFence()
 	
 			int X = 3, Y = 3;
 			FenceMesh = GetWorld()->SpawnActor<AProceduralFenceMesh>(GetVertexPositionWorld(GetVertexIndex(X, Y)), FRotator::ZeroRotator);
+			FenceMesh->AssociatedTerrain = this;
+			FenceMesh->bDestroyable = false;
 			FenceMesh->SplineComponent->ClearSplinePoints();
 			FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
 
@@ -404,9 +406,36 @@ int AEcoscapeTerrain::GetClosestVertex(FVector Position)
 	return GetVertexIndex(X, Y);
 }
 
-void AEcoscapeTerrain::CreateFence(FVector2D Start, FVector2D End)
+AProceduralFenceMesh* AEcoscapeTerrain::CreateFence(FVector2D Start, FVector2D End, int Step)
 {
+	const int LowX  = Start.X < End.X ? Start.X : End.X;
+	const int LowY  = Start.Y < End.Y ? Start.Y : End.Y;
+	const int HighX = Start.X > End.X ? Start.X : End.X;
+	const int HighY = Start.Y > End.Y ? Start.Y : End.Y;
 	
+	int X = LowX, Y = LowY;
+	AProceduralFenceMesh* Fence = GetWorld()->SpawnActor<AProceduralFenceMesh>(GetVertexPositionWorld(GetVertexIndex(X, Y)), FRotator::ZeroRotator);
+	Fence->bShouldGenerateGate = true;
+	Fence->AssociatedTerrain = this;
+	Fence->SplineComponent->ClearSplinePoints();
+	Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+
+	for (; X < HighX; X = FMath::Min(HighX, X + Step))
+		Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+	for (; Y < HighY; Y = FMath::Min(HighY, Y + Step))
+		Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+	for (; X > LowX; X = FMath::Max(LowX, X - Step))
+		Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+	for (; Y > LowY; Y = FMath::Max(LowY, Y - Step))
+		Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+
+	X = LowX;
+	Y = LowY;
+	Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));	
+	
+	Fence->Regenerate();
+
+	return Fence;
 }
 
 TArray<FVertexOverlapInfo> AEcoscapeTerrain::GetVerticiesInSphere(FVector Position, float Radius, bool CheckZ)

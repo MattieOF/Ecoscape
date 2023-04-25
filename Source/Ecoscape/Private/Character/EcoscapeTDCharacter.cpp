@@ -8,6 +8,7 @@
 #include "World/EcoscapeTerrain.h"
 #include "World/FencePlacementPreview.h"
 #include "World/PlacedItem.h"
+#include "World/ProceduralFenceMesh.h"
 
 AEcoscapeTDCharacter::AEcoscapeTDCharacter()
 {
@@ -121,6 +122,14 @@ void AEcoscapeTDCharacter::OnToolUsed()
 				
 				Item->Destroy();
 				HighlightObject(nullptr);
+			} else if (AProceduralFenceMesh* Fence = Cast<AProceduralFenceMesh>(HighlightedObject))
+			{
+				// TODO: Remove from saved fences
+				if (!Fence->bDestroyable)
+					return;
+				
+				Fence->Destroy();
+				HighlightObject(nullptr);
 			}
 		}
 		break;
@@ -130,11 +139,31 @@ void AEcoscapeTDCharacter::OnToolUsed()
 			{
 				// We haven't started placing yet.
 				// Take the current position and turn that into our start
+				FHitResult Hit;
+				if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, TArray<AActor*>()))
+				{
+					if (AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(Hit.GetActor()))
+					{
+						FencePlacementPreview->Terrain = Terrain;
+						FencePlacementPreview->StartPreview(Terrain->GetVertexXY(Terrain->GetClosestVertex(Hit.ImpactPoint)));
+						FencePlacementStage = EFPPlacing;
+					}
+				}
 			}
 			else
 			{
 				// This is our second location.
 				// If this is valid, we can create our fence now
+
+				if (FencePlacementPreview->bValid)
+				{
+					FencePlacementPreview->CreateFence();
+					FencePlacementPreview->DisablePreview();
+					FencePlacementStage = EFPNone;
+				} else
+				{
+					OnFailedPlacementAttempt();
+				}
 			}
 		}
 		break;
@@ -266,6 +295,18 @@ void AEcoscapeTDCharacter::Tick(float DeltaSeconds)
 			if (FencePlacementStage == EFPPlacing)
 			{
 				// We're placing, so update the positions of the preview
+				FHitResult Hit;
+				if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, TArray<AActor*>()))
+				{
+					if (AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(Hit.GetActor()))
+					{
+						auto XY = Terrain->GetVertexXY(Terrain->GetClosestVertex(Hit.ImpactPoint));
+						auto Pos = Terrain->GetVertexPositionWorld(Terrain->GetVertexIndex(XY.X, XY.Y));
+						DrawDebugSphere(GetWorld(), Pos, 20, 6, FColor::Red);
+						
+						FencePlacementPreview->UpdatePreview(Terrain->GetVertexXY(Terrain->GetClosestVertex(Hit.ImpactPoint)));
+					}
+				}
 			}
 		}
 		break;

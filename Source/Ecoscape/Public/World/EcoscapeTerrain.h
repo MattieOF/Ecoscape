@@ -109,8 +109,14 @@ public:
 		return (X * (Width + 1)) + Y;
 	}
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE FVector2D GetVertexXY(int Index)
+	{
+		return FVector2D(FMath::Floor(Index / (Width + 1)), Index % (Height + 1));
+	}
+
 	UFUNCTION(BlueprintCallable)
-	void CreateFence(FVector2D Start, FVector2D End);
+	AProceduralFenceMesh* CreateFence(FVector2D Start, FVector2D End, int Step = 2);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	TArray<FVertexOverlapInfo> GetVerticiesInSphere(FVector Position, float Radius, bool CheckZ = false);

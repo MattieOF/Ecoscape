@@ -21,7 +21,9 @@ public:
 	void RegeneratePreview();
 	void CheckValid();
 
-	void CreateQuad(FVector Start, FVector End);
+	void CreateFence() const;
+	
+	void CreateQuad(FVector Start, FVector End, float Thickness = 30, float ZOffset = 100);
 	
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* ValidMaterial;

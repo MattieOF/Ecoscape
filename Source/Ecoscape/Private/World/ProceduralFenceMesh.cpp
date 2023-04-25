@@ -2,10 +2,8 @@
 
 #include "World/ProceduralFenceMesh.h"
 
-#include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
 #include "KismetProceduralMeshLibrary.h"
-#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values
 AProceduralFenceMesh::AProceduralFenceMesh()
@@ -15,7 +13,9 @@ AProceduralFenceMesh::AProceduralFenceMesh()
 	ProceduralMeshComponent = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Mesh"));
 	ProceduralMeshComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 	ProceduralMeshComponent->SetCollisionResponseToChannel(ECC_BLOCKS_ITEM_PLACEMENT, ECR_Block);
+	ProceduralMeshComponent->SetCollisionResponseToChannel(ECC_HIGHLIGHTABLE, ECR_Block);
 	ProceduralMeshComponent->SetMaterial(0, Material);
+	ProceduralMeshComponent->ComponentTags.Add("Outline");
 	SplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("Spline"));
 	SplineComponent->SetupAttachment(ProceduralMeshComponent);
 	RootComponent = ProceduralMeshComponent;
@@ -51,7 +51,7 @@ void AProceduralFenceMesh::Regenerate()
 				          FVector2D(0.01, 0.01));
 
 				int VertIndex = Verticies.Num();
-				float Distance = FVector::Distance(LastPosition, Pos);
+				const float Distance = FVector::Distance(LastPosition, Pos);
 				Verticies.Add(LastPosition - FVector(0, 0, 80));
 				Verticies.Add(LastPosition + FVector(0, 0, 160));
 				Verticies.Add(Pos - FVector(0, 0, 80));
