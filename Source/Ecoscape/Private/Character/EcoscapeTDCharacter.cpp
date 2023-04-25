@@ -6,9 +6,9 @@
 #include "EcoscapeStatics.h"
 #include "Character/EcoscapePlayerController.h"
 #include "World/EcoscapeTerrain.h"
-#include "World/FencePlacementPreview.h"
+#include "World/Fence/FencePlacementPreview.h"
 #include "World/PlacedItem.h"
-#include "World/ProceduralFenceMesh.h"
+#include "World/Fence/ProceduralFenceMesh.h"
 
 AEcoscapeTDCharacter::AEcoscapeTDCharacter()
 {

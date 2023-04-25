@@ -9,9 +9,9 @@
 #include "KismetProceduralMeshLibrary.h"
 #include "Serialization/BufferArchive.h"
 #include "World/FastNoise.h"
-#include "World/Fence.h"
-#include "World/ProceduralFence.h"
-#include "World/ProceduralFenceMesh.h"
+#include "World/Fence/Fence.h"
+#include "World/Fence/ProceduralFence.h"
+#include "World/Fence/ProceduralFenceMesh.h"
 
 DECLARE_CYCLE_STAT(TEXT("Terrain: Generate"), STAT_GenTerrain, STATGROUP_EcoscapeTerrain);
 DECLARE_CYCLE_STAT(TEXT("Terrain: Get Nearest Vertex"), STAT_GetNearestVert, STATGROUP_EcoscapeTerrain);

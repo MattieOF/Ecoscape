@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "EcoscapeObject.h"
-#include "OutlineComponent.h"
 #include "PlaceableItemData.h"
 #include "GameFramework/Actor.h"
 #include "PlacedItem.generated.h"
