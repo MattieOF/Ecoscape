@@ -9,6 +9,7 @@
 #include "ProceduralMeshComponent.h"
 #include "EcoscapeTerrain.generated.h"
 
+class AFenceGate;
 class AProceduralFenceMesh;
 FORCEINLINE FArchive& operator<<(FArchive& LHS, FProcMeshTangent& RHS)
 {
@@ -88,6 +89,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TEnumAsByte<EFenceImpl> FenceImplementation;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AProceduralFenceMesh> FenceClass;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE FVector GetVertexPositionLocal(int Index) { return Verticies[Index]; }

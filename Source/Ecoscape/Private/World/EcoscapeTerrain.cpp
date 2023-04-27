@@ -320,9 +320,10 @@ void AEcoscapeTerrain::GenerateFence()
 				FenceMesh->Destroy();
 	
 			int X = 3, Y = 3;
-			FenceMesh = GetWorld()->SpawnActor<AProceduralFenceMesh>(GetVertexPositionWorld(GetVertexIndex(X, Y)), FRotator::ZeroRotator);
+			FenceMesh = GetWorld()->SpawnActor<AProceduralFenceMesh>(FenceClass, GetVertexPositionWorld(GetVertexIndex(X, Y)), FRotator::ZeroRotator);
 			FenceMesh->AssociatedTerrain = this;
 			FenceMesh->bDestroyable = false;
+			FenceMesh->Outline->DestroyComponent();
 			FenceMesh->SplineComponent->ClearSplinePoints();
 			FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
 
@@ -414,7 +415,7 @@ AProceduralFenceMesh* AEcoscapeTerrain::CreateFence(FVector2D Start, FVector2D E
 	const int HighY = Start.Y > End.Y ? Start.Y : End.Y;
 	
 	int X = LowX, Y = LowY;
-	AProceduralFenceMesh* Fence = GetWorld()->SpawnActor<AProceduralFenceMesh>(GetVertexPositionWorld(GetVertexIndex(X, Y)), FRotator::ZeroRotator);
+	AProceduralFenceMesh* Fence = GetWorld()->SpawnActor<AProceduralFenceMesh>(FenceClass, GetVertexPositionWorld(GetVertexIndex(X, Y)), FRotator::ZeroRotator);
 	Fence->bShouldGenerateGate = true;
 	Fence->AssociatedTerrain = this;
 	Fence->SplineComponent->ClearSplinePoints();

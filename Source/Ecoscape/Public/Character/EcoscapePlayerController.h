@@ -9,6 +9,7 @@
 #include "UI/InteractionPrompt.h"
 #include "EcoscapePlayerController.generated.h"
 
+class AProceduralFenceMesh;
 class AEcoscapeTerrain;
 
 UENUM(BlueprintType)
@@ -68,7 +69,7 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnPlayerViewChanged OnPlayerViewChanged;
-	
+
 protected:
 	virtual void BeginPlay() override;
 

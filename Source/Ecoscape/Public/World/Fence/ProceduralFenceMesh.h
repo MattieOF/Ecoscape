@@ -9,6 +9,7 @@
 #include "GameFramework/Actor.h"
 #include "ProceduralFenceMesh.generated.h"
 
+class AFenceGate;
 class AEcoscapeTerrain;
 
 UCLASS()
@@ -35,6 +36,12 @@ public:
 	UPROPERTY()
 	AEcoscapeTerrain* AssociatedTerrain;
 	
+	UPROPERTY(EditAnywhere)
+	UProceduralMeshComponent* ProceduralMeshComponent;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AFenceGate> FenceGateClass;
+	
 #if WITH_EDITOR
 	void DrawVerticies();
 #endif
@@ -42,17 +49,11 @@ public:
 protected:
 	virtual void OnConstruction(const FTransform& Transform) override;
 	
-	void AddCuboid(FVector Center, FVector Extents, bool OverrideUV = false, FVector2D UV = FVector2D());
-	void AddCuboid(FVector Start, FVector End, FVector2D Extents, bool OverrideUV = false, FVector2D UV = FVector2D());
-
 	void CalculateNormals();
 
 	UPROPERTY(EditAnywhere)
 	UMaterialInterface* Material;
 	
-	UPROPERTY(EditAnywhere)
-	UProceduralMeshComponent* ProceduralMeshComponent;
-
 	TArray<FVector> Verticies, Normals;
 	TArray<FVector2D> UV0;
 	TArray<int> Indicies;
