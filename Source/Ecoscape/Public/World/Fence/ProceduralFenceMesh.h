@@ -41,6 +41,8 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AFenceGate> FenceGateClass;
+
+	virtual void Destroyed() override;
 	
 #if WITH_EDITOR
 	void DrawVerticies();
@@ -58,4 +60,7 @@ protected:
 	TArray<FVector2D> UV0;
 	TArray<int> Indicies;
 	TArray<FProcMeshTangent> Tangents;
+
+	UPROPERTY()
+	TArray<AFenceGate*> Gates;
 };

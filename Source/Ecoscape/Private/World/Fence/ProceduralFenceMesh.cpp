@@ -57,6 +57,7 @@ void AProceduralFenceMesh::Regenerate()
 				{	
 					AFenceGate* FenceGate = GetWorld()->SpawnActor<AFenceGate>(FenceGateClass, FVector::ZeroVector, FRotator::ZeroRotator);
 					FenceGate->Create(GetActorLocation() + LastPosition, GetActorLocation() + Pos);
+					Gates.Add(FenceGate);
 					
 					GateCount--;
 				} else {
@@ -85,6 +86,13 @@ void AProceduralFenceMesh::Regenerate()
 }
 
 #if WITH_EDITOR
+void AProceduralFenceMesh::Destroyed()
+{
+	for (AFenceGate* Gate : Gates)
+		Gate->Destroy();
+	Super::Destroyed();
+}
+
 void AProceduralFenceMesh::DrawVerticies()
 {
 	for (int i = 0; i < Verticies.Num(); i++)
