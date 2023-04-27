@@ -48,6 +48,9 @@ void AEcoscapePlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
+	InteractionPrompt = CreateWidget<UInteractionPrompt>(this, InteractionPromptClass);
+	InteractionPrompt->AddToViewport();
+	
 	// Get character
 	FPCharacter = Cast<AEcoscapeFPPlayerCharacter>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
 	TDCharacter = GetWorld()->SpawnActor<AEcoscapeTDCharacter>(TopDownCharacterClass, FVector(0, 0, TopDownSpawnHeight), FRotator::ZeroRotator);
@@ -71,6 +74,7 @@ void AEcoscapePlayerController::BeginPlay()
 	InputComponent->BindAction("Modifier", IE_Released, this, &AEcoscapePlayerController::OnModifierReleased);
 	InputComponent->BindAction("SwitchView", IE_Pressed, this, &AEcoscapePlayerController::OnSwitchView);
 	InputComponent->BindAction("UseTool", IE_Pressed, this, &AEcoscapePlayerController::OnUseTool);
+	InputComponent->BindAction("Interact", IE_Pressed, this, &AEcoscapePlayerController::OnInteract);
 	InputComponent->BindAction("UseAltTool", IE_Pressed, this, &AEcoscapePlayerController::OnUseAltTool);
 	InputComponent->BindAction("ResetTool", IE_Pressed, this, &AEcoscapePlayerController::OnResetTool);
 }
@@ -161,6 +165,12 @@ void AEcoscapePlayerController::OnResetTool()
 {
 	if (CurrentView == EPSTopDown)
 		TDCharacter->ResetTool();
+}
+
+void AEcoscapePlayerController::OnInteract()
+{
+	if (CurrentView == EPSFirstPerson)
+		FPCharacter->Interact();
 }
 
 void AEcoscapePlayerController::SetView(const EEcoscapePlayerView NewView, const bool bInstant, const float BlendTime)

@@ -6,6 +6,7 @@
 #include "EcoscapeFPPlayerCharacter.h"
 #include "EcoscapeTDCharacter.h"
 #include "GameFramework/PlayerController.h"
+#include "UI/InteractionPrompt.h"
 #include "EcoscapePlayerController.generated.h"
 
 class AEcoscapeTerrain;
@@ -50,17 +51,23 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void CenterMouse();
 
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<AEcoscapeTDCharacter> TopDownCharacterClass = AEcoscapeTDCharacter::StaticClass();
-
-	UPROPERTY(BlueprintAssignable)
-	FOnPlayerViewChanged OnPlayerViewChanged;
-
 	UFUNCTION(BlueprintCallable)
 	void GoToTerrain(AEcoscapeTerrain* Terrain);
 
 	UFUNCTION(Exec)
 	void GoToCursor();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE UInteractionPrompt* GetInteractionPrompt() { return InteractionPrompt; }
+	
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AEcoscapeTDCharacter> TopDownCharacterClass = AEcoscapeTDCharacter::StaticClass();
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UInteractionPrompt> InteractionPromptClass = UInteractionPrompt::StaticClass();
+
+	UPROPERTY(BlueprintAssignable)
+	FOnPlayerViewChanged OnPlayerViewChanged;
 	
 protected:
 	virtual void BeginPlay() override;
@@ -83,6 +90,7 @@ protected:
 	void OnUseTool();
 	void OnUseAltTool();
 	void OnResetTool();
+	void OnInteract();
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnEcoscapePlayerViewChanged(EEcoscapePlayerView NewState, APawn* NewPawn, float Time = 0.5f);
@@ -110,6 +118,9 @@ protected:
 	
 	UPROPERTY(BlueprintReadOnly)
 	AEcoscapeTerrain* CurrentTerrain;
+
+	UPROPERTY(BlueprintReadOnly)
+	UInteractionPrompt* InteractionPrompt;
 	
 private:
 	float CurrentSwitchViewCooldown = 0;

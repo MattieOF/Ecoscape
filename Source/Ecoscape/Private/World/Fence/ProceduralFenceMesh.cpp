@@ -90,13 +90,13 @@ void AProceduralFenceMesh::DrawVerticies()
 		                nullptr, FColor::White, 2);
 	}
 }
+#endif
 
 void AProceduralFenceMesh::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 	Regenerate();
 }
-#endif
 
 void AProceduralFenceMesh::AddCuboid(FVector Center, FVector Extents, bool OverrideUV, FVector2D UV)
 {

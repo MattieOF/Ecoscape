@@ -15,10 +15,21 @@
 
 #include "../../Public/Character/EcoscapeFPPlayerMovement.h"
 #include "Character/EcoscapePlayerController.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "World/InteractableComponent.h"
 
 static TAutoConsoleVariable<int32> CVarAutoBHop(TEXT("move.Pogo"), 0, TEXT("If holding spacebar should make the player jump whenever possible.\n"), ECVF_Cheat);
 static TAutoConsoleVariable<int32> CVarJumpBoost(TEXT("move.JumpBoost"), 1, TEXT("If the player should boost in a movement direction while jumping.\n0 - disables jump boosting entirely\n1 - boosts in the direction of input, even when moving in another direction\n2 - boosts in the direction of input when moving in the same direction\n"), ECVF_Cheat);
 static TAutoConsoleVariable<int32> CVarBunnyhop(TEXT("move.Bunnyhopping"), 0, TEXT("Enable normal bunnyhopping.\n"), ECVF_Cheat);
+
+void AEcoscapeFPPlayerCharacter::HighlightObject(AEcoscapeObject* NewObject)
+{
+	if (HighlightedObject)
+		HighlightedObject->Outline->HideOutline();
+	HighlightedObject = NewObject;
+	if (HighlightedObject)
+		HighlightedObject->Outline->ShowOutline();
+}
 
 // Sets default values
 AEcoscapeFPPlayerCharacter::AEcoscapeFPPlayerCharacter(const FObjectInitializer& ObjectInitializer)
@@ -65,11 +76,47 @@ void AEcoscapeFPPlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-
 	if (bDeferJumpStop)
 	{
 		bDeferJumpStop = false;
 		Super::StopJumping();
+	}
+
+	// Check for interactions
+	if (bCurrentlyPossessed || true)
+	{
+		FVector EyeHeight = GetActorLocation() + FVector(0, 0, 45);
+		FVector LookDir = UKismetMathLibrary::Conv_RotatorToVector(GetViewRotation());
+
+		FHitResult Hit;
+		FCollisionQueryParams Params;
+		Params.AddIgnoredActor(this);
+		UInteractionPrompt* InteractionPrompt = Cast<AEcoscapePlayerController>(Controller)->GetInteractionPrompt();
+		if (GetWorld()->LineTraceSingleByChannel(Hit, EyeHeight, EyeHeight + (LookDir * InteractionRange), ECC_WorldStatic, Params))
+		{
+			AEcoscapeObject* AsEcoscapeObject = Cast<AEcoscapeObject>(Hit.GetActor());
+
+			if (UInteractableComponent* Interactable = Cast<UInteractableComponent>(Hit.GetActor()->GetComponentByClass(UInteractableComponent::StaticClass())))
+			{
+				if (AsEcoscapeObject)
+					HighlightObject(AsEcoscapeObject);
+				CurrentInteractable = Interactable;
+				InteractionPrompt->ShowPrompt(Interactable);
+			} 
+			else
+			{
+				CurrentInteractable = nullptr;
+				HighlightObject(nullptr);
+				if (InteractionPrompt->IsPromptVisible())
+					InteractionPrompt->HidePrompt();
+			}
+		} else
+		{
+			if (InteractionPrompt->IsPromptVisible())
+				InteractionPrompt->HidePrompt();
+			CurrentInteractable = nullptr;
+			HighlightObject(nullptr);
+		}
 	}
 }
 
@@ -114,6 +161,7 @@ void AEcoscapeFPPlayerCharacter::ApplyDamageMomentum(float DamageTaken, FDamageE
 void AEcoscapeFPPlayerCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
+	bCurrentlyPossessed = true;
 	if (AEcoscapePlayerController* PlayerController = Cast<AEcoscapePlayerController>(NewController))
 	{
 		PlayerController->SetMouseEnabled(false);
@@ -121,6 +169,12 @@ void AEcoscapeFPPlayerCharacter::PossessedBy(AController* NewController)
 	}
 	else
 		UE_LOG(LogEcoscape, Error, TEXT("Ecoscape pawn possessed by non-ecoscape controller!"));
+}
+
+void AEcoscapeFPPlayerCharacter::Interact()
+{
+	if (CurrentInteractable)
+		CurrentInteractable->OnInteract();
 }
 
 void AEcoscapeFPPlayerCharacter::ClearJumpInput(float DeltaTime)
@@ -363,4 +417,10 @@ void AEcoscapeFPPlayerCharacter::RecalculateBaseEyeHeight()
 bool AEcoscapeFPPlayerCharacter::CanCrouch() const
 {
 	return !GetCharacterMovement()->bCheatFlying && Super::CanCrouch() && !MovementPtr->IsOnLadder();
+}
+
+void AEcoscapeFPPlayerCharacter::UnPossessed()
+{
+	HighlightObject(nullptr);
+	bCurrentlyPossessed = false;
 }

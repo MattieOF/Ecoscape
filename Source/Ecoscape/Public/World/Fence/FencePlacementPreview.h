@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EcoscapeTerrain.h"
+#include "World/EcoscapeTerrain.h"
 #include "GameFramework/Actor.h"
 #include "FencePlacementPreview.generated.h"
 

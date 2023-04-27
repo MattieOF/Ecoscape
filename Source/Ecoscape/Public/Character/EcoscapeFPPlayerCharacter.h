@@ -4,6 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "EcoscapeObject.h"
 
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
@@ -12,6 +13,7 @@
 
 #include "EcoscapeFPPlayerCharacter.generated.h"
 
+class UInteractableComponent;
 class USoundCue;
 class UPBMoveStepSound;
 class UEcoscapeFPPlayerMovement;
@@ -50,6 +52,8 @@ public:
 	{
 		return Cast<AEcoscapeFPPlayerCharacter>(UGameplayStatics::GetPlayerPawn(WorldContext, Index));
 	}
+	
+	virtual void Interact();
 
 private:
 
@@ -105,12 +109,22 @@ private:
 	/** defer the jump stop for a frame (for early jumps) */
 	bool bDeferJumpStop;
 
+	float InteractionRange = 200;
+
 	virtual void ApplyDamageMomentum(float DamageTaken, FDamageEvent const& DamageEvent, APawn* PawnInstigator, AActor* DamageCauser) override;
 
 	virtual void PossessedBy(AController* NewController) override;
 
+	
 protected:
 	virtual void BeginPlay() override;
+
+	UPROPERTY()
+	AEcoscapeObject* HighlightedObject;
+	UPROPERTY()
+	UInteractableComponent* CurrentInteractable;
+	void HighlightObject(AEcoscapeObject* NewObject);
+	
 public:
 	AEcoscapeFPPlayerCharacter(const FObjectInitializer& ObjectInitializer);
 
@@ -193,4 +207,8 @@ public:
 	void LookUp(bool bIsPure, float Rate);
 
 	virtual bool CanCrouch() const override;
+
+	virtual void UnPossessed() override;
+	
+	bool bCurrentlyPossessed = false;
 };
