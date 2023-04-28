@@ -68,6 +68,15 @@ public:
 	float Offset = .1f;
 };
 
+// USTRUCT(BlueprintType)
+// struct FFenceInfo
+// {
+// 	GENERATED_BODY()
+//
+// 	FVector2D Start, End;
+// 	int Step = 2;
+// };
+
 UCLASS()
 class ECOSCAPE_API AEcoscapeTerrain : public AActor
 {
@@ -86,6 +95,12 @@ public:
 
 	UPROPERTY()
 	TArray<APlacedItem*> PlacedItems;
+
+	UPROPERTY()
+	TArray<AProceduralFenceMesh*> PlacedFences;
+
+	// UPROPERTY()
+	// TArray<FFenceInfo> PlacedFenceInfo;
 
 	UPROPERTY(EditAnywhere)
 	TEnumAsByte<EFenceImpl> FenceImplementation;

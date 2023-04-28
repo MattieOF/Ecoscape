@@ -69,6 +69,10 @@ void AEcoscapeTerrain::SerialiseTerrain(FArchive& Archive)
 			Item->Destroy();
 		PlacedItems.Empty();
 
+		for (AProceduralFenceMesh* Fence : PlacedFences)
+			Fence->Destroy();
+		PlacedFences.Empty();
+
 		PlacedItems.Reserve(Count);
 
 		UEcoscapeGameInstance* GameInstance = UEcoscapeGameInstance::GetEcoscapeGameInstance(GetWorld());
@@ -91,6 +95,28 @@ void AEcoscapeTerrain::SerialiseTerrain(FArchive& Archive)
 			NewItem->SetItemData(ItemData);
 			NewItem->AssociatedTerrain = this; 
 			PlacedItems.Add(NewItem);
+		}
+	}
+
+	int FenceCount = PlacedFences.Num();
+	Archive << FenceCount;
+	if (Archive.IsSaving())
+	{
+		for (AProceduralFenceMesh* Fence : PlacedFences)
+		{
+			FVector Loc = Fence->GetActorLocation();
+			Archive << Loc;
+			Fence->SerialiseFence(Archive);
+		}
+	} else
+	{
+		for (int i = 0; i < FenceCount; i++)
+		{
+			FVector Loc;
+			Archive << Loc;
+			AProceduralFenceMesh* Fence = GetWorld()->SpawnActor<AProceduralFenceMesh>(FenceClass, Loc, FRotator::ZeroRotator);
+			Fence->SerialiseFence(Archive);
+			PlacedFences.Add(Fence);
 		}
 	}
 }
@@ -436,6 +462,8 @@ AProceduralFenceMesh* AEcoscapeTerrain::CreateFence(FVector2D Start, FVector2D E
 	
 	Fence->Regenerate();
 
+	PlacedFences.Add(Fence);
+	
 	return Fence;
 }
 
@@ -530,6 +558,9 @@ void AEcoscapeTerrain::Regenerate()
 	for (APlacedItem* Item : PlacedItems)
 		Item->Destroy();
 	PlacedItems.Empty();
+	for (AProceduralFenceMesh* Fence : PlacedFences)
+		Fence->Destroy();
+	PlacedFences.Empty();
 	GenerateVerticies();
 	GenerateIndicies();
 	GenerateNormals();

@@ -345,6 +345,8 @@ void AEcoscapeTDCharacter::UnPossessed()
 		ItemPreview->Destroy();
 		ItemPreview = nullptr;
 	}
+	if (FencePlacementPreview)
+		FencePlacementPreview->DisablePreview();
 	HighlightObject(nullptr);
 }
 

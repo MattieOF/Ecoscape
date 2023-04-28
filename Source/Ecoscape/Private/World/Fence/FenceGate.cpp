@@ -94,3 +94,22 @@ void AFenceGate::GenerateNormals()
 		Normals[i] = -Normals[i];
 	}
 }
+
+void AFenceGate::SerialiseGate(FArchive& Ar)
+{
+	Ar << Verticies;
+	Ar << Indicies;
+	Ar << Normals;
+	Ar << UV0;
+
+	Mesh->SetMaterial(0, Material);
+	Mesh->CreateMeshSection(0, Verticies, Indicies, Normals, UV0, TArray<FColor>(), TArray<FProcMeshTangent>(), true);
+
+	FVector Loc = DoorMesh->GetRelativeLocation();
+	Ar << Loc;
+	FRotator Rot = DoorMesh->GetRelativeRotation();
+	Ar << Rot;
+
+	DoorMesh->SetRelativeLocation(Loc);
+	DoorMesh->SetRelativeRotation(Rot);
+}

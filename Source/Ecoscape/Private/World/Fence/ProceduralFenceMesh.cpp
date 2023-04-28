@@ -7,6 +7,13 @@
 #include "World/EcoscapeProcMeshStatics.h"
 #include "World/Fence/FenceGate.h"
 
+FORCEINLINE FArchive& operator<<(FArchive& LHS, FProcMeshTangent& RHS)
+{
+	LHS << RHS.TangentX;
+	LHS << RHS.bFlipTangentY;
+	return LHS;
+}
+
 // Sets default values
 AProceduralFenceMesh::AProceduralFenceMesh()
 {
@@ -90,6 +97,40 @@ void AProceduralFenceMesh::Destroyed()
 	for (AFenceGate* Gate : Gates)
 		Gate->Destroy();
 	Super::Destroyed();
+}
+
+void AProceduralFenceMesh::SerialiseFence(FArchive& Ar)
+{
+	Ar << Verticies;
+	Ar << Indicies;
+	Ar << Normals;
+	Ar << UV0;
+	Ar << Tangents;
+	
+	if (Ar.IsLoading())
+		ProceduralMeshComponent->CreateMeshSection(0, Verticies, Indicies, Normals, UV0, TArray<FColor>(), Tangents, true);
+
+	int GateCount = Gates.Num();
+	Ar << GateCount;
+
+	for (int i = 0; i < GateCount; i++)
+	{
+		if (Ar.IsSaving())
+		{
+			FVector Loc = Gates[i]->GetActorLocation(); 
+			Ar << Loc;
+
+			Gates[i]->SerialiseGate(Ar);
+		} else
+		{
+			FVector Loc;
+			Ar << Loc;
+
+			AFenceGate* Gate = GetWorld()->SpawnActor<AFenceGate>(FenceGateClass, Loc, FRotator::ZeroRotator);
+			Gate->SerialiseGate(Ar);
+			Gates.Add(Gate);
+		}
+	}
 }
 
 #if WITH_EDITOR

@@ -20,6 +20,8 @@ public:
 
 	void Create(FVector Start, FVector End);
 	void GenerateNormals();
+
+	void SerialiseGate(FArchive& Ar);
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UProceduralMeshComponent* Mesh;

@@ -43,6 +43,8 @@ public:
 	TSubclassOf<AFenceGate> FenceGateClass;
 
 	virtual void Destroyed() override;
+
+	void SerialiseFence(FArchive& Ar);
 	
 #if WITH_EDITOR
 	void DrawVerticies();
