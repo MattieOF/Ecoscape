@@ -85,7 +85,6 @@ void AProceduralFenceMesh::Regenerate()
 	ProceduralMeshComponent->CreateMeshSection(0, Verticies, Indicies, Normals, UV0, TArray<FColor>(), Tangents, true);
 }
 
-#if WITH_EDITOR
 void AProceduralFenceMesh::Destroyed()
 {
 	for (AFenceGate* Gate : Gates)
@@ -93,6 +92,7 @@ void AProceduralFenceMesh::Destroyed()
 	Super::Destroyed();
 }
 
+#if WITH_EDITOR
 void AProceduralFenceMesh::DrawVerticies()
 {
 	for (int i = 0; i < Verticies.Num(); i++)
@@ -109,8 +109,6 @@ void AProceduralFenceMesh::OnConstruction(const FTransform& Transform)
 	Super::OnConstruction(Transform);
 	Regenerate();
 }
-
-
 
 void AProceduralFenceMesh::CalculateNormals()
 {
