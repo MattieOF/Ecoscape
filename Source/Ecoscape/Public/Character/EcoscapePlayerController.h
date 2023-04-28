@@ -16,7 +16,8 @@ UENUM(BlueprintType)
 enum EEcoscapePlayerView
 {
 	EPSFirstPerson   UMETA(DisplayName = "First Person"),
-	EPSTopDown       UMETA(DisplayName = "Top Down")
+	EPSTopDown       UMETA(DisplayName = "Top Down"),
+	EPSMenu          UMETA(DisplayName = "Menu")
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerViewChanged, EEcoscapePlayerView, NewView);
@@ -53,10 +54,13 @@ public:
 	void CenterMouse();
 
 	UFUNCTION(BlueprintCallable)
-	void GoToTerrain(AEcoscapeTerrain* Terrain);
+	bool GoToTerrain(AEcoscapeTerrain* Terrain);
 
 	UFUNCTION(Exec)
 	void GoToCursor();
+
+	UFUNCTION(BlueprintCallable)
+	void GoToHabitatSelect();
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE UInteractionPrompt* GetInteractionPrompt() { return InteractionPrompt; }
@@ -66,6 +70,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UInteractionPrompt> InteractionPromptClass = UInteractionPrompt::StaticClass();
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UUserWidget> HabitatSelectUIClass;
 
 	UPROPERTY(BlueprintAssignable)
 	FOnPlayerViewChanged OnPlayerViewChanged;
@@ -122,6 +129,9 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly)
 	UInteractionPrompt* InteractionPrompt;
+
+	UPROPERTY()
+	ACameraActor* HabitatCam;
 	
 private:
 	float CurrentSwitchViewCooldown = 0;

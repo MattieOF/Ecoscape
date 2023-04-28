@@ -9,6 +9,7 @@
 #include "EcoscapeGameInstance.h"
 #include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
+#include "Camera/CameraActor.h"
 #include "Kismet/GameplayStatics.h"
 
 AEcoscapePlayerController::AEcoscapePlayerController()
@@ -16,16 +17,25 @@ AEcoscapePlayerController::AEcoscapePlayerController()
 	PrimaryActorTick.bCanEverTick = true;
 }
 
-void AEcoscapePlayerController::GoToTerrain(AEcoscapeTerrain* Terrain)
+bool AEcoscapePlayerController::GoToTerrain(AEcoscapeTerrain* Terrain)
 {
 	if (!FPCharacter || !TDCharacter)
-		return;
+		return false;
+
+	if (!Terrain)
+	{
+		UE_LOG(LogEcoscape, Error, TEXT("Null terrain provided to AEcoscapePlayerController::GoToTerrain"));
+		return false;
+	}
 	
 	CurrentTerrain = Terrain;
 	FVector TerrainCenter = Terrain->GetCenterPosition();
 	FPCharacter->SetActorLocation(TerrainCenter + FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(FPCharacter)));
 	TerrainCenter.Z = TopDownSpawnHeight;
 	TDCharacter->SetActorLocation(TerrainCenter);
+	SetView(EPSFirstPerson, true, 0);
+
+	return true;
 }
 
 void AEcoscapePlayerController::GoToCursor()
@@ -44,6 +54,16 @@ void AEcoscapePlayerController::GoToCursor()
 	}
 }
 
+void AEcoscapePlayerController::GoToHabitatSelect()
+{
+	if (CurrentView == EPSMenu)
+		return;
+	
+	SetView(EPSMenu, false);
+	SetViewTarget(HabitatCam);
+	CreateWidget(this, HabitatSelectUIClass)->AddToViewport();
+}
+
 void AEcoscapePlayerController::BeginPlay()
 {
 	Super::BeginPlay();
@@ -56,8 +76,13 @@ void AEcoscapePlayerController::BeginPlay()
 	TDCharacter = GetWorld()->SpawnActor<AEcoscapeTDCharacter>(TopDownCharacterClass, FVector(0, 0, TopDownSpawnHeight), FRotator::ZeroRotator);
 	GoToTerrain(UEcoscapeGameInstance::GetEcoscapeGameInstance(GetWorld())->GetTerrain("Forest"));
 
-	// Switch the view.
-	SetView(EPSFirstPerson, true);
+	// Get habitat cam
+	TArray<AActor*> HabitatCams;
+	UGameplayStatics::GetAllActorsOfClassWithTag(GetWorld(), ACameraActor::StaticClass(), "HabitatCam", HabitatCams);
+	HabitatCam = Cast<ACameraActor>(HabitatCams[0]);
+	
+	// Go to habitat select for now
+	GoToHabitatSelect();
 
 	// Setup input
 	InputComponent->BindAxis("MoveForward", this, &AEcoscapePlayerController::OnMoveForward);
@@ -77,25 +102,38 @@ void AEcoscapePlayerController::BeginPlay()
 	InputComponent->BindAction("Interact", IE_Pressed, this, &AEcoscapePlayerController::OnInteract);
 	InputComponent->BindAction("UseAltTool", IE_Pressed, this, &AEcoscapePlayerController::OnUseAltTool);
 	InputComponent->BindAction("ResetTool", IE_Pressed, this, &AEcoscapePlayerController::OnResetTool);
+	InputComponent->BindAction("HabitatSelect", IE_Pressed, this, &AEcoscapePlayerController::GoToHabitatSelect);
 }
 
 void AEcoscapePlayerController::OnMoveForward(const float Value)
 {
+	if (CurrentView == EPSMenu)
+		return;
+	
 	CurrentPawn->AddMovementInput(CurrentView == EPSFirstPerson ? CurrentPawn->GetActorForwardVector() : FVector::ForwardVector, bModifierPressed ? Value * SprintSpeedModifier : Value);
 }
 
 void AEcoscapePlayerController::OnMoveRight(const float Value)
 {
+	if (CurrentView == EPSMenu)
+		return;
+	
 	CurrentPawn->AddMovementInput(CurrentView == EPSFirstPerson ? CurrentPawn->GetActorRightVector() : FVector::RightVector, bModifierPressed ? Value * SprintSpeedModifier : Value);
 }	
 
 void AEcoscapePlayerController::OnLookUp(const float Value)
 {
+	if (CurrentView == EPSMenu)
+		return;
+	
 	CurrentPawn->AddControllerPitchInput(Value);
 }
 
 void AEcoscapePlayerController::OnTurn(const float Value)
 {
+	if (CurrentView == EPSMenu)
+		return;
+	
 	CurrentPawn->AddControllerYawInput(Value);
 }
 
@@ -141,6 +179,9 @@ void AEcoscapePlayerController::OnModifierReleased()
 
 void AEcoscapePlayerController::OnSwitchView()
 {
+	if (CurrentView == EPSMenu) // Don't switch if in the menu, some button will do that for us
+		return;
+	
 	if (CurrentSwitchViewCooldown > 0)
 		return;
 	
@@ -179,18 +220,21 @@ void AEcoscapePlayerController::SetView(const EEcoscapePlayerView NewView, const
 	APawn* PreviousPawn = CurrentPawn;
 	CurrentView = NewView;
 
-	// Possess pawn
-	if (CurrentView == EPSFirstPerson)
-		Possess(FPCharacter);
-	else if (CurrentView == EPSTopDown)
-		Possess(TDCharacter);
-	else
-		UE_LOG(LogEcoscape, Error, TEXT("Invalid player view: %i!"), static_cast<int>(CurrentView));
+	if (NewView != EPSMenu)
+	{
+		// Possess pawn
+		if (CurrentView == EPSFirstPerson)
+			Possess(FPCharacter);
+		else if (CurrentView == EPSTopDown)
+			Possess(TDCharacter);
+		else
+			UE_LOG(LogEcoscape, Error, TEXT("Invalid player view: %i!"), static_cast<int>(CurrentView));
 
-	// Update view target
-	CurrentPawn = GetPawn();
-	SetViewTarget(PreviousPawn);
-	SetViewTargetWithBlend(CurrentPawn, BlendTime, VTBlend_Cubic, 2, true);
+		// Update view target
+		CurrentPawn = GetPawn();
+		SetViewTarget(PreviousPawn);
+		SetViewTargetWithBlend(CurrentPawn, BlendTime, VTBlend_Cubic, 2, true);
+	}
 
 	// Call blueprint events
 	OnPlayerViewChanged.Broadcast(NewView);
