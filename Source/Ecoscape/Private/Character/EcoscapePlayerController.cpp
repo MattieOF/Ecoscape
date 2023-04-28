@@ -10,6 +10,7 @@
 #include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
 #include "Camera/CameraActor.h"
+#include "Components/AudioComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 AEcoscapePlayerController::AEcoscapePlayerController()
@@ -62,6 +63,21 @@ void AEcoscapePlayerController::GoToHabitatSelect()
 	SetView(EPSMenu, false);
 	SetViewTarget(HabitatCam);
 	CreateWidget(this, HabitatSelectUIClass)->AddToViewport();
+}
+
+void AEcoscapePlayerController::PlayMusic(USoundWave* NewMusic)
+{
+	if (CurrentMusic)
+	{
+		CurrentMusic->FadeOut(1.5f, 0);
+		FadingMusic.Add({CurrentMusic, 1.5f});
+	}
+
+	CurrentMusic = Cast<UAudioComponent>(AddComponentByClass(UAudioComponent::StaticClass(), false, FTransform(), false));
+	CurrentMusic->SetSound(NewMusic);
+	CurrentMusic->bAllowSpatialization = false;
+	CurrentMusic->Play();
+	CurrentMusic->FadeIn(1.3f);
 }
 
 void AEcoscapePlayerController::BeginPlay()
@@ -267,4 +283,15 @@ void AEcoscapePlayerController::Tick(const float DeltaTime)
 	// Tick cooldowns
 	if (CurrentSwitchViewCooldown > 0)
 		CurrentSwitchViewCooldown = FMath::Max(CurrentSwitchViewCooldown - DeltaTime, 0);
+
+	// Check for music
+	for (int i = FadingMusic.Num(); i--;)
+	{
+		FadingMusic[i].RemainingTime -= DeltaTime;
+		if (FadingMusic[i].RemainingTime <= 0)
+		{
+			FadingMusic[i].AudioComponent->DestroyComponent();
+			FadingMusic.RemoveAt(i);
+		}
+	}
 }

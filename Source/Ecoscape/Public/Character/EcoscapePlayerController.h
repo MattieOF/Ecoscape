@@ -20,6 +20,17 @@ enum EEcoscapePlayerView
 	EPSMenu          UMETA(DisplayName = "Menu")
 };
 
+USTRUCT()
+struct FFadingMusic
+{
+	GENERATED_BODY()
+	
+	UPROPERTY()
+	UAudioComponent* AudioComponent;
+	UPROPERTY()
+	float RemainingTime = 0;
+};
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerViewChanged, EEcoscapePlayerView, NewView);
 
 UCLASS()
@@ -61,6 +72,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void GoToHabitatSelect();
+
+	UFUNCTION(BlueprintCallable)
+	void PlayMusic(USoundWave* NewMusic);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE UInteractionPrompt* GetInteractionPrompt() { return InteractionPrompt; }
@@ -132,6 +146,12 @@ protected:
 
 	UPROPERTY()
 	ACameraActor* HabitatCam;
+
+	UPROPERTY()
+	TArray<FFadingMusic> FadingMusic;
+	
+	UPROPERTY()
+	UAudioComponent* CurrentMusic;
 	
 private:
 	float CurrentSwitchViewCooldown = 0;
