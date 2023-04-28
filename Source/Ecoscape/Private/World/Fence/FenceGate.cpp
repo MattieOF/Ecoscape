@@ -66,9 +66,10 @@ void AFenceGate::Create(FVector Start, FVector End)
 	DefaultRotation.Pitch = 0;
 	DefaultRotation.Roll = 0;
 	DoorMesh->SetRelativeRotation(DefaultRotation);
-	
-	UEcoscapeProcMeshStatics::AddCuboid(Verticies, Indicies, UV0, Normals, TempTangents, End1 + FVector(0, 0, 90), FVector(10, 10, 140), true, FVector2D(0.1, 0.03));
-	UEcoscapeProcMeshStatics::AddCuboid(Verticies, Indicies, UV0, Normals, TempTangents, Start2 + FVector(0, 0, 90), FVector(10, 10, 140), true, FVector2D(0.1, 0.03));
+
+	float PoleZ = End1.Z < Start2.Z ? End1.Z : Start2.Z;
+	UEcoscapeProcMeshStatics::AddCuboid(Verticies, Indicies, UV0, Normals, TempTangents, FVector(End1.X, End1.Y, PoleZ) + FVector(0, 0, 90), FVector(10, 10, 160), true, FVector2D(0.1, 0.03));
+	UEcoscapeProcMeshStatics::AddCuboid(Verticies, Indicies, UV0, Normals, TempTangents, FVector(Start2.X, Start2.Y, PoleZ) + FVector(0, 0, 90), FVector(10, 10, 160), true, FVector2D(0.1, 0.03));
 	
 	GenerateNormals();
 	
@@ -112,4 +113,5 @@ void AFenceGate::SerialiseGate(FArchive& Ar)
 
 	DoorMesh->SetRelativeLocation(Loc);
 	DoorMesh->SetRelativeRotation(Rot);
+	DefaultRotation = Rot;
 }

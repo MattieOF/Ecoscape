@@ -82,24 +82,18 @@ void AEcoscapePlayerController::PlayMusic(USoundWave* NewMusic)
 
 void AEcoscapePlayerController::BeginPlay()
 {
-	Super::BeginPlay();
-
 	InteractionPrompt = CreateWidget<UInteractionPrompt>(this, InteractionPromptClass);
 	InteractionPrompt->AddToViewport();
 	
 	// Get character
 	FPCharacter = Cast<AEcoscapeFPPlayerCharacter>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
 	TDCharacter = GetWorld()->SpawnActor<AEcoscapeTDCharacter>(TopDownCharacterClass, FVector(0, 0, TopDownSpawnHeight), FRotator::ZeroRotator);
-	GoToTerrain(UEcoscapeGameInstance::GetEcoscapeGameInstance(GetWorld())->GetTerrain("Forest"));
 
 	// Get habitat cam
 	TArray<AActor*> HabitatCams;
 	UGameplayStatics::GetAllActorsOfClassWithTag(GetWorld(), ACameraActor::StaticClass(), "HabitatCam", HabitatCams);
 	HabitatCam = Cast<ACameraActor>(HabitatCams[0]);
 	
-	// Go to habitat select for now
-	GoToHabitatSelect();
-
 	// Setup input
 	InputComponent->BindAxis("MoveForward", this, &AEcoscapePlayerController::OnMoveForward);
 	InputComponent->BindAxis("MoveRight", this, &AEcoscapePlayerController::OnMoveRight);
@@ -119,6 +113,13 @@ void AEcoscapePlayerController::BeginPlay()
 	InputComponent->BindAction("UseAltTool", IE_Pressed, this, &AEcoscapePlayerController::OnUseAltTool);
 	InputComponent->BindAction("ResetTool", IE_Pressed, this, &AEcoscapePlayerController::OnResetTool);
 	InputComponent->BindAction("HabitatSelect", IE_Pressed, this, &AEcoscapePlayerController::GoToHabitatSelect);
+	
+	Super::BeginPlay();
+	
+	// Go to habitat select for now
+	// Init to forest habitat
+	GoToTerrain(UEcoscapeGameInstance::GetEcoscapeGameInstance(GetWorld())->GetTerrain("Forest"));
+	GoToHabitatSelect();
 }
 
 void AEcoscapePlayerController::OnMoveForward(const float Value)

@@ -5,6 +5,7 @@
 #include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
 #include "Character/EcoscapePlayerController.h"
+#include "Net/NetworkProfiler.h"
 #include "World/EcoscapeTerrain.h"
 #include "World/Fence/FencePlacementPreview.h"
 #include "World/PlacedItem.h"
@@ -21,20 +22,20 @@ AEcoscapeTDCharacter::AEcoscapeTDCharacter()
 
 void AEcoscapeTDCharacter::SetCurrentTool(EEcoscapeTool NewTool)
 {
-	CurrentTool = NewTool;
-
 	// Create or destroy item preview
-	if (CurrentTool != ETPlaceObjects && ItemPreview)
+	if (NewTool != ETPlaceObjects && ItemPreview)
 	{
 		ItemPreview->Destroy();
 		ItemPreview = nullptr;
-	} else if (CurrentTool == ETPlaceObjects)
-	{
+	} else if (NewTool == ETPlaceObjects)
 		SetItemPreview(TestItem);
-	}
+	else if (NewTool != ETPlaceFence)
+		FencePlacementPreview->DisablePreview();
 
-	if (NewTool == ETPlaceFence)
+	if (CurrentTool != ETPlaceFence)
 		FencePlacementStage = EFPNone;
+	
+	CurrentTool = NewTool;
 
 	HighlightObject(nullptr);
 }
@@ -124,9 +125,11 @@ void AEcoscapeTDCharacter::OnToolUsed()
 				HighlightObject(nullptr);
 			} else if (AProceduralFenceMesh* Fence = Cast<AProceduralFenceMesh>(HighlightedObject))
 			{
-				// TODO: Remove from saved fences
 				if (!Fence->bDestroyable)
 					return;
+
+				if (Fence->AssociatedTerrain)
+					Fence->AssociatedTerrain->PlacedFences.Remove(Fence);
 				
 				Fence->Destroy();
 				HighlightObject(nullptr);
@@ -347,6 +350,7 @@ void AEcoscapeTDCharacter::UnPossessed()
 	}
 	if (FencePlacementPreview)
 		FencePlacementPreview->DisablePreview();
+	FencePlacementStage = EFPNone;
 	HighlightObject(nullptr);
 }
 
@@ -365,7 +369,7 @@ void AEcoscapeTDCharacter::HighlightObject(AEcoscapeObject* Object)
 	if (HighlightedObject)
 		HighlightedObject->Outline->HideOutline();
 	HighlightedObject = Object;
-	if (HighlightedObject)
+	if (HighlightedObject && HighlightedObject->Outline)
 		HighlightedObject->Outline->ShowOutline();
 }
 
