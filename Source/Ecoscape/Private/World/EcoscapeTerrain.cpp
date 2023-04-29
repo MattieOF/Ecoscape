@@ -7,6 +7,7 @@
 #include "EcoscapeStatics.h"
 #include "EcoscapeStats.h"
 #include "KismetProceduralMeshLibrary.h"
+#include "Misc/FileHelper.h"
 #include "Serialization/BufferArchive.h"
 #include "World/FastNoise.h"
 #include "World/Fence/Fence.h"

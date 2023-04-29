@@ -15,6 +15,7 @@
 
 #include "../../Public/Character/EcoscapeFPPlayerMovement.h"
 #include "Character/EcoscapePlayerController.h"
+#include "GameFramework/DamageType.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "World/InteractableComponent.h"
 

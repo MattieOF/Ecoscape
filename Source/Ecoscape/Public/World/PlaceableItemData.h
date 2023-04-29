@@ -18,12 +18,23 @@ class ECOSCAPE_API UPlaceableItemData : public UDataAsset
 
 public:
 	UPlaceableItemData();
+
+#if WITH_EDITOR
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Icon")
+	void CreateIcon();
+#endif
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Basic Details")
 	FText Name;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(MultiLine=true), Category="Basic Details")
 	FText Description;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Icon")
+	UTexture2D* Icon;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Icon")
+	float IconFOV = 70;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
 	UStaticMesh* Mesh;

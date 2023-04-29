@@ -4,6 +4,7 @@
 
 #include "ProceduralMeshComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "UObject/ConstructorHelpers.h"
 #include "World/EcoscapeProcMeshStatics.h"
 #include "World/InteractableComponent.h"
 

@@ -9,6 +9,6 @@ public class EcoscapeEditorTarget : TargetRules
 	{
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
-		ExtraModuleNames.AddRange( new string[] { "Ecoscape" } );
+		ExtraModuleNames.AddRange( new string[] { "Ecoscape", "EcoscapeEditor" } );
 	}
 }

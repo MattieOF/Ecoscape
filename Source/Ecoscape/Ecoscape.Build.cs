@@ -10,5 +10,8 @@ public class Ecoscape : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "PhysicsCore", "UMG" });
 		PrivateDependencyModuleNames.AddRange(new string[] { "ProceduralMeshComponent", "GeometryFramework", "GeometryScriptingCore" });
+		
+		if (Target.bBuildEditor) 
+			PublicDependencyModuleNames.Add("UnrealEd");
 	}
 }

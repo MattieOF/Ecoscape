@@ -4,6 +4,7 @@
 
 #include "EcoscapeStatics.h"
 #include "KismetProceduralMeshLibrary.h"
+#include "UObject/ConstructorHelpers.h"
 #include "World/EcoscapeProcMeshStatics.h"
 #include "World/Fence/FenceGate.h"
 

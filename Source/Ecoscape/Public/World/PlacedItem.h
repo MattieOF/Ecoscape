@@ -31,6 +31,9 @@ public:
 	UPROPERTY()
 	AEcoscapeTerrain* AssociatedTerrain;
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE UStaticMeshComponent* GetMesh() { return MainMesh; }
+
 protected:
 	virtual void BeginPlay() override;
 
