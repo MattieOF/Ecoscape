@@ -35,6 +35,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Icon")
 	float IconFOV = 70;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Icon")
+	int32 IconSize = 512;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
 	UStaticMesh* Mesh;

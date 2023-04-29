@@ -55,8 +55,7 @@ void UPlaceableItemData::CreateIcon()
 	UTextureRenderTarget2D* RenderTarget = NewObject<UTextureRenderTarget2D>();
 	RenderTarget->AddToRoot(); // Prevent GC while working
 	RenderTarget->ClearColor = FLinearColor::Black;
-	constexpr int32 Size = 1024;
-	RenderTarget->InitAutoFormat(Size, Size);
+	RenderTarget->InitAutoFormat(IconSize, IconSize);
 	SceneCapture->GetCaptureComponent2D()->TextureTarget = RenderTarget;
 	
 	SceneCapture->GetCaptureComponent2D()->CaptureScene();
