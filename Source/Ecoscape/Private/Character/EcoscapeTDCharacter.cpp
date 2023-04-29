@@ -305,7 +305,8 @@ void AEcoscapeTDCharacter::Tick(float DeltaSeconds)
 					{
 						auto XY = Terrain->GetVertexXY(Terrain->GetClosestVertex(Hit.ImpactPoint));
 						auto Pos = Terrain->GetVertexPositionWorld(Terrain->GetVertexIndex(XY.X, XY.Y));
-						DrawDebugSphere(GetWorld(), Pos, 20, 6, FColor::Red);
+						if (bDrawDebug)
+							DrawDebugSphere(GetWorld(), Pos, 20, 6, FColor::Red);
 						
 						FencePlacementPreview->UpdatePreview(Terrain->GetVertexXY(Terrain->GetClosestVertex(Hit.ImpactPoint)));
 					}
