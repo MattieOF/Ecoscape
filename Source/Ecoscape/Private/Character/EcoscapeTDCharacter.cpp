@@ -386,7 +386,7 @@ void AEcoscapeTDCharacter::CheckHoveredObject()
 
 void AEcoscapeTDCharacter::HighlightObject(AEcoscapeObject* Object)
 {
-	if (HighlightedObject)
+	if (HighlightedObject && HighlightedObject->Outline)
 		HighlightedObject->Outline->HideOutline();
 	HighlightedObject = Object;
 	if (HighlightedObject && HighlightedObject->Outline)
