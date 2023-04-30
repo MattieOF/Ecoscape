@@ -70,6 +70,7 @@ void UPlaceableItemData::CreateIcon()
 	SceneCapture->GetCaptureComponent2D()->bCaptureEveryFrame = false;
 	SceneCapture->GetCaptureComponent2D()->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
 	SceneCapture->GetCaptureComponent2D()->FOVAngle = IconFOV;
+	SceneCapture->GetCaptureComponent2D()->ShowFlags.SetAtmosphere(false);
 
 	// Create the placed item and add it to the capture's show list
 	APlacedItem* Item = APlacedItem::SpawnItem(EditorWorld, this, FVector(0, 0, 0), FVector::OneVector, IconObjectRotation);
