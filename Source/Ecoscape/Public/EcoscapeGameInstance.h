@@ -15,6 +15,7 @@ class UItemFolder : public UObject
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(BlueprintReadOnly)
 	FText Name;
 
 	UPROPERTY(BlueprintReadOnly)

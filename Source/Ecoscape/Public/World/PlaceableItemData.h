@@ -12,7 +12,7 @@ class APlacedItem;
 /**
  * Data for a placeable item
  */
-UCLASS()
+UCLASS(BlueprintType)
 class ECOSCAPE_API UPlaceableItemData : public UDataAsset
 {
 	GENERATED_BODY()
