@@ -46,7 +46,9 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	UItemFolder* RootFolder;
 
+	UFUNCTION(BlueprintCallable)
 	void AddItem(UPlaceableItemData* Item);
+	UFUNCTION(BlueprintCallable)
 	void Empty();
 };
 
