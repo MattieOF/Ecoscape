@@ -187,4 +187,6 @@ public:
     
 		return NonCollinear;
 	}
+
+	static FString JoinStringArray(const TArray<FString>& Array, const FString& Joiner);
 };

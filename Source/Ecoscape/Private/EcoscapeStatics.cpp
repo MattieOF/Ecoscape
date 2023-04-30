@@ -127,3 +127,17 @@ void UEcoscapeStatics::SetOutlinesEnabled(UObject* WorldContext, bool NewOutline
 	if (const auto OutlineVolume = GetFirstActorWithTag(WorldContext, OutlineVolumeTag))
 		Cast<APostProcessVolume>(OutlineVolume)->bEnabled = NewOutlinesEnabled;
 }
+
+FString UEcoscapeStatics::JoinStringArray(const TArray<FString>& Array, const FString& Joiner)
+{
+	FString Output;
+
+	for (int i = 0; i < Array.Num(); i++)
+	{
+		Output += Array[i];
+		if (i != Array.Num() - 1)
+			Output += Joiner;
+	}
+	
+	return Output;
+}

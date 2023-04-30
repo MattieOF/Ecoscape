@@ -13,7 +13,7 @@ public:
 
 private:
 	void AddMenuEntries(FMenuBuilder& MenuBuilder);
-	void GenIcons();
+	void GeneratePlaceableData();
 	void RefreshItemDir();
 
 };

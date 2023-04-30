@@ -86,7 +86,7 @@ public:
 	AEcoscapeTerrain();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FString DebugName = "Terrain";
+	FString TerrainName = "Terrain";
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FColor DirtColour  = FColor(64,41,5, 255);

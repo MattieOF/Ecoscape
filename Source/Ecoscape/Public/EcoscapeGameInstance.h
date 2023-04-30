@@ -21,6 +21,17 @@ public:
 	TMap<FString, UItemFolder*> Folders;
 	UPROPERTY(BlueprintReadOnly)
 	TArray<UPlaceableItemData*> Items;
+
+	UPROPERTY(BlueprintReadOnly)
+	TArray<FString> ValidTerrains;
+
+	UPROPERTY(BlueprintReadOnly)
+	bool bValidForAllTerrains = false;
+
+	void GenValidTerrains();
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE bool IsValidForTerrain(const FString& TerrainName) const { return bValidForAllTerrains || ValidTerrains.Contains(TerrainName); }
 };
 
 UCLASS(BlueprintType)

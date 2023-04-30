@@ -8,7 +8,9 @@
 #include "EcoscapeLog.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Engine/TextureRenderTarget2D.h"
+#include "Kismet/KismetStringLibrary.h"
 #include "UObject/SavePackage.h"
+#include "World/EcoscapeTerrain.h"
 #include "World/PlacedItem.h"
 
 #if WITH_EDITOR
@@ -20,6 +22,14 @@
 UPlaceableItemData::UPlaceableItemData()
 {
 	ColourRangeSquared = ColourRange * ColourRange;
+	CreateValidTerrainsArray();
+}
+
+UPlaceableItemData::UPlaceableItemData(FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+	ColourRangeSquared = ColourRange * ColourRange;
+	CreateValidTerrainsArray();
 }
 
 #if WITH_EDITOR
@@ -129,7 +139,35 @@ void UPlaceableItemData::CreateIcon()
 	Item->Destroy();
 	SceneCapture->Destroy();
 }
+
+void UPlaceableItemData::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	CreateValidTerrainsArray();	
+}
 #endif
+
+void UPlaceableItemData::CreateValidTerrainsArray()
+{
+	if (ValidTerrains == "All")
+	{
+		ValidTerrainsArray.Empty();
+		return;
+	}
+	
+	ValidTerrainsArray = UKismetStringLibrary::ParseIntoArray(ValidTerrains,  ";");
+}
+
+bool UPlaceableItemData::IsValidForTerrain(AEcoscapeTerrain* Terrain)
+{
+	return IsValidForTerrainName(Terrain->TerrainName);
+}
+
+bool UPlaceableItemData::IsValidForTerrainName(FString TerrainName)
+{
+	return ValidTerrains == "All" || ValidTerrainsArray.Contains("TerrainName");
+}
 
 UPlaceableItemData* UItemDataList::GetRandomItem()
 {

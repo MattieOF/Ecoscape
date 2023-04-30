@@ -3,6 +3,7 @@
 #include "EcoscapeGameInstance.h"
 
 #include "EcoscapeLog.h"
+#include "EcoscapeStatics.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Character/EcoscapePlayerController.h"
 #include "Kismet/KismetStringLibrary.h"
@@ -51,7 +52,7 @@ AEcoscapeTerrain* UEcoscapeGameInstance::GetTerrain(FString TerrainName)
 	for (AActor* TerrainActor : Terrains)
 	{
 		AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(TerrainActor);
-		if (Terrain->DebugName == TerrainName)
+		if (Terrain->TerrainName == TerrainName)
 			return Terrain;
 	}
 	
@@ -67,7 +68,7 @@ void UEcoscapeGameInstance::SaveTerrain(const FString& TerrainName, const FStrin
 	for (AActor* TerrainActor : Terrains)
 	{
 		AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(TerrainActor);
-		if (Terrain->DebugName != TerrainName)
+		if (Terrain->TerrainName != TerrainName)
 			continue;
 		Terrain->SerialiseTerrainToFile(Filename);
 		UE_LOG(LogEcoscape, Log, TEXT("Saved terrain %s to %s"), *TerrainName, *Filename);
@@ -82,7 +83,7 @@ void UEcoscapeGameInstance::LoadTerrain(const FString& TerrainName, const FStrin
 	for (AActor* TerrainActor : Terrains)
 	{
 		AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(TerrainActor);
-		if (Terrain->DebugName != TerrainName)
+		if (Terrain->TerrainName != TerrainName)
 			continue;
 		Terrain->DeserialiseTerrainFromFile(Filename);
 		AEcoscapePlayerController* Player = AEcoscapePlayerController::GetEcoscapePlayerController(GetWorld());
@@ -100,7 +101,7 @@ void UEcoscapeGameInstance::RegenerateTerrain(const FString& TerrainName) const
 	for (AActor* TerrainActor : Terrains)
 	{
 		AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(TerrainActor);
-		if (Terrain->DebugName != TerrainName)
+		if (Terrain->TerrainName != TerrainName)
 			continue;
 		Terrain->Regenerate();
 		AEcoscapePlayerController* Player = AEcoscapePlayerController::GetEcoscapePlayerController(GetWorld());
@@ -112,6 +113,8 @@ void UEcoscapeGameInstance::RegenerateTerrain(const FString& TerrainName) const
 
 void UEcoscapeGameInstance::GenerateItemDirectory()
 {
+	const double Start = FPlatformTime::Seconds();
+	
 	// Initialise item directory
 	if (ItemDirectory)
 		ItemDirectory->Empty();
@@ -120,6 +123,11 @@ void UEcoscapeGameInstance::GenerateItemDirectory()
 	
 	for (const auto& Item : ItemTypes)
 		ItemDirectory->AddItem(Item.Value);
+
+	ItemDirectory->RootFolder->GenValidTerrains();
+
+	const double End = FPlatformTime::Seconds();
+	UE_LOG(LogEcoscape, Log, TEXT("Took %fs to generate item directory"), End - Start);
 }
 
 void UEcoscapeGameInstance::PrintItemDirectory()
@@ -140,7 +148,11 @@ void UEcoscapeGameInstance::AddWithIndent(FString& Output, FString Message, int 
 
 void UEcoscapeGameInstance::SearchItemDirFolder(UItemFolder* Folder, FString& Output, int Level)
 {
-	AddWithIndent(Output, Folder->Name.ToString(), Level);
+	AddWithIndent(Output, FString::Printf(TEXT("%s - Valid for %s"), *Folder->Name.ToString(),
+	                                      Folder->bValidForAllTerrains
+		                                      ? *FString("all")
+		                                      : *UEcoscapeStatics::JoinStringArray(Folder->ValidTerrains, ", ")),
+	              Level);
 
 	if (Folder->Folders.Num() == 0 && Folder->Items.Num() == 0)
 	{
@@ -152,7 +164,44 @@ void UEcoscapeGameInstance::SearchItemDirFolder(UItemFolder* Folder, FString& Ou
 		SearchItemDirFolder(NestedFolder.Value, Output, Level + 1);
 
 	for (const UPlaceableItemData* Item : Folder->Items)
-		AddWithIndent(Output, FString::Printf(TEXT("%ls (%ls)"), *Item->Name.ToString(), *Item->GetName()), Level + 1);
+		AddWithIndent(Output, FString::Printf(
+			              TEXT("%ls (%ls) - Valid for %s"), *Item->Name.ToString(), *Item->GetName(),
+			              Item->ValidTerrains == "All"
+				              ? *FString("all")
+				              : *UEcoscapeStatics::JoinStringArray(Item->ValidTerrainsArray, ", ")), Level + 1);
+}
+
+void UItemFolder::GenValidTerrains()
+{
+	// Recursive method. Sucks, but only on init, so probably ok.
+
+	for (const auto& Folder : Folders)
+	{
+		Folder.Value->GenValidTerrains();
+		
+		if (Folder.Value->bValidForAllTerrains)
+		{
+			bValidForAllTerrains = true;
+			return;
+		}
+
+		for (const auto& TerrainName : Folder.Value->ValidTerrains)
+			if (!ValidTerrains.Contains(TerrainName))
+				ValidTerrains.Add(TerrainName);
+	}
+
+	for (const auto Item : Items)
+	{
+		if (Item->ValidTerrains == "All")
+		{
+			bValidForAllTerrains = true;
+			return;	
+		}
+
+		for (const auto& TerrainName : Item->ValidTerrainsArray)
+			if (!ValidTerrains.Contains(TerrainName))
+				ValidTerrains.Add(TerrainName);
+	}
 }
 
 UItemDirectory::UItemDirectory()

@@ -6,6 +6,7 @@
 #include "Engine/DataAsset.h"
 #include "PlaceableItemData.generated.h"
 
+class AEcoscapeTerrain;
 class APlacedItem;
 
 /**
@@ -18,11 +19,21 @@ class ECOSCAPE_API UPlaceableItemData : public UDataAsset
 
 public:
 	UPlaceableItemData();
+	UPlaceableItemData(FObjectInitializer& ObjectInitializer);
 
 #if WITH_EDITOR
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Icon")
 	void CreateIcon();
+
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
+
+	void CreateValidTerrainsArray();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE bool IsValidForTerrain(AEcoscapeTerrain* Terrain);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE bool IsValidForTerrainName(FString TerrainName);
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Basic Details")
 	FText Name;
@@ -33,9 +44,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Basic Details")
 	FString Categorisation = "";
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Basic Details")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
 	// Either "All" or semi-colon seperated valid terrains
 	FString ValidTerrains = "All";
+
+	UPROPERTY(BlueprintReadOnly, Category="Placement")
+	TArray<FString> ValidTerrainsArray;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Icon")
 	UTexture2D* Icon;
