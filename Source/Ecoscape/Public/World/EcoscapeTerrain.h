@@ -118,6 +118,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FVector GetCenterPosition();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	void GetXYBounds(FVector2D& Min, FVector2D& Max);
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int GetClosestVertex(FVector Position);

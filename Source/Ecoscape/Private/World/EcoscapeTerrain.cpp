@@ -412,6 +412,14 @@ FVector AEcoscapeTerrain::GetCenterPosition()
 	return Hit.ImpactPoint;
 }
 
+void AEcoscapeTerrain::GetXYBounds(FVector2D& Min, FVector2D& Max)
+{
+	FVector Loc = GetActorLocation();
+	Min = FVector2D(Loc.X, Loc.Y);
+	Loc += FVector(Width * Scale, Height * Scale, 0);
+	Max = FVector2D(Loc.X, Loc.Y);
+}
+
 int AEcoscapeTerrain::GetClosestVertex(FVector Position)
 {
 	SCOPE_CYCLE_COUNTER(STAT_GetNearestVert);

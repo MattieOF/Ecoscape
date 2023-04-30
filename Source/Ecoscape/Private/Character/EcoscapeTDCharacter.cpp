@@ -50,6 +50,14 @@ void AEcoscapeTDCharacter::SetCurrentTool(EEcoscapeTool NewTool)
 void AEcoscapeTDCharacter::AddMovementInput(FVector WorldDirection, float ScaleValue, bool bForce)
 {
 	AddActorWorldOffset(WorldDirection * ScaleValue * Speed);
+
+	if (AEcoscapeTerrain* Terrain = EcoscapePlayerController->GetCurrentTerrain())
+	{
+		const FVector Loc = GetActorLocation();
+		FVector2D Min, Max;
+		Terrain->GetXYBounds(Min, Max); // TODO: Cache?
+		SetActorLocation(FVector(FMath::Clamp(Loc.X, Min.X, Max.X), FMath::Clamp(Loc.Y, Min.Y, Max.Y), Loc.Z));
+	}
 }
 
 void AEcoscapeTDCharacter::OnToolUsed()
