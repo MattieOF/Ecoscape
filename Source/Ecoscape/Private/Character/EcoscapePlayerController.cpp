@@ -12,6 +12,7 @@
 #include "Camera/CameraActor.h"
 #include "Components/AudioComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "World/EcoscapeTerrain.h"
 
 AEcoscapePlayerController::AEcoscapePlayerController()
 {

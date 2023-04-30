@@ -5,7 +5,6 @@
 #include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
 #include "Character/EcoscapePlayerController.h"
-#include "Net/NetworkProfiler.h"
 #include "World/EcoscapeTerrain.h"
 #include "World/Fence/FencePlacementPreview.h"
 #include "World/PlacedItem.h"
@@ -255,25 +254,6 @@ void AEcoscapeTDCharacter::Tick(float DeltaSeconds)
 			Location.Z += -Diff * 10.f * DeltaSeconds;
 		SetActorLocation(Location);	
 	}
-
-#if 0
-	{
-		FHitResult Hit;
-		const TArray<AActor*> IgnoredActors;
-		if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, IgnoredActors))
-		{
-			if (AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(Hit.GetActor()))
-			{
-				TArray<int> Indicies = Terrain->GetVerticiesInSphere(Hit.ImpactPoint, 800);
-				for (int i : Indicies)
-				{
-					FVector VertexPos = Terrain->GetVertexPositionWorld(i);
-					DrawDebugSphere(GetWorld(), VertexPos, 20, 6, FColor::Red);
-				}
-			}
-		}
-	}
-#endif
 
 	// Do tool logic
 	switch (CurrentTool)

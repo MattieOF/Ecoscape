@@ -62,7 +62,7 @@ void UPlaceableItemData::CreateIcon()
 	SceneCapture->GetCaptureComponent2D()->FOVAngle = IconFOV;
 
 	// Create the placed item and add it to the capture's show list
-	APlacedItem* Item = APlacedItem::SpawnItem(EditorWorld, this, FVector(0, 0, 0));
+	APlacedItem* Item = APlacedItem::SpawnItem(EditorWorld, this, FVector(0, 0, 0), FVector::OneVector, IconObjectRotation);
 	if (!Item)
 	{
 		UE_LOG(LogEcoscape, Error, TEXT("While generating icon for %s, failed to spawn it's respective APlacedItem!"), *GetName());
@@ -77,6 +77,7 @@ void UPlaceableItemData::CreateIcon()
 	const float Distance = (Extent.GetMax() / FMath::Tan(FMath::DegreesToRadians(IconFOV) * 0.5f)) + 150; // Add 150 as this math isn't perfect usually
 	const FVector NewLocation = Bounds.Origin - SceneCapture->GetActorForwardVector() * Distance;
 	SceneCapture->SetActorLocation(NewLocation);
+	SceneCapture->AddActorWorldOffset(IconCameraOffset);
 
 	// Setup render target
 	UTextureRenderTarget2D* RenderTarget = NewObject<UTextureRenderTarget2D>();

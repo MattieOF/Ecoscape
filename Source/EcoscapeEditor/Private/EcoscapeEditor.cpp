@@ -1,5 +1,6 @@
 #include "EcoscapeEditor.h"
 
+#include "EcoscapeGameInstance.h"
 #include "LevelEditor.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Modules/ModuleManager.h"
@@ -39,6 +40,10 @@ void FEcoscapeEditorModule::AddMenuEntries(FMenuBuilder& MenuBuilder)
 			LOCTEXT("EcoscapeTool_GenIcons_Desc", "Generate icons for all placeable item types"),
 			FSlateIconFinder::FindIcon("ClassIcon.Texture2D"),
 			FUIAction(FExecuteAction::CreateRaw(this, &FEcoscapeEditorModule::GenIcons)));
+		// MenuBuilder.AddMenuEntry(LOCTEXT("EcoscapeTool_RefreshItemDir", "Refresh Item Directory"),
+		// 	LOCTEXT("EcoscapeTool_RefreshItemDir_Desc", "Refresh the GameInstance's item directory"),
+		// 	FSlateIconFinder::FindIcon("SourceControl.Actions.Refresh"),
+		// 	FUIAction(FExecuteAction::CreateRaw(this, &FEcoscapeEditorModule::RefreshItemDir)));
 	}
 	MenuBuilder.EndSection();
 }
@@ -66,6 +71,18 @@ void FEcoscapeEditorModule::GenIcons()
     		UPlaceableItemData* Item = Cast<UPlaceableItemData>(Asset.GetAsset());
     		Item->CreateIcon();
     	}
+}
+
+void FEcoscapeEditorModule::RefreshItemDir()
+{
+	UWorld* EditorWorld = GEditor->GetEditorWorldContext(false).World();
+	UEcoscapeGameInstance* GI = Cast<UEcoscapeGameInstance>(EditorWorld->GetGameInstance());
+	if (!GI)
+	{
+		UE_LOG(LogEcoscapeEditor, Error, TEXT("Game Instance is null in RefreshItemDir()"));
+		return;
+	}
+	GI->GenerateItemDirectory();
 }
 
 #undef LOCTEXT_NAMESPACE

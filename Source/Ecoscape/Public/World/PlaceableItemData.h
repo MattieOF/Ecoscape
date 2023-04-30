@@ -30,14 +30,29 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(MultiLine=true), Category="Basic Details")
 	FText Description;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Basic Details")
+	FString Categorisation = "";
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Basic Details")
+	// Either "All" or semi-colon seperated valid terrains
+	FString ValidTerrains = "All";
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Icon")
 	UTexture2D* Icon;
 
+#if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Icon")
 	float IconFOV = 70;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Icon")
+	FVector IconCameraOffset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Icon")
+	FRotator IconObjectRotation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Icon")
 	int32 IconSize = 512;
+#endif
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
 	UStaticMesh* Mesh;
@@ -67,6 +82,7 @@ public:
 	FLinearColor MaxLandColour;
 };
 
+// UNUSED
 /**
  * Data asset containing a list of placeable item data, allowing for one selection to result in a random selection of one of many item types.
  */

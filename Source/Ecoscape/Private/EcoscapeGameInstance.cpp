@@ -5,6 +5,7 @@
 #include "EcoscapeLog.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Character/EcoscapePlayerController.h"
+#include "Kismet/KismetStringLibrary.h"
 #include "World/EcoscapeTerrain.h"
 
 void UEcoscapeGameInstance::Init()
@@ -30,6 +31,16 @@ void UEcoscapeGameInstance::Init()
 		UPlaceableItemData* Item = Cast<UPlaceableItemData>(Asset.GetAsset());
 		ItemTypes.Add(Item->GetName(), Item);
 	}
+
+	GenerateItemDirectory();
+}
+
+UTextPopup* UEcoscapeGameInstance::ShowPopup(FString Title, FString Message)
+{
+	UTextPopup* Popup = CreateWidget<UTextPopup>(this, TextPopupClass);
+	Popup->Show(Title, Message);
+	Popup->AddToViewport();
+	return Popup;
 }
 
 AEcoscapeTerrain* UEcoscapeGameInstance::GetTerrain(FString TerrainName)
@@ -97,4 +108,87 @@ void UEcoscapeGameInstance::RegenerateTerrain(const FString& TerrainName) const
 			Player->GoToTerrain(Terrain); // Reposition player on new terrain
 		UE_LOG(LogEcoscape, Log, TEXT("Regenerated terrain %s"), *TerrainName);
 	}
+}
+
+void UEcoscapeGameInstance::GenerateItemDirectory()
+{
+	// Initialise item directory
+	if (ItemDirectory)
+		ItemDirectory->Empty();
+	else
+		ItemDirectory = NewObject<UItemDirectory>(this);
+	
+	for (const auto& Item : ItemTypes)
+		ItemDirectory->AddItem(Item.Value);
+}
+
+void UEcoscapeGameInstance::PrintItemDirectory()
+{
+	FString Directory = "";
+	SearchItemDirFolder(ItemDirectory->RootFolder, Directory, 0);
+	ShowPopup("Item Directory", Directory);
+}
+
+void UEcoscapeGameInstance::AddWithIndent(FString& Output, FString Message, int Indent, bool NewLine)
+{
+	for (int i = 0; i < Indent; i++)
+		Output += "    ";
+	Output += Message;
+	if (NewLine)
+		Output += "\n";
+}
+
+void UEcoscapeGameInstance::SearchItemDirFolder(UItemFolder* Folder, FString& Output, int Level)
+{
+	AddWithIndent(Output, Folder->Name.ToString(), Level);
+
+	if (Folder->Folders.Num() == 0 && Folder->Items.Num() == 0)
+	{
+		AddWithIndent(Output, "<EMPTY>", Level + 1);
+		return;
+	}
+	
+	for (const auto& NestedFolder : Folder->Folders)
+		SearchItemDirFolder(NestedFolder.Value, Output, Level + 1);
+
+	for (const UPlaceableItemData* Item : Folder->Items)
+		AddWithIndent(Output, FString::Printf(TEXT("%ls (%ls)"), *Item->Name.ToString(), *Item->GetName()), Level + 1);
+}
+
+UItemDirectory::UItemDirectory()
+{
+	RootFolder = CreateDefaultSubobject<UItemFolder>("RootFolder");
+	RootFolder->Name = FText::FromString("Item Directory");
+}
+
+void UItemDirectory::AddItem(UPlaceableItemData* Item)
+{
+	TArray<FString> Folders = UKismetStringLibrary::ParseIntoArray(Item->Categorisation, "/", true);
+
+	if (Folders.IsEmpty())
+	{
+		RootFolder->Items.Add(Item);
+	}
+	else
+	{
+		UItemFolder* CurrentFolder = RootFolder;
+		for (const auto& FolderName : Folders)
+		{
+			if (!CurrentFolder->Folders.Contains(FolderName))
+			{
+				UItemFolder* Folder = NewObject<UItemFolder>(CurrentFolder);
+				Folder->Name = FText::FromString(FolderName);
+				CurrentFolder->Folders.Add(FolderName, Folder);
+			}
+			CurrentFolder = CurrentFolder->Folders[FolderName];
+		}
+		CurrentFolder->Items.Add(Item);
+	}
+}
+
+void UItemDirectory::Empty()
+{
+	RootFolder->ConditionalBeginDestroy();
+	RootFolder = NewObject<UItemFolder>(this);
+	RootFolder->Name = FText::FromString("Item Directory");
 }
