@@ -165,11 +165,6 @@ bool UPlaceableItemData::IsValidForTerrain(AEcoscapeTerrain* Terrain)
 	return IsValidForTerrainName(Terrain->TerrainName);
 }
 
-bool UPlaceableItemData::IsValidForTerrainName(FString TerrainName)
-{
-	return ValidTerrains == "All" || ValidTerrainsArray.Contains("TerrainName");
-}
-
 UPlaceableItemData* UItemDataList::GetRandomItem()
 {
 	if (Options.Num() <= 0)

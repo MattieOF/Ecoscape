@@ -2,6 +2,7 @@
 
 #include "World/PlaceableItemPreview.h"
 
+#include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
 #include "EcoscapeStats.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -47,6 +48,12 @@ void APlaceableItemPreview::Tick(const float DeltaSeconds)
 
 void APlaceableItemPreview::SetItem(UPlaceableItemData* Item)
 {
+	if (!Item)
+	{
+		UE_LOG(LogEcoscape, Error, TEXT("In APlaceableItemPreview::SetItem, Item is null!"));
+		return;
+	}
+	
 	CurrentItem = Item;
 	MainMesh->SetStaticMesh(Item->Mesh);
 	UEcoscapeStatics::SetAllMaterials(MainMesh, InvalidMaterial);

@@ -35,6 +35,7 @@ bool AEcoscapePlayerController::GoToTerrain(AEcoscapeTerrain* Terrain)
 	FPCharacter->SetActorLocation(TerrainCenter + FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(FPCharacter)));
 	TerrainCenter.Z = TopDownSpawnHeight;
 	TDCharacter->SetActorLocation(TerrainCenter);
+	TDCharacter->GoToTerrain(Terrain);
 	SetView(EPSFirstPerson, true, 0);
 
 	return true;

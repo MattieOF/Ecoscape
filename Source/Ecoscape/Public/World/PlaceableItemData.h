@@ -31,9 +31,9 @@ public:
 	void CreateValidTerrainsArray();
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FORCEINLINE bool IsValidForTerrain(AEcoscapeTerrain* Terrain);
+	bool IsValidForTerrain(AEcoscapeTerrain* Terrain);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FORCEINLINE bool IsValidForTerrainName(FString TerrainName);
+	FORCEINLINE bool IsValidForTerrainName(FString TerrainName) { return ValidTerrains == "All" || ValidTerrainsArray.Contains(TerrainName); };
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Basic Details")
 	FText Name;

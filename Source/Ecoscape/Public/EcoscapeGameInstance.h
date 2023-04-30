@@ -30,6 +30,9 @@ public:
 	bool bValidForAllTerrains = false;
 
 	void GenValidTerrains();
+
+	UFUNCTION(BlueprintCallable)
+	UPlaceableItemData* GetRandomItem(const FString& TerrainName);
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE bool IsValidForTerrain(const FString& TerrainName) const { return bValidForAllTerrains || ValidTerrains.Contains(TerrainName); }

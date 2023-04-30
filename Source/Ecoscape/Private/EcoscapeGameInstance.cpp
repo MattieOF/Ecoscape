@@ -204,6 +204,20 @@ void UItemFolder::GenValidTerrains()
 	}
 }
 
+UPlaceableItemData* UItemFolder::GetRandomItem(const FString& TerrainName)
+{
+	TArray<UPlaceableItemData*> ValidItems;
+
+	for (auto Item : Items)
+		if (Item->IsValidForTerrainName(TerrainName))
+			ValidItems.Add(Item);
+
+	if (ValidItems.Num() == 0)
+		return nullptr;
+	
+	return ValidItems[FMath::RandRange(0, ValidItems.Num() - 1)];
+}
+
 UItemDirectory::UItemDirectory()
 {
 	RootFolder = CreateDefaultSubobject<UItemFolder>("RootFolder");

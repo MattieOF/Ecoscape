@@ -3,12 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "EcoscapeGameInstance.h"
 #include "EcoscapeObject.h"
 #include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "World/PlaceableItemPreview.h"
 #include "EcoscapeTDCharacter.generated.h"
 
+class UItemFolder;
 class AFencePlacementPreview;
 class AEcoscapePlayerController;
 
@@ -16,7 +18,6 @@ UENUM(BlueprintType)
 enum EEcoscapeTool
 {
 	ETNone            UMETA(DisplayName = "None"),
-	// ETSculpt          UMETA(DisplayName = "Sculpt"),
 	ETPlaceObjects    UMETA(DisplayName = "Place Objects"),
 	ETDestroyObjects  UMETA(DisplayName = "Destroy Objects"),
 	ETPlaceFence      UMETA(DisplayName = "Place Fence"),
@@ -27,6 +28,29 @@ enum EFencePlacementStage
 	EFPNone,
 	EFPPlacing,
 };
+
+// ------------------------------------------
+// Some data types relating to item selection
+enum EItemDataType
+{
+	Item,
+	Folder
+};
+
+struct FItemDataInterface
+{
+	AEcoscapeTerrain* CurrentTerrain;
+	EItemDataType Type;
+	UPlaceableItemData* Item;
+	UItemFolder* Folder;
+
+	void RerollItem();
+	FORCEINLINE UPlaceableItemData* GetItem() { return Type == EItemDataType::Folder ? NextItem : Item; }
+
+private:
+	UPlaceableItemData* NextItem; // For use with folders
+};
+// ------------------------------------------
 
 UCLASS()
 class ECOSCAPE_API AEcoscapeTDCharacter : public APawn
@@ -83,6 +107,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	void AddScrollInput(float Value);
 
+	UFUNCTION(BlueprintCallable)
+	void SetCurrentItem(UPlaceableItemData* Item);
+	UFUNCTION(BlueprintCallable)
+	void SetCurrentFolder(UItemFolder* Folder);
+
+	void GoToTerrain(AEcoscapeTerrain* Terrain);
+	
 	/**
 	 * @brief Speed the player moves
 	 */
@@ -116,11 +147,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Tools")
 	TEnumAsByte<ECollisionChannel> FloorChannel;
 
-	UPROPERTY(EditAnywhere, Category = "Tools")
-	UPlaceableItemData* TestItem;
-
 	UPROPERTY(EditAnywhere, Category = "Debugd")
 	bool bDrawDebug = false;
+
+	FItemDataInterface CurrentItemData;
 	
 protected:
 	UPROPERTY(BlueprintReadOnly)

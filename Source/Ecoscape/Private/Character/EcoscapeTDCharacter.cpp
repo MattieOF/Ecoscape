@@ -10,6 +10,13 @@
 #include "World/PlacedItem.h"
 #include "World/Fence/ProceduralFenceMesh.h"
 
+void FItemDataInterface::RerollItem()
+{
+	if (Type == EItemDataType::Item)
+		return;
+	NextItem = Folder->GetRandomItem(CurrentTerrain->TerrainName);
+}
+
 AEcoscapeTDCharacter::AEcoscapeTDCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -27,7 +34,7 @@ void AEcoscapeTDCharacter::SetCurrentTool(EEcoscapeTool NewTool)
 		ItemPreview->Destroy();
 		ItemPreview = nullptr;
 	} else if (NewTool == ETPlaceObjects)
-		SetItemPreview(TestItem);
+		SetItemPreview(CurrentItemData.GetItem());
 	else if (NewTool != ETPlaceFence)
 		FencePlacementPreview->DisablePreview();
 
@@ -48,24 +55,12 @@ void AEcoscapeTDCharacter::OnToolUsed()
 {
 	switch (CurrentTool)
 	{
-	// case ETSculpt:
-	// 	{
-	// 		FHitResult Hit;
-	// 		const TArray<AActor*> IgnoredActors;
-	// 		if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, IgnoredActors))
-	// 		{
-	// 			AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(Hit.GetActor());
-	// 			if (!Terrain)
-	// 				return;
-	// 			auto Indicies = Terrain->GetVerticiesInSphere(Hit.ImpactPoint, 6 * Terrain->GetScale());
-	// 			for (auto& [Vertex, Dist] : Indicies)
-	// 				Terrain->AddVertexColour(Vertex, FColor(0, UEcoscapeStatics::MapFloat(Dist, 0, 6 * Terrain->GetScale(), 30, 0), 0), false);
-	// 			Terrain->FlushMesh();
-	// 		}
-	// 	}
-	// 	break;
 	case ETPlaceObjects:
 		{
+			// Check we have an item
+			if (CurrentItemData.GetItem() == nullptr)
+				return;
+			
 			// Check position is valid
 			if (!ItemPreview || !ItemPreview->IsValidPlacement())
 			{
@@ -79,15 +74,15 @@ void AEcoscapeTDCharacter::OnToolUsed()
 			if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, IgnoredActors))
 			{
 				FRotator Rot = ItemPreview->GetActorRotation();
-				APlacedItem* Item = APlacedItem::SpawnItem(GetWorld(), TestItem, Hit.Location, FVector(PlacedItemScale), FRotator(Rot.Pitch, PlacedItemRotation, Rot.Roll));
-				Item->AddActorWorldOffset(FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(Item) + TestItem->ZOffset)); // Move it so the bottom of the mesh is on the ground
+				APlacedItem* Item = APlacedItem::SpawnItem(GetWorld(), CurrentItemData.GetItem(), Hit.Location, FVector(PlacedItemScale), FRotator(Rot.Pitch, PlacedItemRotation, Rot.Roll));
+				Item->AddActorWorldOffset(FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(Item) + CurrentItemData.GetItem()->ZOffset)); // Move it so the bottom of the mesh is on the ground
 				OnItemPlaced(Item->GetActorLocation(), Item);
 
 				if (AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(Hit.GetActor()))
 				{
 					Item->AssociatedTerrain = Terrain; 
 					Terrain->PlacedItems.Add(Item);
-					auto Verts = Terrain->GetVerticiesInSphere(Hit.ImpactPoint, TestItem->ColourRange * PlacedItemScale, true);
+					auto Verts = Terrain->GetVerticiesInSphere(Hit.ImpactPoint, CurrentItemData.GetItem()->ColourRange * PlacedItemScale, true);
 					for (auto& [Vertex, _] : Verts)
 					{
 						if (bDrawDebug)
@@ -96,6 +91,10 @@ void AEcoscapeTDCharacter::OnToolUsed()
 					}
 					Terrain->FlushMesh();
 				}
+
+				// Reroll item
+				CurrentItemData.RerollItem();
+				ItemPreview->SetItem(CurrentItemData.GetItem());
 			}
 		}
 		break;
@@ -108,7 +107,7 @@ void AEcoscapeTDCharacter::OnToolUsed()
 				if (Terrain)
 				{
 					Terrain->PlacedItems.Remove(Item);
-					auto Verts = Terrain->GetVerticiesInSphere(Item->GetActorLocation(), TestItem->ColourRange * PlacedItemScale, true);
+					auto Verts = Terrain->GetVerticiesInSphere(Item->GetActorLocation(), CurrentItemData.GetItem()->ColourRange * PlacedItemScale, true);
 					for (auto& [Vertex, _] : Verts)
 					{
 						if (bDrawDebug)
@@ -179,6 +178,9 @@ void AEcoscapeTDCharacter::OnToolAltUsed()
 	{
 		case ETPlaceObjects:
 			{
+				if (!CurrentItemData.GetItem())
+					return;
+				
 				PlacedItemRotation += 90;
 				PlacedItemRotation = FMath::Fmod(PlacedItemRotation, 360);
 				if (ItemPreview)
@@ -220,10 +222,35 @@ void AEcoscapeTDCharacter::AddScrollInput(float Value)
 {
 	if (CurrentTool == ETPlaceObjects && EcoscapePlayerController->IsModifierHeld())
 	{
-		PlacedItemScale = FMath::Clamp(PlacedItemScale += Value * 0.2f, TestItem->ScaleBounds.X, TestItem->ScaleBounds.Y);
+		PlacedItemScale = FMath::Clamp(PlacedItemScale += Value * 0.2f, CurrentItemData.GetItem()->ScaleBounds.X, CurrentItemData.GetItem()->ScaleBounds.Y);
 		ItemPreview->SetTargetScale(PlacedItemScale);
 	} else
 		TargetHeight = FMath::Clamp(TargetHeight + -Value * ZoomSensitivity, HeightBounds.X, HeightBounds.Y);
+}
+
+void AEcoscapeTDCharacter::SetCurrentItem(UPlaceableItemData* Item)
+{
+	CurrentItemData.Type = EItemDataType::Item;
+	CurrentItemData.Item = Item;
+
+	if (ItemPreview)
+		ItemPreview->SetItem(CurrentItemData.GetItem());
+}
+
+void AEcoscapeTDCharacter::SetCurrentFolder(UItemFolder* Folder)
+{
+	CurrentItemData.Type = EItemDataType::Folder;
+	CurrentItemData.Folder = Folder;
+	
+	CurrentItemData.RerollItem();
+	if (ItemPreview)
+		ItemPreview->SetItem(CurrentItemData.GetItem());
+}
+
+void AEcoscapeTDCharacter::GoToTerrain(AEcoscapeTerrain* Terrain)
+{
+	// TODO: Calculate movement bounds
+	CurrentItemData.CurrentTerrain = Terrain;
 }
 
 void AEcoscapeTDCharacter::BeginPlay()
@@ -262,6 +289,9 @@ void AEcoscapeTDCharacter::Tick(float DeltaSeconds)
 		break;
 	case ETPlaceObjects:
 		{
+			if (!CurrentItemData.GetItem())
+				return;
+			
 			FHitResult Hit;
 			const TArray<AActor*> IgnoredActors;
 			if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, IgnoredActors))
