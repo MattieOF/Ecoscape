@@ -76,6 +76,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void PlayMusic(USoundWave* NewMusic);
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void SetupHUD();
+
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE UInteractionPrompt* GetInteractionPrompt() { return InteractionPrompt; }
 	

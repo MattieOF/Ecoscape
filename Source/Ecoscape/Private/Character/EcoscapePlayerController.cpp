@@ -119,8 +119,8 @@ void AEcoscapePlayerController::BeginPlay()
 	Super::BeginPlay();
 	
 	// Go to habitat select for now
-	// Init to forest habitat
 	GoToTerrain(UEcoscapeGameInstance::GetEcoscapeGameInstance(GetWorld())->GetTerrain("Forest"));
+	SetupHUD(); // Order here is important. If HUD is setup after going to habitat select, HUD will stay on screen 
 	GoToHabitatSelect();
 }
 

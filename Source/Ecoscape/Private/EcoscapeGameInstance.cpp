@@ -182,12 +182,11 @@ void UItemFolder::GenValidTerrains()
 		if (Folder.Value->bValidForAllTerrains)
 		{
 			bValidForAllTerrains = true;
-			return;
+			continue;
 		}
 
 		for (const auto& TerrainName : Folder.Value->ValidTerrains)
-			if (!ValidTerrains.Contains(TerrainName))
-				ValidTerrains.Add(TerrainName);
+			ValidTerrains.AddUnique(TerrainName);
 	}
 
 	for (const auto Item : Items)
@@ -199,8 +198,7 @@ void UItemFolder::GenValidTerrains()
 		}
 
 		for (const auto& TerrainName : Item->ValidTerrainsArray)
-			if (!ValidTerrains.Contains(TerrainName))
-				ValidTerrains.Add(TerrainName);
+			ValidTerrains.AddUnique(TerrainName);
 	}
 }
 
