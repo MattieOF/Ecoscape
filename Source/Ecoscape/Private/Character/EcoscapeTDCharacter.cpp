@@ -116,7 +116,7 @@ void AEcoscapeTDCharacter::OnToolUsed()
 				if (Terrain)
 				{
 					Terrain->PlacedItems.Remove(Item);
-					auto Verts = Terrain->GetVerticiesInSphere(Item->GetActorLocation(), CurrentItemData.GetItem()->ColourRange * PlacedItemScale, true);
+					auto Verts = Terrain->GetVerticiesInSphere(Item->GetActorLocation(), Item->GetItemData()->ColourRange * Item->GetActorScale().X, true);
 					for (auto& [Vertex, _] : Verts)
 					{
 						if (bDrawDebug)
