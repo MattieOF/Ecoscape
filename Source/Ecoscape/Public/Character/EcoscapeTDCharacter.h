@@ -31,6 +31,7 @@ enum EFencePlacementStage
 
 // ------------------------------------------
 // Some data types relating to item selection
+// TODO: Move to separate files?
 enum EItemDataType
 {
 	Item,
@@ -51,6 +52,8 @@ private:
 	UPlaceableItemData* NextItem; // For use with folders
 };
 // ------------------------------------------
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnToolChanged, TEnumAsByte<EEcoscapeTool>, NewTool);
 
 UCLASS()
 class ECOSCAPE_API AEcoscapeTDCharacter : public APawn
@@ -103,6 +106,9 @@ public:
 	 */
 	UFUNCTION(BlueprintImplementableEvent, Category = "Tools")
 	void OnFailedPlacementAttempt();
+
+	UPROPERTY(BlueprintAssignable, BlueprintReadWrite, Category = "Tools")
+	FOnToolChanged OnToolChanged;
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	void AddScrollInput(float Value);

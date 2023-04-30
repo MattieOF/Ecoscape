@@ -42,6 +42,7 @@ void AEcoscapeTDCharacter::SetCurrentTool(EEcoscapeTool NewTool)
 		FencePlacementStage = EFPNone;
 	
 	CurrentTool = NewTool;
+	OnToolChanged.Broadcast(NewTool);
 
 	HighlightObject(nullptr);
 }
