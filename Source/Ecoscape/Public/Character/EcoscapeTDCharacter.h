@@ -19,6 +19,7 @@ enum EEcoscapeTool
 {
 	ETNone            UMETA(DisplayName = "None"),
 	ETPlaceObjects    UMETA(DisplayName = "Place Objects"),
+	ETPaintObjects    UMETA(DisplayName = "Paint Objects"),
 	ETDestroyObjects  UMETA(DisplayName = "Destroy Objects"),
 	ETPlaceFence      UMETA(DisplayName = "Place Fence"),
 };
@@ -147,6 +148,21 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Tools")
 	TSubclassOf<APlaceableItemPreview> ItemPreviewClass = APlaceableItemPreview::StaticClass();
 
+	UPROPERTY(EditAnywhere, Category = "Tools")
+	TSubclassOf<AActor> PaintPreviewClass;
+
+	/**
+	 * @brief The radius of the sphere in the provided paint preview class at a uniform scale of 1
+	 */
+	UPROPERTY(EditAnywhere, Category = "Tools")
+	float PaintPreviewRadius = 100;
+
+	UPROPERTY(EditAnywhere, Category = "Tools")
+	FVector2D PaintRadiusRange = FVector2D(750, 3000);
+	
+	UPROPERTY(EditAnywhere, Category = "Tools")
+	FVector2D PaintSpeedRange = FVector2D(1, 30);
+
 	/**
 	 * @brief Collision channel blocked by objects that can have items placed on
 	 */
@@ -173,6 +189,12 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	float TargetHeight = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Tools")
+	float PaintRadius = 1000;
+	
+	UPROPERTY(BlueprintReadOnly, Category = "Tools")
+	float PaintSpeed = 5;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Tools")
 	TEnumAsByte<EEcoscapeTool> CurrentTool = ETNone;

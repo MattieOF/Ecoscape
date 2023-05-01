@@ -107,6 +107,11 @@ void AEcoscapeTDCharacter::OnToolUsed()
 			}
 		}
 		break;
+	case ETPaintObjects:
+		{
+			
+		}
+		break;
 	case ETDestroyObjects:
 		{
 			if (APlacedItem* Item = Cast<APlacedItem>(HighlightedObject))
@@ -195,6 +200,11 @@ void AEcoscapeTDCharacter::OnToolAltUsed()
 				if (ItemPreview)
 					ItemPreview->SetTargetRotation(PlacedItemRotation);
 			}
+		break;
+		case ETPaintObjects:
+			{
+				
+			}
 			break;
 		case ETPlaceFence:
 			{
@@ -223,6 +233,11 @@ void AEcoscapeTDCharacter::ResetTool(bool bInstant)
 			ItemPreview->SetTargetScale(PlacedItemScale, bInstant);
 			break;
 		}
+	case ETPaintObjects:
+		{
+			
+		}
+		break;
 	default: UE_LOG(LogEcoscape, Error, TEXT("Attempted to use unimplemented tool: %i"), static_cast<int>(CurrentTool)); break;
 	}
 }
@@ -305,6 +320,11 @@ void AEcoscapeTDCharacter::Tick(float DeltaSeconds)
 			const TArray<AActor*> IgnoredActors;
 			if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, IgnoredActors))
 				ItemPreview->UpdateWithHitInfo(Hit);
+		}
+		break;
+	case ETPaintObjects:
+		{
+			
 		}
 		break;
 	case ETDestroyObjects:

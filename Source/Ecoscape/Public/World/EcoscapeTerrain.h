@@ -18,12 +18,14 @@ FORCEINLINE FArchive& operator<<(FArchive& LHS, FProcMeshTangent& RHS)
 	return LHS;
 }
 
+#if WITH_EDITOR
 UENUM(BlueprintType)
 enum ENoiseType
 {
 	ENTPerlin    UMETA(DisplayName = "Perlin"),
 	ENTSimplex   UMETA(DisplayName = "Simplex")
 };
+#endif
 
 UENUM()
 enum EFenceImpl
@@ -101,10 +103,12 @@ public:
 
 	// UPROPERTY()
 	// TArray<FFenceInfo> PlacedFenceInfo;
-
+	
+#if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere)
 	TEnumAsByte<EFenceImpl> FenceImplementation;
-
+#endif
+	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AProceduralFenceMesh> FenceClass;
 
