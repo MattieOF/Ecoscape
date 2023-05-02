@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "EcoscapeGameInstance.h"
 #include "FastNoise.h"
 #include "PlacedItem.h"
 #include "GameFramework/Actor.h"
@@ -68,6 +69,22 @@ public:
 	float Offset = .1f;
 };
 
+struct FTerrainDetailActor
+{
+	FString ItemName;
+	FVector Pos;
+
+	AStaticMeshActor* Actor;
+};
+
+FORCEINLINE FArchive& operator<<(FArchive& LHS, FTerrainDetailActor& RHS)
+{
+	LHS << RHS.ItemName;
+	LHS << RHS.Pos;
+	
+	return LHS;
+}
+
 // USTRUCT(BlueprintType)
 // struct FFenceInfo
 // {
@@ -88,16 +105,24 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FString TerrainName = "Terrain";
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FColor DirtColour  = FColor(64,41,5, 255);
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FColor GrassColour = FColor(25, 255, 10, 255);
-
 	UPROPERTY()
 	TArray<APlacedItem*> PlacedItems;
 
 	UPROPERTY()
 	TArray<AProceduralFenceMesh*> PlacedFences;
+
+	UPROPERTY(EditAnywhere)
+	TArray<UPlaceableItemData*> ExteriorItems;
+
+	UPROPERTY(EditAnywhere)
+	FLinearColor FloorColour;
+	UPROPERTY(EditAnywhere)
+	FLinearColor ExteriorColour;
+
+	UPROPERTY(EditAnywhere)
+	bool bDoRotationForExteriorItems = true;
+
+	TArray<FTerrainDetailActor> DetailActors; 
 
 	// UPROPERTY()
 	// TArray<FFenceInfo> PlacedFenceInfo;
@@ -162,6 +187,9 @@ public:
 	UFUNCTION(BlueprintCallable, CallInEditor)
 	void Regenerate();
 	
+	UPROPERTY(EditAnywhere)
+	int ExteriorTileCount = 10;
+
 	// -----------------------
 	// Serialisation functions
 	// -----------------------
@@ -188,6 +216,7 @@ protected:
 	void GenerateIndicies();
 	void GenerateNormals();
 	void GenerateFence();
+	void GenerateExteriorDetail();
 	void CreateMesh() const;
 
 #if WITH_EDITOR
@@ -205,6 +234,9 @@ protected:
 	int Width = 50;
 	UPROPERTY(EditAnywhere)
 	int Height = 50;
+
+	UPROPERTY(EditAnywhere)
+	float ExteriorHeightOffset = 1500;
 	
 	/**
 	 * @brief Distance in units between each vertex

@@ -220,6 +220,8 @@ protected:
 	UPROPERTY()
 	AEcoscapePlayerController* EcoscapePlayerController;
 
+	FVector2D PlayRangeMin, PlayRangeMax;
+
 	virtual void BeginPlay() override;
 
 	void DoPaintTool();

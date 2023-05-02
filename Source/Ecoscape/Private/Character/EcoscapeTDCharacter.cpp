@@ -198,13 +198,8 @@ void AEcoscapeTDCharacter::AddMovementInput(FVector WorldDirection, float ScaleV
 {
 	AddActorWorldOffset(WorldDirection * ScaleValue * Speed);
 
-	if (AEcoscapeTerrain* Terrain = EcoscapePlayerController->GetCurrentTerrain())
-	{
-		const FVector Loc = GetActorLocation();
-		FVector2D Min, Max;
-		Terrain->GetXYBounds(Min, Max); // TODO: Cache?
-		SetActorLocation(FVector(FMath::Clamp(Loc.X, Min.X, Max.X), FMath::Clamp(Loc.Y, Min.Y, Max.Y), Loc.Z));
-	}
+	const FVector Loc = GetActorLocation();
+	SetActorLocation(FVector(FMath::Clamp(Loc.X, PlayRangeMin.X, PlayRangeMax.X), FMath::Clamp(Loc.Y, PlayRangeMin.Y, PlayRangeMax.Y), Loc.Z));
 }
 
 void AEcoscapeTDCharacter::OnToolUsed()
@@ -262,9 +257,7 @@ void AEcoscapeTDCharacter::OnToolUsed()
 		{
 			if (APlacedItem* Item = Cast<APlacedItem>(HighlightedObject))
 			{
-				AEcoscapeTerrain* Terrain = Item->AssociatedTerrain;
-
-				if (Terrain)
+				if (AEcoscapeTerrain* Terrain = Item->AssociatedTerrain)
 				{
 					Terrain->PlacedItems.Remove(Item);
 					auto Verts = Terrain->GetVerticiesInSphere(Item->GetActorLocation(), Item->GetItemData()->ColourRange * Item->GetActorScale().X, true);
@@ -435,7 +428,12 @@ void AEcoscapeTDCharacter::SetCurrentFolder(UItemFolder* Folder)
 
 void AEcoscapeTDCharacter::GoToTerrain(AEcoscapeTerrain* Terrain)
 {
-	// TODO: Calculate movement bounds
+	Terrain->GetXYBounds(PlayRangeMin, PlayRangeMax); // TODO: Cache?
+	PlayRangeMin.X += Terrain->ExteriorTileCount * Terrain->GetScale();
+	PlayRangeMin.Y += Terrain->ExteriorTileCount * Terrain->GetScale();
+	PlayRangeMax.X -= Terrain->ExteriorTileCount * Terrain->GetScale();
+	PlayRangeMax.Y -= Terrain->ExteriorTileCount * Terrain->GetScale();
+	
 	CurrentItemData.CurrentTerrain = Terrain;
 }
 

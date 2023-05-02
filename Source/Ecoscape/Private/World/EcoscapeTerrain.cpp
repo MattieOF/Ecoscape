@@ -7,6 +7,8 @@
 #include "EcoscapeStatics.h"
 #include "EcoscapeStats.h"
 #include "KismetProceduralMeshLibrary.h"
+#include "Engine/StaticMeshActor.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Misc/FileHelper.h"
 #include "Serialization/BufferArchive.h"
 #include "World/FastNoise.h"
@@ -74,6 +76,10 @@ void AEcoscapeTerrain::SerialiseTerrain(FArchive& Archive)
 			Fence->Destroy();
 		PlacedFences.Empty();
 
+		for (const auto& Detail : DetailActors)
+			Detail.Actor->Destroy();
+		DetailActors.Empty();
+
 		PlacedItems.Reserve(Count);
 
 		UEcoscapeGameInstance* GameInstance = UEcoscapeGameInstance::GetEcoscapeGameInstance(GetWorld());
@@ -118,6 +124,30 @@ void AEcoscapeTerrain::SerialiseTerrain(FArchive& Archive)
 			AProceduralFenceMesh* Fence = GetWorld()->SpawnActor<AProceduralFenceMesh>(FenceClass, Loc, FRotator::ZeroRotator);
 			Fence->SerialiseFence(Archive);
 			PlacedFences.Add(Fence);
+		}
+	}
+
+	int DetailActorCount = DetailActors.Num();
+	Archive << DetailActorCount;
+	if (Archive.IsSaving())
+	{
+		for (auto& DetailActor : DetailActors)
+			Archive << DetailActor;
+	} else
+	{
+		DetailActors.Reserve(Count);
+		for (int i = 0; i < Count; i++)
+		{
+			FTerrainDetailActor DetailInfo;
+			Archive << DetailInfo;
+			const UPlaceableItemData* Item = UEcoscapeGameInstance::GetEcoscapeGameInstance(GetWorld())->ItemTypes[DetailInfo.ItemName];
+			AStaticMeshActor* MeshActor = GetWorld()->SpawnActor<AStaticMeshActor>(DetailInfo.Pos, FRotator::ZeroRotator);
+			MeshActor->SetMobility(EComponentMobility::Movable);
+			MeshActor->GetStaticMeshComponent()->SetStaticMesh(Item->Mesh);
+			MeshActor->SetFolderPath("ExteriorDetail/");
+			MeshActor->SetMobility(EComponentMobility::Static);
+			DetailInfo.Actor = MeshActor;
+			DetailActors.Add(DetailInfo);
 		}
 	}
 }
@@ -222,6 +252,11 @@ void AEcoscapeTerrain::GenerateVerticies()
 				Z += Noise.GetNoise(x * CoordinateScale, y * CoordinateScale) * HeightScale;
 			}
 
+			// Add exterior height offset
+			const int Distance = FMath::Min(FMath::Min(x, y), FMath::Min(Width - x, Height - y));
+			const float Alpha = 1 - (static_cast<float>(Distance - 3) / static_cast<float>(ExteriorTileCount - 3));
+			Z += FMath::Lerp(0, ExteriorHeightOffset, FMath::Clamp(Alpha, 0, 1));
+
 			AverageHeight += Z;
 			HighestHeight = FMath::Max(HighestHeight, Z);
 			LowestHeight = FMath::Min(LowestHeight, Z);
@@ -238,7 +273,7 @@ void AEcoscapeTerrain::GenerateVerticies()
 			FVector Offset = FVector(Value);
 			ColorOffsets.Add(Offset);
 			
-			FColor VertexColor = DirtColour;
+			FColor VertexColor = UKismetMathLibrary::LinearColorLerp(FloorColour, ExteriorColour, FMath::Clamp(Alpha * 7, 0, 1)).ToFColor(false);
 			VertexColor = UEcoscapeStatics::AddToColor(VertexColor, Offset);
 			VertexColors.Add(VertexColor);
 		}
@@ -347,7 +382,7 @@ void AEcoscapeTerrain::GenerateFence()
 			if (FenceMesh)
 				FenceMesh->Destroy();
 	
-			int X = 3, Y = 3;
+			int X = ExteriorTileCount + 1, Y = ExteriorTileCount + 1;
 			FenceMesh = GetWorld()->SpawnActor<AProceduralFenceMesh>(FenceClass, GetVertexPositionWorld(GetVertexIndex(X, Y)), FRotator::ZeroRotator);
 			FenceMesh->AssociatedTerrain = this;
 			FenceMesh->bDestroyable = false;
@@ -356,25 +391,89 @@ void AEcoscapeTerrain::GenerateFence()
 			FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
 
 			X += 2;
-			for (; X < Width - 3; X += 2)
+			for (; X < Width - ExteriorTileCount - 1; X += 2)
 				FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
-			for (; Y < Height - 3; Y += 2)
+			for (; Y < Height - ExteriorTileCount - 1; Y += 2)
 				FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
-			for (; X > 3; X -= 2)
+			for (; X > ExteriorTileCount + 1; X -= 2)
 				FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
-			for (; Y > 3; Y -= 2)
+			for (; Y > ExteriorTileCount + 1; Y -= 2)
 				FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
 
-			X = 3;
-			Y = 3;
+			X = ExteriorTileCount + 1;
+			Y = ExteriorTileCount + 1;
 			FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));	
 	
 			FenceMesh->Regenerate();
 #if WITH_EDITOR
 		}
 		break;
+	default: break;
 	}
 #endif
+}
+
+// TODO: This function SUCKS
+void AEcoscapeTerrain::GenerateExteriorDetail()
+{
+	FVector TerrainLoc = GetActorLocation();
+	
+	for (int i = 0; i < 600; i++)
+	{
+		float X, Y;
+
+		if (FMath::FRand() < 0.5)
+		{
+			// X is long side
+			X = FMath::RandRange(static_cast<float>(0), Width * Scale);
+			Y = FMath::RandRange(static_cast<float>(0), ExteriorTileCount * Scale);
+			if (FMath::FRand() < 0.5)
+				Y = (Height * Scale) - Y; 
+		} else
+		{
+			// Y is long side
+			Y = FMath::RandRange(static_cast<float>(0), Height * Scale);
+			X = FMath::RandRange(static_cast<float>(0), ExteriorTileCount * Scale);
+			if (FMath::FRand() < 0.5)
+				X = (Width * Scale) - X;
+		}
+
+		X += TerrainLoc.X;
+		Y += TerrainLoc.Y;
+
+		FHitResult Hit;
+		const FVector RayStart = FVector(X, Y, GetHighestHeight() + 50);
+		const FVector RayEnd = FVector(X, Y, GetLowestHeight() - 50);
+		if (GetWorld()->LineTraceSingleByChannel(Hit, RayStart, RayEnd, ECC_ITEM_PLACEABLE_ON))
+		{
+			UPlaceableItemData* Item = ExteriorItems[FMath::RandRange(0, ExteriorItems.Num() - 1)];
+			AStaticMeshActor* Mesh = GetWorld()->SpawnActor<AStaticMeshActor>(Hit.ImpactPoint, FRotator::ZeroRotator);
+			Mesh->SetMobility(EComponentMobility::Movable);
+			Mesh->GetStaticMeshComponent()->SetStaticMesh(Item->Mesh);
+			Mesh->AddActorLocalOffset(FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(Mesh) + Item->ZOffset));
+			Mesh->SetFolderPath("ExteriorDetail/");
+
+			if (bDoRotationForExteriorItems)
+			{
+				auto Rotation = UKismetMathLibrary::Conv_VectorToRotator(Hit.ImpactNormal);
+				FVector UpVector = Mesh->GetActorUpVector();
+				FVector NormalVector = UKismetMathLibrary::VLerp(UpVector, Hit.ImpactNormal, 0.4f);
+				FVector RotationAxis = FVector::CrossProduct(UpVector, NormalVector);
+				RotationAxis.Normalize();
+				float DotProduct = FVector::DotProduct(UpVector, NormalVector);
+				float RotationAngle = acosf(DotProduct);
+				FQuat Quat = FQuat(RotationAxis, RotationAngle);
+				FQuat RootQuat = Mesh->GetActorQuat();
+				FQuat NewQuat = Quat * RootQuat;
+				Rotation = NewQuat.Rotator();
+				Mesh->SetActorRotation(Rotation);
+			}
+			
+			Mesh->SetMobility(EComponentMobility::Static);
+			
+			DetailActors.Add({Item->GetName(), Mesh->GetActorLocation(), Mesh});
+		}
+	}
 }
 
 void AEcoscapeTerrain::CreateMesh() const
@@ -386,7 +485,12 @@ void AEcoscapeTerrain::CreateMesh() const
 void AEcoscapeTerrain::CalculateVertColour(int Index, bool Flush)
 {
 	const FVector Position = GetVertexPositionWorld(Index);
-	VertexColors[Index] = DirtColour;
+
+	const auto Coordinate = GetVertexXY(Index);
+	const int Distance = FMath::Min(FMath::Min(Coordinate.X, Coordinate.Y), FMath::Min(Width - Coordinate.X, Height - Coordinate.Y));
+	const float Alpha = 1 - (static_cast<float>(Distance - 3) / static_cast<float>(ExteriorTileCount - 3));
+	VertexColors[Index] = UKismetMathLibrary::LinearColorLerp(FloorColour, ExteriorColour, FMath::Clamp(Alpha * 7, 0, 1)).ToFColor(false);
+	
 	for (APlacedItem* Item : PlacedItems)
 	{
 		const float DistanceSquared = FVector::DistSquared(Position, Item->GetActorLocation());
@@ -505,7 +609,7 @@ TArray<FVertexOverlapInfo> AEcoscapeTerrain::GetVerticiesInSphere(FVector Positi
 		{
 			for (int Y = -CurrentRadius; Y <= CurrentRadius; Y++)
 			{
-				int Index = RootVertex + X + (Y * (Width + 1));
+				const int Index = RootVertex + X + (Y * (Width + 1));
 				
 				// Ensure no out of bounds indicies are given
 				if (Index < 0 || Index >= Verticies.Num())
@@ -571,9 +675,13 @@ void AEcoscapeTerrain::Regenerate()
 	for (AProceduralFenceMesh* Fence : PlacedFences)
 		Fence->Destroy();
 	PlacedFences.Empty();
+	for (const auto& Detail : DetailActors)
+		Detail.Actor->Destroy();
+	DetailActors.Empty();
 	GenerateVerticies();
 	GenerateIndicies();
 	GenerateNormals();
 	GenerateFence();
 	CreateMesh();
+	GenerateExteriorDetail();
 }

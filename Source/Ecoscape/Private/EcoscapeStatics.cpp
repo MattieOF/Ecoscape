@@ -5,6 +5,7 @@
 #include "EngineUtils.h"
 #include "Engine/PostProcessVolume.h"
 #include "Kismet/GameplayStatics.h"
+#include "World/PlaceableItemData.h"
 
 FVector2D UEcoscapeStatics::ClampVector2D(FVector2D Vector, FVector2D Min, FVector2D Max)
 {
@@ -114,6 +115,12 @@ float UEcoscapeStatics::GetZUnderOrigin(AActor* Object)
 	const FVector ObjectOrigin = Object->GetActorLocation();
 	const FVector Difference = Origin - ObjectOrigin;
 	return Extents.Z - Difference.Z;
+}
+
+float UEcoscapeStatics::GetZUnderOriginItem(UPlaceableItemData* Object)
+{
+	FBoxSphereBounds Bounds = Object->Mesh->GetBounds();
+	return Bounds.Origin.Z;
 }
 
 void UEcoscapeStatics::SetAllMaterials(UStaticMeshComponent* MeshComponent, UMaterialInterface* Material)

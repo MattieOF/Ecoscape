@@ -10,6 +10,7 @@
 #define ECC_HIGHLIGHTABLE         ECC_GameTraceChannel2
 #define ECC_ITEM_PLACEABLE_ON     ECC_GameTraceChannel3
 
+class UPlaceableItemData;
 FORCEINLINE FColor operator-(const FColor& LHS, const FColor& RHS)
 {
 	FColor Result;
@@ -86,6 +87,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static float GetZUnderOrigin(AActor* Object);
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static float GetZUnderOriginItem(UPlaceableItemData* Object);
 
 	UFUNCTION(BlueprintCallable)
 	static void SetAllMaterials(UStaticMeshComponent* MeshComponent, UMaterialInterface* Material);
