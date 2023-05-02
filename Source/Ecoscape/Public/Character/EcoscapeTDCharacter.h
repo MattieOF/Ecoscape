@@ -191,9 +191,6 @@ protected:
 	float TargetHeight = 0;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Tools")
-	float PaintRadius = 1000;
-	
-	UPROPERTY(BlueprintReadOnly, Category = "Tools")
 	float PaintSpeed = 5;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Tools")
@@ -204,6 +201,14 @@ protected:
 	
 	UPROPERTY()
 	AFencePlacementPreview* FencePlacementPreview;
+
+	UPROPERTY()
+	AActor* PaintPreview;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Tools")
+	float TargetPaintRadius;
+	float PrevPaintRadius, PaintRadiusAlpha = 1;
+	float PaintTimer = 0;
 
 	EFencePlacementStage FencePlacementStage = EFPNone;
 
@@ -217,6 +222,8 @@ protected:
 
 	virtual void BeginPlay() override;
 
+	void DoPaintTool();
+	
 	virtual void Tick(float DeltaSeconds) override;
 	
 	virtual void PossessedBy(AController* NewController) override;
@@ -234,4 +241,6 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void SetItemPreview(UPlaceableItemData* ItemData);
+
+	bool TryPlaceItemAtHit(UPlaceableItemData* Item, FHitResult& Hit);
 };

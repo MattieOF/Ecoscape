@@ -51,6 +51,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE bool IsModifierHeld() { return bModifierPressed; }
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE bool IsUseDown() { return bUseDown; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE AEcoscapeTerrain* GetCurrentTerrain() { return CurrentTerrain; }
@@ -113,6 +116,7 @@ protected:
 
 	void OnSwitchView();
 	void OnUseTool();
+	void OnStopUseTool();
 	void OnUseAltTool();
 	void OnResetTool();
 	void OnInteract();
@@ -160,4 +164,6 @@ private:
 	float CurrentSwitchViewCooldown = 0;
 
 	bool bModifierPressed = false;
+
+	bool bUseDown = false;
 };

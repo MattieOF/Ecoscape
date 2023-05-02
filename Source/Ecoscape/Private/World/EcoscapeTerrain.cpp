@@ -223,6 +223,7 @@ void AEcoscapeTerrain::GenerateVerticies()
 			}
 
 			AverageHeight += Z;
+			HighestHeight = FMath::Max(HighestHeight, Z);
 			LowestHeight = FMath::Min(LowestHeight, Z);
 			
 			Verticies.Add(FVector(x * Scale, y * Scale, Z));

@@ -121,6 +121,11 @@ public:
 	FORCEINLINE float GetScale() { return Scale; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE float GetHighestHeight() { return HighestHeight; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE float GetLowestHeight() { return LowestHeight; }
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FVector GetCenterPosition();
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -256,6 +261,8 @@ protected:
 	float ColorOffsetSeed = 0;
 	UPROPERTY(BlueprintReadOnly)
 	float LowestHeight = 0;
+	UPROPERTY(BlueprintReadOnly)
+	float HighestHeight = 0;
 	UPROPERTY(BlueprintReadOnly)
 	float AverageHeight = 0;
 };

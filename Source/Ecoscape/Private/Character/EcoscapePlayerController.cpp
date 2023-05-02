@@ -111,6 +111,7 @@ void AEcoscapePlayerController::BeginPlay()
 	InputComponent->BindAction("Modifier", IE_Released, this, &AEcoscapePlayerController::OnModifierReleased);
 	InputComponent->BindAction("SwitchView", IE_Pressed, this, &AEcoscapePlayerController::OnSwitchView);
 	InputComponent->BindAction("UseTool", IE_Pressed, this, &AEcoscapePlayerController::OnUseTool);
+	InputComponent->BindAction("UseTool", IE_Released, this, &AEcoscapePlayerController::OnStopUseTool);
 	InputComponent->BindAction("Interact", IE_Pressed, this, &AEcoscapePlayerController::OnInteract);
 	InputComponent->BindAction("UseAltTool", IE_Pressed, this, &AEcoscapePlayerController::OnUseAltTool);
 	InputComponent->BindAction("ResetTool", IE_Pressed, this, &AEcoscapePlayerController::OnResetTool);
@@ -213,6 +214,13 @@ void AEcoscapePlayerController::OnUseTool()
 {
 	if (CurrentView == EPSTopDown)
 		TDCharacter->OnToolUsed();
+
+	bUseDown = true;
+}
+
+void AEcoscapePlayerController::OnStopUseTool()
+{
+	bUseDown = false;
 }
 
 void AEcoscapePlayerController::OnUseAltTool()
@@ -263,10 +271,14 @@ void AEcoscapePlayerController::SetView(const EEcoscapePlayerView NewView, const
 void AEcoscapePlayerController::SetMouseEnabled(const bool NewState)
 {
 	if (NewState)
-		SetInputMode(FInputModeGameAndUI());
+	{
+		auto InputMode = FInputModeGameAndUI();
+		InputMode.SetHideCursorDuringCapture(false);
+		SetInputMode(InputMode);
+	}
 	else
 		SetInputMode(FInputModeGameOnly());
-	
+
 	bShowMouseCursor = NewState;
 	bEnableClickEvents = NewState;
 	bEnableMouseOverEvents = NewState;

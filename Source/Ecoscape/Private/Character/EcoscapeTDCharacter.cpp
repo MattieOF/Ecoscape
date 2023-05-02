@@ -5,6 +5,7 @@
 #include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
 #include "Character/EcoscapePlayerController.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "World/EcoscapeTerrain.h"
 #include "World/Fence/FencePlacementPreview.h"
 #include "World/PlacedItem.h"
@@ -26,6 +27,147 @@ AEcoscapeTDCharacter::AEcoscapeTDCharacter()
 	RootComponent = Camera;
 }
 
+void AEcoscapeTDCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// Init paint preview
+	PaintPreview = GetWorld()->SpawnActor<AActor>(PaintPreviewClass);
+	PaintPreview->SetActorHiddenInGame(true);
+	TargetPaintRadius  = FMath::Lerp(PaintRadiusRange.X, PaintRadiusRange.Y, 0.5);
+	PrevPaintRadius    = TargetPaintRadius;
+	PaintSpeed = FMath::Lerp(PaintSpeedRange.X, PaintSpeedRange.Y, 0.5);
+	PaintPreview->SetActorScale3D(FVector(TargetPaintRadius / PaintPreviewRadius));
+	
+	TargetHeight = GetActorLocation().Z;
+	
+	// Make fence placement preview now
+	FencePlacementPreview = GetWorld()->SpawnActor<AFencePlacementPreview>();
+}
+
+void AEcoscapeTDCharacter::DoPaintTool()
+{
+	if (PaintTimer > 0 || !EcoscapePlayerController->IsUseDown() || !CurrentItemData.GetItem())
+		return;
+
+	AEcoscapeTerrain* Terrain = EcoscapePlayerController->GetCurrentTerrain();
+	
+	// This function brute forces points in a square until one lands in a circle
+	// This could be bad, and I think this maths might work better:
+	// https://stackoverflow.com/a/50746409
+	// For now, just use it to get a random point within the range
+	const FVector2D RandomInRange = FMath::RandPointInCircle(TargetPaintRadius);
+	const FVector PaintOrigin = PaintPreview->GetActorLocation();
+	const FVector RayStart = FVector(RandomInRange.X + PaintOrigin.X, RandomInRange.Y + PaintOrigin.Y, Terrain->GetHighestHeight() + 50);
+	const FVector RayEnd = FVector(RayStart.X, RayStart.Y, Terrain->GetLowestHeight() - 50);
+	
+	DrawDebugLine(GetWorld(), RayStart, RayEnd, FColor::Red, false, 3, 0, 5);
+	
+	FHitResult Hit;
+	if (GetWorld()->LineTraceSingleByChannel(Hit, RayStart, RayEnd, ECC_ITEM_PLACEABLE_ON))
+	{
+		if (TryPlaceItemAtHit(CurrentItemData.GetItem(), Hit))
+		{
+			CurrentItemData.RerollItem();
+			PaintTimer = 1 / PaintSpeed;	
+		}
+	}
+}
+
+void AEcoscapeTDCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if (!bIsPossessed)
+		return;
+	
+	// Animate zoom height
+	FVector Location = GetActorLocation();
+	if (Location.Z != TargetHeight)
+	{
+		const float Diff = Location.Z - TargetHeight;
+		if (FMath::Abs(Diff) < 1)
+			Location.Z = TargetHeight;
+		else
+			Location.Z += -Diff * 10.f * DeltaSeconds;
+		SetActorLocation(Location);	
+	}
+
+	// Animate paint radius
+	if (PaintRadiusAlpha < 1)
+	{
+		PaintRadiusAlpha += DeltaSeconds * 3;
+		if (PaintRadiusAlpha >= 0.99)
+			PaintRadiusAlpha = 1;
+
+		float NewPaintRadius = FMath::InterpEaseOut(PrevPaintRadius, TargetPaintRadius, PaintRadiusAlpha, 2);
+		PaintPreview->SetActorScale3D(FVector(NewPaintRadius / PaintPreviewRadius));
+	}
+
+	if (PaintTimer > 0)
+		PaintTimer -= DeltaSeconds;
+
+	if (CurrentTool == ETPaintObjects)
+		DoPaintTool();
+
+	// Do tool logic
+	switch (CurrentTool)
+	{
+	case ETNone:
+		break;
+	case ETPlaceObjects:
+		{
+			if (!CurrentItemData.GetItem())
+				return;
+			
+			FHitResult Hit;
+			if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()),
+			                                                    FloorChannel, true, Hit, TArray<AActor*>()))
+			{
+				ItemPreview->UpdateWithHitInfo(Hit);
+			}
+		}
+		break;
+	case ETPaintObjects:
+		{
+			FHitResult Hit;
+			if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()),
+			                                                    FloorChannel, true, Hit, TArray<AActor*>()))
+			{
+				PaintPreview->SetActorLocation(Hit.ImpactPoint);
+			}
+		}
+		break;
+	case ETDestroyObjects:
+		{
+			CheckHoveredObject();
+		}
+		break;
+	case ETPlaceFence:
+		{
+			if (FencePlacementStage == EFPPlacing)
+			{
+				// We're placing, so update the positions of the preview
+				FHitResult Hit;
+				if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, TArray<AActor*>()))
+				{
+					if (AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(Hit.GetActor()))
+					{
+						auto XY = Terrain->GetVertexXY(Terrain->GetClosestVertex(Hit.ImpactPoint));
+						auto Pos = Terrain->GetVertexPositionWorld(Terrain->GetVertexIndex(XY.X, XY.Y));
+						if (bDrawDebug)
+							DrawDebugSphere(GetWorld(), Pos, 20, 6, FColor::Red);
+						
+						FencePlacementPreview->UpdatePreview(Terrain->GetVertexXY(Terrain->GetClosestVertex(Hit.ImpactPoint)));
+					}
+				}
+			}
+		}
+		break;
+	default: UE_LOG(LogEcoscape, Error, TEXT("Ticking unimplemented tool: %i"), static_cast<int>(CurrentTool)); break;
+	}
+}
+
 void AEcoscapeTDCharacter::SetCurrentTool(EEcoscapeTool NewTool)
 {
 	// Create or destroy item preview
@@ -35,11 +177,18 @@ void AEcoscapeTDCharacter::SetCurrentTool(EEcoscapeTool NewTool)
 		ItemPreview = nullptr;
 	} else if (NewTool == ETPlaceObjects)
 		SetItemPreview(CurrentItemData.GetItem());
-	else if (NewTool != ETPlaceFence)
+
+	if (NewTool != ETPlaceFence)
 		FencePlacementPreview->DisablePreview();
 
 	if (CurrentTool != ETPlaceFence)
 		FencePlacementStage = EFPNone;
+
+	// Show or hide paint preview depending on tool
+	if (NewTool == ETPaintObjects)
+		PaintPreview->SetActorHiddenInGame(false);
+	else
+		PaintPreview->SetActorHiddenInGame(true);
 	
 	CurrentTool = NewTool;
 	OnToolChanged.Broadcast(NewTool);
@@ -109,7 +258,6 @@ void AEcoscapeTDCharacter::OnToolUsed()
 		break;
 	case ETPaintObjects:
 		{
-			
 		}
 		break;
 	case ETDestroyObjects:
@@ -235,7 +383,10 @@ void AEcoscapeTDCharacter::ResetTool(bool bInstant)
 		}
 	case ETPaintObjects:
 		{
-			
+			PrevPaintRadius = PaintPreview->GetActorScale().X * PaintPreviewRadius;
+			TargetPaintRadius = FMath::Lerp(PaintRadiusRange.X, PaintRadiusRange.Y, 0.5);
+			PaintRadiusAlpha = 0;
+			PaintSpeed = FMath::Lerp(PaintSpeedRange.X, PaintSpeedRange.Y, 0.5);
 		}
 		break;
 	default: UE_LOG(LogEcoscape, Error, TEXT("Attempted to use unimplemented tool: %i"), static_cast<int>(CurrentTool)); break;
@@ -244,11 +395,24 @@ void AEcoscapeTDCharacter::ResetTool(bool bInstant)
 
 void AEcoscapeTDCharacter::AddScrollInput(float Value)
 {
+	if (Value == 0)
+		return;
+	
 	if (CurrentTool == ETPlaceObjects && EcoscapePlayerController->IsModifierHeld())
 	{
-		PlacedItemScale = FMath::Clamp(PlacedItemScale += Value * 0.2f, CurrentItemData.GetItem()->ScaleBounds.X, CurrentItemData.GetItem()->ScaleBounds.Y);
-		ItemPreview->SetTargetScale(PlacedItemScale);
-	} else
+		if (!CurrentItemData.GetItem())
+			return;
+		PlacedItemScale = FMath::Clamp(PlacedItemScale + Value * 0.2f, CurrentItemData.GetItem()->ScaleBounds.X, CurrentItemData.GetItem()->ScaleBounds.Y);
+		if (ItemPreview)
+			ItemPreview->SetTargetScale(PlacedItemScale);
+	}
+	else if (CurrentTool == ETPaintObjects && EcoscapePlayerController->IsModifierHeld())
+	{
+		PrevPaintRadius = PaintPreview->GetActorScale().X * PaintPreviewRadius;
+		TargetPaintRadius = FMath::Clamp(TargetPaintRadius + Value * 100, PaintRadiusRange.X, PaintRadiusRange.Y);
+		PaintRadiusAlpha = 0;
+	}
+	else
 		TargetHeight = FMath::Clamp(TargetHeight + -Value * ZoomSensitivity, HeightBounds.X, HeightBounds.Y);
 }
 
@@ -275,86 +439,6 @@ void AEcoscapeTDCharacter::GoToTerrain(AEcoscapeTerrain* Terrain)
 {
 	// TODO: Calculate movement bounds
 	CurrentItemData.CurrentTerrain = Terrain;
-}
-
-void AEcoscapeTDCharacter::BeginPlay()
-{
-	Super::BeginPlay();
-	
-	TargetHeight = GetActorLocation().Z;
-
-	// Make fence placement preview now
-	FencePlacementPreview = GetWorld()->SpawnActor<AFencePlacementPreview>();
-}
-
-void AEcoscapeTDCharacter::Tick(float DeltaSeconds)
-{
-	Super::Tick(DeltaSeconds);
-
-	if (!bIsPossessed)
-		return;
-	
-	// Animate zoom height
-	FVector Location = GetActorLocation();
-	if (Location.Z != TargetHeight)
-	{
-		const float Diff = Location.Z - TargetHeight;
-		if (FMath::Abs(Diff) < 1)
-			Location.Z = TargetHeight;
-		else
-			Location.Z += -Diff * 10.f * DeltaSeconds;
-		SetActorLocation(Location);	
-	}
-
-	// Do tool logic
-	switch (CurrentTool)
-	{
-	case ETNone:
-		break;
-	case ETPlaceObjects:
-		{
-			if (!CurrentItemData.GetItem())
-				return;
-			
-			FHitResult Hit;
-			const TArray<AActor*> IgnoredActors;
-			if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, IgnoredActors))
-				ItemPreview->UpdateWithHitInfo(Hit);
-		}
-		break;
-	case ETPaintObjects:
-		{
-			
-		}
-		break;
-	case ETDestroyObjects:
-		{
-			CheckHoveredObject();
-		}
-		break;
-	case ETPlaceFence:
-		{
-			if (FencePlacementStage == EFPPlacing)
-			{
-				// We're placing, so update the positions of the preview
-				FHitResult Hit;
-				if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), FloorChannel, true, Hit, TArray<AActor*>()))
-				{
-					if (AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(Hit.GetActor()))
-					{
-						auto XY = Terrain->GetVertexXY(Terrain->GetClosestVertex(Hit.ImpactPoint));
-						auto Pos = Terrain->GetVertexPositionWorld(Terrain->GetVertexIndex(XY.X, XY.Y));
-						if (bDrawDebug)
-							DrawDebugSphere(GetWorld(), Pos, 20, 6, FColor::Red);
-						
-						FencePlacementPreview->UpdatePreview(Terrain->GetVertexXY(Terrain->GetClosestVertex(Hit.ImpactPoint)));
-					}
-				}
-			}
-		}
-		break;
-	default: UE_LOG(LogEcoscape, Error, TEXT("Ticking unimplemented tool: %i"), static_cast<int>(CurrentTool)); break;
-	}
 }
 
 void AEcoscapeTDCharacter::PossessedBy(AController* NewController)
@@ -391,6 +475,7 @@ void AEcoscapeTDCharacter::UnPossessed()
 	if (FencePlacementPreview)
 		FencePlacementPreview->DisablePreview();
 	FencePlacementStage = EFPNone;
+	PaintPreview->SetActorHiddenInGame(true);
 	HighlightObject(nullptr);
 }
 
@@ -425,4 +510,72 @@ void AEcoscapeTDCharacter::SetItemPreview(UPlaceableItemData* ItemData)
 	if (!ItemPreview)
 		CreateItemPreview();
 	ItemPreview->SetItem(ItemData);
+}
+
+bool AEcoscapeTDCharacter::TryPlaceItemAtHit(UPlaceableItemData* Item, FHitResult& Hit)
+{
+	// Check normal
+	if (UEcoscapeStatics::AngleBetweenDirectionsDeg(FVector(0, 0, 1), Hit.ImpactNormal) > Item->MaxAngle)
+	{
+		DrawDebugString(GetWorld(), Hit.ImpactPoint + FVector(0, 0, 50), "BAD NORMAL", nullptr, FColor::White, 3);
+		return false;
+	}
+
+	float Yaw = FMath::RandRange(0, 360);
+	
+	// Spawn an object to use with the checks
+	APlacedItem* PlacedItem = APlacedItem::SpawnItem(GetWorld(), Item,
+													 Hit.ImpactPoint + Item->ZOffset, FVector::OneVector, FRotator(0, Yaw, 0));
+	PlacedItem->AddActorLocalOffset(FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(PlacedItem)));
+	
+	auto Rotation = UKismetMathLibrary::Conv_VectorToRotator(Hit.ImpactNormal);
+	FVector UpVector = PlacedItem->GetActorUpVector();
+	FVector NormalVector = UKismetMathLibrary::VLerp(UpVector, Hit.ImpactNormal, 0.4f);
+	FVector RotationAxis = FVector::CrossProduct(UpVector, NormalVector);
+	RotationAxis.Normalize();
+	float DotProduct = FVector::DotProduct(UpVector, NormalVector);
+	float RotationAngle = acosf(DotProduct);
+	FQuat Quat = FQuat(RotationAxis, RotationAngle);
+	FQuat RootQuat = PlacedItem->GetActorQuat();
+	FQuat NewQuat = Quat * RootQuat;
+	Rotation = NewQuat.Rotator();
+	Rotation.Yaw = Yaw;
+	PlacedItem->SetActorRotation(Rotation);
+
+	// Get any overlapping components
+	FComponentQueryParams ComponentQueryParams;
+	ComponentQueryParams.AddIgnoredActor(PlacedItem);
+	TArray<FOverlapResult> OverlapResults;
+	GetWorld()->ComponentOverlapMulti(OverlapResults, PlacedItem->GetMesh(),
+		PlacedItem->GetActorLocation(), Rotation,
+		ComponentQueryParams, FCollisionObjectQueryParams::AllObjects);
+	
+	// Check that there are no overlaps with objects that block placement
+	for (const auto OverlapResult : OverlapResults)
+	{
+		if (OverlapResult.Component->GetCollisionResponseToChannel(ECC_BLOCKS_ITEM_PLACEMENT) == ECR_Block)
+		{
+			PlacedItem->Destroy();
+			DrawDebugString(GetWorld(), Hit.ImpactPoint + FVector(0, 0, 50), "BLOCKED", nullptr, FColor::White, 3);
+			return false;
+		}
+	}
+
+	// Placement should be valid. Do other placement things
+	OnItemPlaced(PlacedItem->GetActorLocation(), PlacedItem);
+	if (AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(Hit.GetActor()))
+	{
+		PlacedItem->AssociatedTerrain = Terrain; 
+		Terrain->PlacedItems.Add(PlacedItem);
+		auto Verts = Terrain->GetVerticiesInSphere(Hit.ImpactPoint, CurrentItemData.GetItem()->ColourRange, true);
+		for (auto& [Vertex, _] : Verts)
+		{
+			if (bDrawDebug)
+				DrawDebugSphere(GetWorld(), Terrain->GetVertexPositionWorld(Vertex), 20, 6, FColor::Red, false, 2.5f);
+			Terrain->CalculateVertColour(Vertex);
+		}
+		Terrain->FlushMesh();
+	}
+
+	return true;
 }
