@@ -169,6 +169,9 @@ public:
 		return FVector2D(FMath::Floor(Index / (Width + 1)), Index % (Height + 1));
 	}
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool IsPositionWithinPlayableSpace(FVector Position);
+
 	UFUNCTION(BlueprintCallable)
 	AProceduralFenceMesh* CreateFence(FVector2D Start, FVector2D End, int Step = 2);
 

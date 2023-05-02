@@ -414,6 +414,7 @@ void AEcoscapeTerrain::GenerateFence()
 }
 
 // TODO: This function SUCKS
+// Look into converting to using instanced static meshes: https://docs.unrealengine.com/4.27/en-US/BlueprintAPI/Components/InstancedStaticMesh/
 void AEcoscapeTerrain::GenerateExteriorDetail()
 {
 	FVector TerrainLoc = GetActorLocation();
@@ -545,6 +546,13 @@ int AEcoscapeTerrain::GetClosestVertex(FVector Position)
 	const int Y = FMath::RoundToInt(Height * YAlpha);
 
 	return GetVertexIndex(X, Y);
+}
+
+bool AEcoscapeTerrain::IsPositionWithinPlayableSpace(FVector Position)
+{
+	const FVector Loc = GetActorLocation();
+	return FMath::IsWithin(Position.X, Loc.X + (ExteriorTileCount * Scale), Loc.X + (Width * Scale) - (ExteriorTileCount * Scale))
+		&& FMath::IsWithin(Position.Y, Loc.Y + (ExteriorTileCount * Scale), Loc.Y + (Height * Scale) - (ExteriorTileCount * Scale));
 }
 
 AProceduralFenceMesh* AEcoscapeTerrain::CreateFence(FVector2D Start, FVector2D End, int Step)

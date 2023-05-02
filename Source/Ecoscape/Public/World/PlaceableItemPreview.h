@@ -34,6 +34,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetTargetScale(float NewValue, bool bInstant = false);
+
+	UPROPERTY()
+	AEcoscapeTerrain* CurrentTerrain;
 	
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

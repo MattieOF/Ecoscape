@@ -6,6 +6,7 @@
 #include "EcoscapeStatics.h"
 #include "EcoscapeStats.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "World/EcoscapeTerrain.h"
 
 DECLARE_CYCLE_STAT(TEXT("Move Item Preview"), STAT_MovePreview, STATGROUP_Ecoscape);
 
@@ -83,6 +84,14 @@ void APlaceableItemPreview::UpdateWithHitInfo(FHitResult Hit)
 	SetActorRotation(Rotation);
 
 	AddActorLocalOffset(FVector(0, 0, CurrentItem->ZOffset));
+
+	// Check position is in playable area of current terrain
+	if (CurrentTerrain && !CurrentTerrain->IsPositionWithinPlayableSpace(Hit.ImpactPoint))
+	{
+		bIsValidPlacement = false;
+		UEcoscapeStatics::SetAllMaterials(MainMesh, InvalidMaterial);
+		return;
+	}
 
 	// Check to see if position is valid or not
 	// First, set the scale to target scale, so we check against that instead of the lerped one.

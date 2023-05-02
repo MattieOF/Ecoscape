@@ -433,6 +433,9 @@ void AEcoscapeTDCharacter::GoToTerrain(AEcoscapeTerrain* Terrain)
 	PlayRangeMin.Y += Terrain->ExteriorTileCount * Terrain->GetScale();
 	PlayRangeMax.X -= Terrain->ExteriorTileCount * Terrain->GetScale();
 	PlayRangeMax.Y -= Terrain->ExteriorTileCount * Terrain->GetScale();
+
+	if (ItemPreview)
+		ItemPreview->CurrentTerrain = Terrain;
 	
 	CurrentItemData.CurrentTerrain = Terrain;
 }
@@ -499,6 +502,7 @@ void AEcoscapeTDCharacter::CreateItemPreview()
 	ItemPreview = GetWorld()->SpawnActor<APlaceableItemPreview>(ItemPreviewClass, FVector(0, 0, 0), FRotator::ZeroRotator);
 	ItemPreview->SetTargetRotation(PlacedItemRotation, true);
 	ItemPreview->SetTargetScale(PlacedItemScale, true);
+	ItemPreview->CurrentTerrain = EcoscapePlayerController->GetCurrentTerrain();
 }
 
 void AEcoscapeTDCharacter::SetItemPreview(UPlaceableItemData* ItemData)
@@ -514,6 +518,10 @@ bool AEcoscapeTDCharacter::TryPlaceItemAtHit(UPlaceableItemData* Item, FHitResul
 	if (UEcoscapeStatics::AngleBetweenDirectionsDeg(FVector(0, 0, 1), Hit.ImpactNormal) > Item->MaxAngle)
 		return false;
 
+	// Check position is within playable space
+	if (!EcoscapePlayerController->GetCurrentTerrain()->IsPositionWithinPlayableSpace(Hit.ImpactPoint))
+		return false;
+	
 	float Yaw = FMath::RandRange(0, 360);
 	
 	// Spawn an object to use with the checks
@@ -534,7 +542,7 @@ bool AEcoscapeTDCharacter::TryPlaceItemAtHit(UPlaceableItemData* Item, FHitResul
 	Rotation = NewQuat.Rotator();
 	Rotation.Yaw = Yaw;
 	PlacedItem->SetActorRotation(Rotation);
-
+	
 	// Get any overlapping components
 	FComponentQueryParams ComponentQueryParams;
 	ComponentQueryParams.AddIgnoredActor(PlacedItem);
