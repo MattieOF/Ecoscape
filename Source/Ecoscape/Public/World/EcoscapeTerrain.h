@@ -18,14 +18,12 @@ FORCEINLINE FArchive& operator<<(FArchive& LHS, FProcMeshTangent& RHS)
 	return LHS;
 }
 
-#if WITH_EDITOR
 UENUM(BlueprintType)
 enum ENoiseType
 {
 	ENTPerlin    UMETA(DisplayName = "Perlin"),
 	ENTSimplex   UMETA(DisplayName = "Simplex")
 };
-#endif
 
 UENUM()
 enum EFenceImpl

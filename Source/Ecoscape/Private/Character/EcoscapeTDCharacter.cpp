@@ -61,8 +61,6 @@ void AEcoscapeTDCharacter::DoPaintTool()
 	const FVector RayStart = FVector(RandomInRange.X + PaintOrigin.X, RandomInRange.Y + PaintOrigin.Y, Terrain->GetHighestHeight() + 50);
 	const FVector RayEnd = FVector(RayStart.X, RayStart.Y, Terrain->GetLowestHeight() - 50);
 	
-	DrawDebugLine(GetWorld(), RayStart, RayEnd, FColor::Red, false, 3, 0, 5);
-	
 	FHitResult Hit;
 	if (GetWorld()->LineTraceSingleByChannel(Hit, RayStart, RayEnd, ECC_ITEM_PLACEABLE_ON))
 	{
@@ -516,10 +514,7 @@ bool AEcoscapeTDCharacter::TryPlaceItemAtHit(UPlaceableItemData* Item, FHitResul
 {
 	// Check normal
 	if (UEcoscapeStatics::AngleBetweenDirectionsDeg(FVector(0, 0, 1), Hit.ImpactNormal) > Item->MaxAngle)
-	{
-		DrawDebugString(GetWorld(), Hit.ImpactPoint + FVector(0, 0, 50), "BAD NORMAL", nullptr, FColor::White, 3);
 		return false;
-	}
 
 	float Yaw = FMath::RandRange(0, 360);
 	
@@ -556,7 +551,6 @@ bool AEcoscapeTDCharacter::TryPlaceItemAtHit(UPlaceableItemData* Item, FHitResul
 		if (OverlapResult.Component->GetCollisionResponseToChannel(ECC_BLOCKS_ITEM_PLACEMENT) == ECR_Block)
 		{
 			PlacedItem->Destroy();
-			DrawDebugString(GetWorld(), Hit.ImpactPoint + FVector(0, 0, 50), "BLOCKED", nullptr, FColor::White, 3);
 			return false;
 		}
 	}
