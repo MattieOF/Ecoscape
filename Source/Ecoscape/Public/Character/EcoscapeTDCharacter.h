@@ -35,6 +35,7 @@ enum EFencePlacementStage
 // TODO: Move to separate files?
 enum EItemDataType
 {
+	None,
 	Item,
 	Folder
 };
@@ -118,6 +119,8 @@ public:
 	void SetCurrentItem(UPlaceableItemData* Item);
 	UFUNCTION(BlueprintCallable)
 	void SetCurrentFolder(UItemFolder* Folder);
+	UFUNCTION(BlueprintCallable)
+	void DeselectItem();
 
 	void GoToTerrain(AEcoscapeTerrain* Terrain);
 	
@@ -204,6 +207,7 @@ protected:
 
 	UPROPERTY()
 	AActor* PaintPreview;
+	UStaticMeshComponent* PaintPreviewMesh;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Tools")
 	float TargetPaintRadius;

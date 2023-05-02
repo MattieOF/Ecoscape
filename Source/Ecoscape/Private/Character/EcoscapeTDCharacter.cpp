@@ -33,6 +33,7 @@ void AEcoscapeTDCharacter::BeginPlay()
 
 	// Init paint preview
 	PaintPreview = GetWorld()->SpawnActor<AActor>(PaintPreviewClass);
+	PaintPreviewMesh = Cast<UStaticMeshComponent>(PaintPreview->GetComponentByClass(UStaticMeshComponent::StaticClass()));
 	PaintPreview->SetActorHiddenInGame(true);
 	TargetPaintRadius  = FMath::Lerp(PaintRadiusRange.X, PaintRadiusRange.Y, 0.5);
 	PrevPaintRadius    = TargetPaintRadius;
@@ -47,6 +48,52 @@ void AEcoscapeTDCharacter::BeginPlay()
 
 void AEcoscapeTDCharacter::DoPaintTool()
 {
+	if (EcoscapePlayerController->IsUseDown() && EcoscapePlayerController->IsModifierHeld())
+	{
+		// Try delete stuff
+		TArray<FOverlapResult> Overlaps;
+		FComponentQueryParams ComponentQueryParams;
+		ComponentQueryParams.AddIgnoredActor(PaintPreview);
+		GetWorld()->ComponentOverlapMulti(Overlaps, PaintPreviewMesh,
+			PaintPreviewMesh->GetComponentLocation(), FRotator(0, 0, 0),
+				ComponentQueryParams, FCollisionObjectQueryParams::AllObjects);
+
+		bool bTerrainChanged = false;
+		for (const auto& Overlap : Overlaps)
+		{
+			APlacedItem* Item = Cast<APlacedItem>(Overlap.GetActor());
+			if (!Item)
+				continue;
+
+			if (CurrentItemData.Type == EItemDataType::Folder && !CurrentItemData.Folder->Items.Contains(Item->GetItemData()))
+				continue;
+			if (CurrentItemData.Type == EItemDataType::Item && !(CurrentItemData.Item == Item->GetItemData()))
+				continue;
+			
+			AEcoscapeTerrain* Terrain = Item->AssociatedTerrain;
+			if (Terrain == EcoscapePlayerController->GetCurrentTerrain())
+			{
+				Terrain->PlacedItems.Remove(Item);
+				auto Verts = Terrain->GetVerticiesInSphere(Item->GetActorLocation(), Item->GetItemData()->ColourRange * Item->GetActorScale().X, true);
+				for (auto& [Vertex, _] : Verts)
+				{
+					if (bDrawDebug)
+						DrawDebugSphere(GetWorld(), Terrain->GetVertexPositionWorld(Vertex), 20, 6, FColor::Red, false, 2.5f);
+					Terrain->CalculateVertColour(Vertex);
+				}
+
+				bTerrainChanged = true;
+				
+				Item->Destroy();
+			}
+		}
+
+		if (bTerrainChanged)
+			EcoscapePlayerController->GetCurrentTerrain()->FlushMesh();
+		
+		return;
+	}
+	
 	if (PaintTimer > 0 || !EcoscapePlayerController->IsUseDown() || !CurrentItemData.GetItem())
 		return;
 
@@ -412,23 +459,43 @@ void AEcoscapeTDCharacter::SetCurrentItem(UPlaceableItemData* Item)
 	CurrentItemData.Type = EItemDataType::Item;
 	CurrentItemData.Item = Item;
 
-	if (ItemPreview)
-		ItemPreview->SetItem(CurrentItemData.GetItem());
+	if (Item)
+		SetItemPreview(Item);
+	else if (ItemPreview && !Item)
+	{
+		ItemPreview->Destroy();
+		ItemPreview = nullptr;
+	}
 }
 
 void AEcoscapeTDCharacter::SetCurrentFolder(UItemFolder* Folder)
 {
 	CurrentItemData.Type = EItemDataType::Folder;
 	CurrentItemData.Folder = Folder;
-	
 	CurrentItemData.RerollItem();
-	if (ItemPreview)
-		ItemPreview->SetItem(CurrentItemData.GetItem());
+	
+	if (CurrentItemData.GetItem())
+		SetItemPreview(CurrentItemData.GetItem());
+	else if (ItemPreview && !CurrentItemData.GetItem())
+	{
+		ItemPreview->Destroy();
+		ItemPreview = nullptr;
+	}
+}
+
+void AEcoscapeTDCharacter::DeselectItem()
+{
+	CurrentItemData.Type = EItemDataType::None;
+	CurrentItemData.Folder = nullptr;
+	CurrentItemData.Item = nullptr;
+	
+	ItemPreview->Destroy();
+	ItemPreview = nullptr;
 }
 
 void AEcoscapeTDCharacter::GoToTerrain(AEcoscapeTerrain* Terrain)
 {
-	Terrain->GetXYBounds(PlayRangeMin, PlayRangeMax); // TODO: Cache?
+	Terrain->GetXYBounds(PlayRangeMin, PlayRangeMax);
 	PlayRangeMin.X += Terrain->ExteriorTileCount * Terrain->GetScale();
 	PlayRangeMin.Y += Terrain->ExteriorTileCount * Terrain->GetScale();
 	PlayRangeMax.X -= Terrain->ExteriorTileCount * Terrain->GetScale();
