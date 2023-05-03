@@ -3,8 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EcoscapeGameInstance.h"
-#include "FastNoise.h"
 #include "PlacedItem.h"
 #include "GameFramework/Actor.h"
 #include "ProceduralMeshComponent.h"
@@ -289,7 +287,6 @@ protected:
 	AActor* WaterMesh = nullptr;
 
 	// Generation stuff
-	FastNoiseLite Noise;
 	UPROPERTY(BlueprintReadOnly)
 	float ColorOffsetSeed = 0;
 	UPROPERTY(BlueprintReadOnly)

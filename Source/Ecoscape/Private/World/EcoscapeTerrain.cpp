@@ -224,6 +224,8 @@ void AEcoscapeTerrain::ResetMeshData()
 
 void AEcoscapeTerrain::GenerateVerticies()
 {
+	static FastNoiseLite Noise; // Declare noise here so we don't have to include FastNoise.h in the header file
+	
 	int VertCount = 0;
 	for (int x = 0; x <= Width; x++)
 	{

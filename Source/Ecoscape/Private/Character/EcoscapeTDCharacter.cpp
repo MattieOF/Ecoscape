@@ -48,7 +48,7 @@ void AEcoscapeTDCharacter::BeginPlay()
 
 void AEcoscapeTDCharacter::DoPaintTool()
 {
-	if (EcoscapePlayerController->IsUseDown() && EcoscapePlayerController->IsModifierHeld())
+	if (EcoscapePlayerController->IsAltUseDown())
 	{
 		// Try delete stuff
 		TArray<FOverlapResult> Overlaps;
@@ -65,10 +65,14 @@ void AEcoscapeTDCharacter::DoPaintTool()
 			if (!Item)
 				continue;
 
-			if (CurrentItemData.Type == EItemDataType::Folder && !CurrentItemData.Folder->Items.Contains(Item->GetItemData()))
-				continue;
-			if (CurrentItemData.Type == EItemDataType::Item && !(CurrentItemData.Item == Item->GetItemData()))
-				continue;
+			// Only do item filtering if shift is not held
+			if (!EcoscapePlayerController->IsModifierHeld())
+			{
+				if (CurrentItemData.Type == EItemDataType::Folder && !CurrentItemData.Folder->Items.Contains(Item->GetItemData()))
+					continue;
+				if (CurrentItemData.Type == EItemDataType::Item && !(CurrentItemData.Item == Item->GetItemData()))
+					continue;
+			}
 			
 			AEcoscapeTerrain* Terrain = Item->AssociatedTerrain;
 			if (Terrain == EcoscapePlayerController->GetCurrentTerrain())
@@ -489,8 +493,11 @@ void AEcoscapeTDCharacter::DeselectItem()
 	CurrentItemData.Folder = nullptr;
 	CurrentItemData.Item = nullptr;
 	
-	ItemPreview->Destroy();
-	ItemPreview = nullptr;
+	if (ItemPreview)
+	{
+		ItemPreview->Destroy();
+		ItemPreview = nullptr;
+	}
 }
 
 void AEcoscapeTDCharacter::GoToTerrain(AEcoscapeTerrain* Terrain)

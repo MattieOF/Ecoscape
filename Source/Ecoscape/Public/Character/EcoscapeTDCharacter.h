@@ -51,7 +51,7 @@ struct FItemDataInterface
 	FORCEINLINE UPlaceableItemData* GetItem() { return Type == EItemDataType::Folder ? NextItem : Item; }
 
 private:
-	UPlaceableItemData* NextItem; // For use with folders
+	UPlaceableItemData* NextItem = nullptr; // For use with folders
 };
 // ------------------------------------------
 
@@ -207,6 +207,7 @@ protected:
 
 	UPROPERTY()
 	AActor* PaintPreview;
+	UPROPERTY()
 	UStaticMeshComponent* PaintPreviewMesh;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Tools")

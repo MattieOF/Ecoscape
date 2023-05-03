@@ -54,6 +54,8 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE bool IsUseDown() { return bUseDown; }
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE bool IsAltUseDown() { return bAltUseDown; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE AEcoscapeTerrain* GetCurrentTerrain() { return CurrentTerrain; }
@@ -118,6 +120,7 @@ protected:
 	void OnUseTool();
 	void OnStopUseTool();
 	void OnUseAltTool();
+	void OnStopUseAltTool();
 	void OnResetTool();
 	void OnInteract();
 
@@ -165,5 +168,5 @@ private:
 
 	bool bModifierPressed = false;
 
-	bool bUseDown = false;
+	bool bUseDown = false, bAltUseDown = false;
 };

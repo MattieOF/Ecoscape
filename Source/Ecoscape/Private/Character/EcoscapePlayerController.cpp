@@ -110,10 +110,11 @@ void AEcoscapePlayerController::BeginPlay()
 	InputComponent->BindAction("Modifier", IE_Pressed, this, &AEcoscapePlayerController::OnModifierPressed);
 	InputComponent->BindAction("Modifier", IE_Released, this, &AEcoscapePlayerController::OnModifierReleased);
 	InputComponent->BindAction("SwitchView", IE_Pressed, this, &AEcoscapePlayerController::OnSwitchView);
+	InputComponent->BindAction("Interact", IE_Pressed, this, &AEcoscapePlayerController::OnInteract);
 	InputComponent->BindAction("UseTool", IE_Pressed, this, &AEcoscapePlayerController::OnUseTool);
 	InputComponent->BindAction("UseTool", IE_Released, this, &AEcoscapePlayerController::OnStopUseTool);
-	InputComponent->BindAction("Interact", IE_Pressed, this, &AEcoscapePlayerController::OnInteract);
 	InputComponent->BindAction("UseAltTool", IE_Pressed, this, &AEcoscapePlayerController::OnUseAltTool);
+	InputComponent->BindAction("UseAltTool", IE_Released, this, &AEcoscapePlayerController::OnStopUseAltTool);
 	InputComponent->BindAction("ResetTool", IE_Pressed, this, &AEcoscapePlayerController::OnResetTool);
 	InputComponent->BindAction("HabitatSelect", IE_Pressed, this, &AEcoscapePlayerController::GoToHabitatSelect);
 	
@@ -212,10 +213,10 @@ void AEcoscapePlayerController::OnSwitchView()
 
 void AEcoscapePlayerController::OnUseTool()
 {
+	bUseDown = true;
+	
 	if (CurrentView == EPSTopDown)
 		TDCharacter->OnToolUsed();
-
-	bUseDown = true;
 }
 
 void AEcoscapePlayerController::OnStopUseTool()
@@ -225,8 +226,15 @@ void AEcoscapePlayerController::OnStopUseTool()
 
 void AEcoscapePlayerController::OnUseAltTool()
 {
+	bAltUseDown = true;
+	
 	if (CurrentView == EPSTopDown)
 		TDCharacter->OnToolAltUsed();
+}
+
+void AEcoscapePlayerController::OnStopUseAltTool()
+{
+	bAltUseDown = false;
 }
 
 void AEcoscapePlayerController::OnResetTool()
