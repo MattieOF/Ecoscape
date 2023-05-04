@@ -7,6 +7,7 @@
 #include "EcoscapeStatics.h"
 #include "EcoscapeStats.h"
 #include "KismetProceduralMeshLibrary.h"
+#include "NavigationSystem.h"
 #include "Engine/StaticMeshActor.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Misc/FileHelper.h"
@@ -694,4 +695,7 @@ void AEcoscapeTerrain::Regenerate()
 	GenerateFence();
 	CreateMesh();
 	GenerateExteriorDetail();
+
+	// Update the navigation
+	FNavigationSystem::UpdateComponentData(*ProceduralMeshComponent);
 }
