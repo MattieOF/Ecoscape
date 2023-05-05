@@ -5,16 +5,13 @@
 #include "CoreMinimal.h"
 #include "AnimalData.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/Character.h"
 #include "BaseAnimal.generated.h"
 
 UCLASS(BlueprintType, Blueprintable)
-class ECOSCAPE_API ABaseAnimal : public APawn
+class ECOSCAPE_API ABaseAnimal : public ACharacter
 {
 	GENERATED_BODY()
-
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	USkeletalMeshComponent* AnimalMesh;
 
 public:
 	// Sets default values for this actor's properties

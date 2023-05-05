@@ -108,7 +108,7 @@ FString UEcoscapeStatics::GetLetterFromNum(int Num)
 	return FString(&Alphabet[Num]);
 }
 
-float UEcoscapeStatics::GetZUnderOrigin(AActor* Object)
+float UEcoscapeStatics::GetZUnderOrigin(const AActor* Object)
 {
 	FVector Origin, Extents;
 	Object->GetActorBounds(true, Origin, Extents);

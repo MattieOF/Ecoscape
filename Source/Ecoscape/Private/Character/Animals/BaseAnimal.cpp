@@ -5,16 +5,18 @@
 #include "Ecoscape.h"
 #include "EcoscapeStatics.h"
 #include "MessageLogModule.h"
+#include "Animation/AnimInstance.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 ABaseAnimal::ABaseAnimal()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	AnimalMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Animal Mesh"));
-	AnimalMesh->SetCollisionResponseToChannel(ECC_BLOCKS_ITEM_PLACEMENT, ECR_Block);
-	RootComponent = AnimalMesh;
-
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+	
+	bUseControllerRotationYaw = false;
+	GetCharacterMovement()->RotationRate.Yaw = 180;
+	GetCharacterMovement()->bOrientRotationToMovement = true;
 }
 
 void ABaseAnimal::BeginPlay()
@@ -43,9 +45,17 @@ void ABaseAnimal::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedE
 void ABaseAnimal::SetAnimalData(UAnimalData* Data, bool bRecreateAI)
 {
 	AnimalData = Data;
+	
 	if (Data)
 	{
-		AnimalMesh->SetSkeletalMesh(Data->Mesh);
+		// Setup basic data
+		GetCharacterMovement()->MaxWalkSpeed = Data->MoveSpeed;
+
+		// Setup mesh
+		GetMesh()->SetSkeletalMesh(Data->Mesh);
+		GetMesh()->SetAnimInstanceClass(Data->AnimationClass);
+
+		// Setup AI
 		AIControllerClass = Data->AI;
 
 		if (Controller)

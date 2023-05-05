@@ -86,7 +86,7 @@ public:
 	static FString GetLetterFromNum(int Num);
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	static float GetZUnderOrigin(AActor* Object);
+	static float GetZUnderOrigin(const AActor* Object);
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static float GetZUnderOriginItem(UPlaceableItemData* Object);
