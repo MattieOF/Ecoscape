@@ -7,6 +7,7 @@
 #include "MessageLogModule.h"
 #include "Animation/AnimInstance.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 ABaseAnimal::ABaseAnimal()
 {
@@ -17,6 +18,9 @@ ABaseAnimal::ABaseAnimal()
 	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->RotationRate.Yaw = 180;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
+
+	GetMesh()->SetCollisionProfileName(UCollisionProfile::Pawn_ProfileName);
+	GetMesh()->SetCollisionResponseToChannel(ECC_BLOCKS_ITEM_PLACEMENT, ECR_Block);
 }
 
 void ABaseAnimal::BeginPlay()
@@ -31,6 +35,42 @@ void ABaseAnimal::BeginPlay()
 	}
 
 	SetAnimalData(AnimalData);
+}
+
+void ABaseAnimal::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	// Find target rotation
+	FRotator CurrentRotation = GetMesh()->GetComponentRotation();
+	double CurrentYaw = CurrentRotation.Yaw;
+	FHitResult Hit;
+	if (GetWorld()->LineTraceSingleByChannel(Hit, GetActorLocation(), GetActorLocation() + FVector(0, 0, -350),
+	                                         ECC_ITEM_PLACEABLE_ON))
+	{
+		GetMesh()->SetWorldRotation(FRotator(0, CurrentYaw, 0));
+		
+		// Set mesh rotation to match terrain
+		auto Rotation = UKismetMathLibrary::Conv_VectorToRotator(Hit.ImpactNormal);
+		FVector NormalVector = UKismetMathLibrary::VLerp(FVector::UpVector, Hit.ImpactNormal, 0.4f);
+		FVector RotationAxis = FVector::CrossProduct(FVector::UpVector, NormalVector);
+		RotationAxis.Normalize();
+		float DotProduct = FVector::DotProduct(FVector::UpVector, NormalVector);
+		float RotationAngle = acosf(DotProduct);
+		FQuat Quat = FQuat(RotationAxis, RotationAngle);
+		FQuat RootQuat = GetMesh()->GetComponentQuat();
+		FQuat NewQuat = Quat * RootQuat;
+		Rotation = NewQuat.Rotator();
+		Rotation.Yaw = CurrentYaw;
+		TargetRotation = Rotation;
+
+		GetMesh()->SetWorldRotation(CurrentRotation);
+	}
+	else
+		TargetRotation = FRotator(0, CurrentYaw, 0);
+
+	// Interpolate towards target rotation
+	GetMesh()->SetWorldRotation(UKismetMathLibrary::RInterpTo_Constant(CurrentRotation, TargetRotation, DeltaSeconds, 15));
 }
 
 #if WITH_EDITOR
