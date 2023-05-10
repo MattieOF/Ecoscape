@@ -217,8 +217,9 @@ protected:
 	void GenerateIndicies();
 	void GenerateNormals();
 	void GenerateFence();
-	void GenerateExteriorDetail();
+	void CreateNavVolume();
 	void CreateMesh() const;
+	void GenerateExteriorDetail();
 
 #if WITH_EDITOR
 	UFUNCTION(BlueprintCallable, CallInEditor)
@@ -285,6 +286,8 @@ protected:
 	AProceduralFenceMesh* FenceMesh = nullptr;
 	UPROPERTY()
 	AActor* WaterMesh = nullptr;
+	UPROPERTY()
+	AActor* NavMeshVolume = nullptr;
 
 	// Generation stuff
 	UPROPERTY(BlueprintReadOnly)

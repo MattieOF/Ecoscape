@@ -416,10 +416,26 @@ void AEcoscapeTerrain::GenerateFence()
 #endif
 }
 
+void AEcoscapeTerrain::CreateNavVolume()
+{
+	// FVector Center = GetCenterPosition();
+	// ANavMeshBoundsVolume* BoundsVolume = GetWorld()->SpawnActor<ANavMeshBoundsVolume>(Center, FRotator::ZeroRotator);
+	// UCubeBuilder* Builder = Cast<UCubeBuilder>(BoundsVolume->BrushBuilder);
+	// Builder->X = (Width - (ExteriorTileCount * 2)) * Scale;
+	// Builder->Y = (Height - (ExteriorTileCount * 2)) * Scale;
+	// Builder->Z = 5000;
+	// Builder->Build(GetWorld());
+	// BoundsVolume->RebuildNavigationData();
+	// NavMeshVolume = BoundsVolume;
+}
+
 // TODO: This function SUCKS
 // Look into converting to using instanced static meshes: https://docs.unrealengine.com/4.27/en-US/BlueprintAPI/Components/InstancedStaticMesh/
 void AEcoscapeTerrain::GenerateExteriorDetail()
 {
+	if (UEcoscapeStatics::InEditor())
+		return;
+	
 	FVector TerrainLoc = GetActorLocation();
 	
 	for (int i = 0; i < 600; i++)
@@ -678,6 +694,12 @@ void AEcoscapeTerrain::Regenerate()
 	for (FTerrainNoiseLayer& Layer : NoiseLayers)
 		Layer.Seed = FMath::RandRange(0.0f, 1000000.0f);
 	ColorOffsetSeed = FMath::RandRange(0.0f, 1000000.0f);
+
+	if (NavMeshVolume)
+	{
+		NavMeshVolume->Destroy();
+		NavMeshVolume = nullptr;
+	}
 	
 	ResetMeshData();
 	for (APlacedItem* Item : PlacedItems)
@@ -687,12 +709,13 @@ void AEcoscapeTerrain::Regenerate()
 		Fence->Destroy();
 	PlacedFences.Empty();
 	for (const auto& Detail : DetailActors)
-		Detail.Actor->Destroy();
+		if (Detail.Actor) Detail.Actor->Destroy();
 	DetailActors.Empty();
 	GenerateVerticies();
 	GenerateIndicies();
 	GenerateNormals();
 	GenerateFence();
+	CreateNavVolume();
 	CreateMesh();
 	GenerateExteriorDetail();
 

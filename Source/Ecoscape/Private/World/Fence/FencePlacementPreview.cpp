@@ -29,6 +29,7 @@ AFencePlacementPreview::AFencePlacementPreview()
 	
 	ProceduralMesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Mesh"));
 	ProceduralMesh->SetMaterial(0, ValidMaterial);
+	RootComponent = ProceduralMesh;
 }
 
 void AFencePlacementPreview::DisablePreview()

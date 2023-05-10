@@ -89,6 +89,7 @@ void ABaseAnimal::SetAnimalData(UAnimalData* Data, bool bRecreateAI)
 	if (Data)
 	{
 		// Setup basic data
+		GivenName = Data->SpeciesName.ToString();
 		GetCharacterMovement()->MaxWalkSpeed = Data->MoveSpeed;
 
 		// Setup mesh

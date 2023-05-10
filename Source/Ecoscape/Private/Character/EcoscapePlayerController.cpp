@@ -29,6 +29,8 @@ bool AEcoscapePlayerController::GoToTerrain(AEcoscapeTerrain* Terrain)
 		UE_LOG(LogEcoscape, Error, TEXT("Null terrain provided to AEcoscapePlayerController::GoToTerrain"));
 		return false;
 	}
+
+	OnPlayerTerrainChanged.Broadcast(CurrentTerrain, Terrain);
 	
 	CurrentTerrain = Terrain;
 	FVector TerrainCenter = Terrain->GetCenterPosition();

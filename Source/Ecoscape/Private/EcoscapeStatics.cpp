@@ -7,6 +7,10 @@
 #include "Kismet/GameplayStatics.h"
 #include "World/PlaceableItemData.h"
 
+#if WITH_EDITOR
+#include "Editor.h"
+#endif
+
 FVector2D UEcoscapeStatics::ClampVector2D(FVector2D Vector, FVector2D Min, FVector2D Max)
 {
 	return FVector2D(FMath::Clamp(Vector.X, Min.X, Max.X), FMath::Clamp(Vector.Y, Min.Y, Max.Y));
@@ -147,4 +151,13 @@ FString UEcoscapeStatics::JoinStringArray(const TArray<FString>& Array, const FS
 	}
 	
 	return Output;
+}
+
+bool UEcoscapeStatics::InActualGame()
+{
+#if WITH_EDITOR
+	return ( GEditor->bIsSimulatingInEditor || ( GEditor->PlayWorld != NULL ) );
+#else
+	return true;
+#endif
 }

@@ -31,6 +31,9 @@ public:
 	UPROPERTY(EditAnywhere)
 	UAnimalData* AnimalData;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString GivenName;
+
 private:
 	FRotator TargetRotation;
 };

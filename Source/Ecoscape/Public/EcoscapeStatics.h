@@ -193,4 +193,9 @@ public:
 	}
 
 	static FString JoinStringArray(const TArray<FString>& Array, const FString& Joiner);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static bool InActualGame();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static FORCEINLINE bool InEditor() { return !InActualGame(); }
 };

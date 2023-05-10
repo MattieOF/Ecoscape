@@ -32,6 +32,7 @@ struct FFadingMusic
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerViewChanged, EEcoscapePlayerView, NewView);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPlayerTerrainChanged, AEcoscapeTerrain*, OldTerrain, AEcoscapeTerrain*, NewTerrain);
 
 UCLASS()
 class ECOSCAPE_API AEcoscapePlayerController : public APlayerController
@@ -98,6 +99,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnPlayerViewChanged OnPlayerViewChanged;
+	
+	UPROPERTY(BlueprintAssignable)
+	FOnPlayerTerrainChanged OnPlayerTerrainChanged;
 
 protected:
 	virtual void BeginPlay() override;
