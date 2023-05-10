@@ -3,6 +3,7 @@
 #include "World/PlacedItem.h"
 
 #include "EcoscapeStatics.h"
+#include "World/StagedItemComponent.h"
 
 APlacedItem::APlacedItem()
 {
@@ -27,7 +28,16 @@ APlacedItem* APlacedItem::SpawnItem(UWorld* World, UPlaceableItemData* ItemData,
 	APlacedItem* PlacedItem = World->SpawnActor<APlacedItem>(ItemData->PlacedItemClass, Position, Rotation);
 	PlacedItem->SetActorScale3D(Scale);
 	PlacedItem->SetItemData(ItemData);
+
+	if (ItemData->StagedGrowth)
+		PlacedItem->AddStagedGrowthComponent();
+	
 	return PlacedItem;
+}
+
+UStagedItemComponent* APlacedItem::AddStagedGrowthComponent()
+{
+	return Cast<UStagedItemComponent>(AddComponentByClass(UStagedItemComponent::StaticClass(), false, FTransform::Identity, false));
 }
 
 void APlacedItem::BeginPlay()

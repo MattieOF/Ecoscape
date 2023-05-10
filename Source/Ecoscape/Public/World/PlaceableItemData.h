@@ -97,6 +97,15 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Colour")
 	FLinearColor MaxLandColour;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Growth")
+	bool StagedGrowth = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Growth")
+	TArray<UStaticMesh*> StageMeshes;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Growth")
+	FVector2D GrowthTimeRangeSecs = FVector2D(30, 50);
 };
 
 // UNUSED

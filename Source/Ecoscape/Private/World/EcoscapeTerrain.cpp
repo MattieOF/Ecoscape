@@ -13,6 +13,7 @@
 #include "Misc/FileHelper.h"
 #include "Serialization/BufferArchive.h"
 #include "World/FastNoise.h"
+#include "World/StagedItemComponent.h"
 #include "World/Fence/Fence.h"
 #include "World/Fence/ProceduralFence.h"
 #include "World/Fence/ProceduralFenceMesh.h"
@@ -65,6 +66,15 @@ void AEcoscapeTerrain::SerialiseTerrain(FArchive& Archive)
 			Archive << Transform;
 			FString ItemName = Item->GetItemData()->GetName();
 			Archive << ItemName;
+
+			UStagedItemComponent* Staged = Cast<UStagedItemComponent>(Item->GetComponentByClass(UStagedItemComponent::StaticClass()));
+			bool HasStagedComponent = Staged != nullptr;
+			Archive << HasStagedComponent;
+			if (HasStagedComponent)
+			{
+				Archive << Staged->CurrentStage;
+				Archive << Staged->GrowthTimer;
+			}
 		}
 	} else
 	{
@@ -89,8 +99,10 @@ void AEcoscapeTerrain::SerialiseTerrain(FArchive& Archive)
 			// Get serialised values
 			FTransform Transform;
 			FString    Item;
+			bool       HasStagedComp;
 			Archive << Transform;
 			Archive << Item;
+			Archive << HasStagedComp;
 
 			if (!GameInstance->ItemTypes.Contains(Item))
 			{
@@ -103,6 +115,16 @@ void AEcoscapeTerrain::SerialiseTerrain(FArchive& Archive)
 			NewItem->SetItemData(ItemData);
 			NewItem->AssociatedTerrain = this; 
 			PlacedItems.Add(NewItem);
+
+			if (HasStagedComp)
+			{
+				int   CurrentStage;
+				float GrowthTimer;
+				Archive << CurrentStage;
+				Archive << GrowthTimer;
+
+				NewItem->AddStagedGrowthComponent()->SetStage(CurrentStage, GrowthTimer);
+			}
 		}
 	}
 

@@ -9,6 +9,7 @@
 #include "PlacedItem.generated.h"
 
 class AEcoscapeTerrain;
+class UStagedItemComponent;
 
 UCLASS()
 class ECOSCAPE_API APlacedItem : public AEcoscapeObject
@@ -33,6 +34,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE UStaticMeshComponent* GetMesh() { return MainMesh; }
+
+	UStagedItemComponent* AddStagedGrowthComponent();
 
 protected:
 	virtual void BeginPlay() override;
