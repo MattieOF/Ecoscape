@@ -6,6 +6,7 @@
 #include "EcoscapeStatics.h"
 #include "MessageLogModule.h"
 #include "Animation/AnimInstance.h"
+#include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 
@@ -95,7 +96,12 @@ void ABaseAnimal::SetAnimalData(UAnimalData* Data, bool bRecreateAI)
 		// Setup mesh
 		GetMesh()->SetSkeletalMesh(Data->Mesh);
 		GetMesh()->SetAnimInstanceClass(Data->AnimationClass);
+		GetMesh()->SetRelativeLocation(Data->MeshOffset);
 
+		// Setup capsule
+		GetCapsuleComponent()->SetCapsuleHalfHeight(Data->ColliderHalfHeight);
+		GetCapsuleComponent()->SetCapsuleRadius(Data->ColliderRadius);
+		
 		// Setup AI
 		AIControllerClass = Data->AI;
 

@@ -24,6 +24,9 @@ public:
 #if WITH_EDITOR
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Icon")
 	void CreateIcon();
+	
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Basic Details")
+	void DeleteItem();
 
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif

@@ -32,6 +32,15 @@ public:
 	USkeletalMesh* Mesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector MeshOffset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float ColliderHalfHeight = 88;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float ColliderRadius = 65;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<UAnimInstance> AnimationClass;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

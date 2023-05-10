@@ -6,6 +6,7 @@
 #include "World/PlaceableItemData.h"
 
 #include "EcoscapeLog.h"
+#include "ObjectTools.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Kismet/KismetStringLibrary.h"
@@ -139,6 +140,15 @@ void UPlaceableItemData::CreateIcon()
 	RenderTarget->ConditionalBeginDestroy();
 	Item->Destroy();
 	SceneCapture->Destroy();
+}
+
+void UPlaceableItemData::DeleteItem()
+{
+	TArray<FAssetData> Assets;
+	Assets.Add(FAssetData(this));
+	if (Icon)
+		Assets.Add(FAssetData(Icon));
+	ObjectTools::DeleteAssets(Assets, true);
 }
 
 void UPlaceableItemData::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
