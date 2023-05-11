@@ -12,6 +12,7 @@
 #include "Camera/CameraActor.h"
 #include "Components/AudioComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "World/EcoscapeTerrain.h"
 
 AEcoscapePlayerController::AEcoscapePlayerController()
@@ -132,8 +133,11 @@ void AEcoscapePlayerController::OnMoveForward(const float Value)
 {
 	if (CurrentView == EPSMenu)
 		return;
-	
-	CurrentPawn->AddMovementInput(CurrentView == EPSFirstPerson ? CurrentPawn->GetActorForwardVector() : FVector::ForwardVector, bModifierPressed ? Value * SprintSpeedModifier : Value);
+
+	if (CurrentView == EPSFirstPerson && bIsSwimming)
+		CurrentPawn->AddMovementInput(UKismetMathLibrary::GetForwardVector(GetControlRotation()), Value);
+	else
+		CurrentPawn->AddMovementInput(CurrentView == EPSFirstPerson ? CurrentPawn->GetActorForwardVector() : FVector::ForwardVector, bModifierPressed ? Value * SprintSpeedModifier : Value);
 }
 
 void AEcoscapePlayerController::OnMoveRight(const float Value)

@@ -246,9 +246,11 @@ protected:
 	UPROPERTY(EditAnywhere)
 	float Scale = 150;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
 	bool bEnableWater = true;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
+	TSubclassOf<AActor> WaterClass;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Water")
 	float WaterHeight = 0.5f;
 
 	/**
@@ -285,7 +287,7 @@ protected:
 	UPROPERTY()
 	AProceduralFenceMesh* FenceMesh = nullptr;
 	UPROPERTY()
-	AActor* WaterMesh = nullptr;
+	AActor* Water = nullptr;
 	UPROPERTY()
 	AActor* NavMeshVolume = nullptr;
 

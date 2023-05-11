@@ -2,7 +2,9 @@
 
 #include "World/PlacedItem.h"
 
+#include "Ecoscape.h"
 #include "EcoscapeStatics.h"
+#include "MessageLogModule.h"
 #include "World/StagedItemComponent.h"
 
 APlacedItem::APlacedItem()
@@ -25,6 +27,12 @@ void APlacedItem::SetItemData(UPlaceableItemData* NewItem)
 
 APlacedItem* APlacedItem::SpawnItem(UWorld* World, UPlaceableItemData* ItemData, const FVector Position, const FVector Scale, const FRotator Rotation)
 {
+	if (!ItemData || !ItemData->PlacedItemClass)
+	{
+		ECO_LOG_ERROR("Attempted to spawn item with invalid item data");
+		return nullptr;
+	}
+	
 	APlacedItem* PlacedItem = World->SpawnActor<APlacedItem>(ItemData->PlacedItemClass, Position, Rotation);
 	PlacedItem->SetActorScale3D(Scale);
 	PlacedItem->SetItemData(ItemData);

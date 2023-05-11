@@ -166,6 +166,9 @@ protected:
 	
 	UPROPERTY()
 	UAudioComponent* CurrentMusic;
+
+	UPROPERTY(BlueprintReadWrite)
+	bool bIsSwimming = false;
 	
 private:
 	float CurrentSwitchViewCooldown = 0;

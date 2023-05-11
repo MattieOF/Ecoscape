@@ -2,6 +2,7 @@
 
 #include "Character\Animals\EnvQueryTest_ItemType.h"
 
+#include "EcoscapeStatics.h"
 #include "Kismet/KismetStringLibrary.h"
 #include "World/PlacedItem.h"
 
@@ -42,5 +43,6 @@ FText UEnvQueryTest_ItemType::GetDescriptionTitle() const
 
 FText UEnvQueryTest_ItemType::GetDescriptionDetails() const
 {
-	return FText::FromString(FString::Printf(TEXT("Valid types: ")));
+	const TArray<FString> ValidTypes = UKismetStringLibrary::ParseIntoArray(ValidItemTypes, ";");
+	return FText::FromString(FString::Printf(TEXT("Valid types: %s"), *UEcoscapeStatics::JoinStringArray(ValidTypes, ",")));
 }

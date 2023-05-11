@@ -73,7 +73,7 @@ void AProceduralFenceMesh::Regenerate()
 			FVector BottomPos = BottomSplineComponent->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::Local);
 			FVector TopPos = TopSplineComponent->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::Local);
 			const float ZDiff = TopPos.Z - BottomPos.Z;
-			UEcoscapeProcMeshStatics::AddCuboid(Verticies, Indicies, UV0, Normals, Tangents, BottomPos + FVector(0, 0, -5 + (ZDiff / 2)), FVector(30, 30, ZDiff + 5), true, FVector2D(0.15, 0.03));
+			UEcoscapeProcMeshStatics::AddCuboid(Verticies, Indicies, UV0, Normals, Tangents, BottomPos + FVector(0, 0, -5 + (ZDiff / 2)), FVector(30, 30, (ZDiff / 2) + 80), true, FVector2D(0.15, 0.03));
 
 			if (i != 0)
 			{

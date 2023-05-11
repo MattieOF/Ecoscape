@@ -41,6 +41,9 @@ public:
 	FVector MeshOffset;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector MeshScale = FVector::OneVector;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ColliderHalfHeight = 88;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

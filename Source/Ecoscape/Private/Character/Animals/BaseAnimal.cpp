@@ -25,6 +25,9 @@ ABaseAnimal::ABaseAnimal()
 
 	GetMesh()->SetCollisionProfileName(UCollisionProfile::Pawn_ProfileName);
 	GetMesh()->SetCollisionResponseToChannel(ECC_BLOCKS_ITEM_PLACEMENT, ECR_Block);
+
+	GetCapsuleComponent()->CanCharacterStepUpOn = ECB_Yes;
+	GetMesh()->CanCharacterStepUpOn = ECB_Yes;
 }
 
 void ABaseAnimal::BeginPlay()
@@ -117,6 +120,7 @@ void ABaseAnimal::SetAnimalData(UAnimalData* Data, bool bRecreateAI)
 		GetMesh()->SetSkeletalMesh(Data->Mesh);
 		GetMesh()->SetAnimInstanceClass(Data->AnimationClass);
 		GetMesh()->SetRelativeLocation(Data->MeshOffset);
+		GetMesh()->SetWorldScale3D(Data->MeshScale);
 
 		// Setup capsule
 		GetCapsuleComponent()->SetCapsuleHalfHeight(Data->ColliderHalfHeight);
