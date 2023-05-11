@@ -2,8 +2,10 @@
 
 #include "World/Fence/ProceduralFenceMesh.h"
 
+#include "Ecoscape.h"
 #include "EcoscapeStatics.h"
 #include "KismetProceduralMeshLibrary.h"
+#include "MessageLogModule.h"
 #include "UObject/ConstructorHelpers.h"
 #include "World/EcoscapeProcMeshStatics.h"
 #include "World/Fence/FenceGate.h"
@@ -26,8 +28,10 @@ AProceduralFenceMesh::AProceduralFenceMesh()
 	ProceduralMeshComponent->SetCollisionResponseToChannel(ECC_HIGHLIGHTABLE, ECR_Block);
 	ProceduralMeshComponent->SetMaterial(0, Material);
 	ProceduralMeshComponent->ComponentTags.Add("Outline");
-	SplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("Spline"));
-	SplineComponent->SetupAttachment(ProceduralMeshComponent);
+	BottomSplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("BottomPoints"));
+	BottomSplineComponent->SetupAttachment(ProceduralMeshComponent);
+	TopSplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("TopPoints"));
+	TopSplineComponent->SetupAttachment(ProceduralMeshComponent);
 	RootComponent = ProceduralMeshComponent;
 
 	const auto MatFinder = ConstructorHelpers::FObjectFinder<UMaterialInterface>(TEXT("Material'/Game/Materials/M_Fence.M_Fence'"));
@@ -44,9 +48,19 @@ void AProceduralFenceMesh::Regenerate()
 	Tangents.Empty();
 	ProceduralMeshComponent->SetMaterial(0, Material);
 	
-	FVector LastPosition;
+	FVector LastBottomPosition, LastTopPosition;
 
-	int NumPoints = SplineComponent->GetNumberOfSplinePoints();
+	if (BottomSplineComponent->GetNumberOfSplinePoints() != TopSplineComponent->GetNumberOfSplinePoints())
+	{
+		ECO_LOG_ERROR(
+			FString::Printf(TEXT(
+					"Fence %s has differing point counts on the top and bottom splines! (Top has %i, bottom has %i)"), 
+				*GetName(), TopSplineComponent->GetNumberOfSplinePoints(), BottomSplineComponent->GetNumberOfSplinePoints()
+			));
+		return;
+	}
+	
+	int NumPoints = BottomSplineComponent->GetNumberOfSplinePoints();
 	for (int i = 0; i < NumPoints; i++)
 	{
 		bool ShouldPlace = true;
@@ -56,35 +70,38 @@ void AProceduralFenceMesh::Regenerate()
 		
 		if (i == 0 || ShouldPlace)
 		{
-			FVector Pos = SplineComponent->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::Local);
-			UEcoscapeProcMeshStatics::AddCuboid(Verticies, Indicies, UV0, Normals, Tangents, Pos + FVector(0, 0, 90), FVector(30, 30, 180), true, FVector2D(0.15, 0.03));
+			FVector BottomPos = BottomSplineComponent->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::Local);
+			FVector TopPos = TopSplineComponent->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::Local);
+			const float ZDiff = TopPos.Z - BottomPos.Z;
+			UEcoscapeProcMeshStatics::AddCuboid(Verticies, Indicies, UV0, Normals, Tangents, BottomPos + FVector(0, 0, -5 + (ZDiff / 2)), FVector(30, 30, ZDiff + 5), true, FVector2D(0.15, 0.03));
 
 			if (i != 0)
 			{
 				if (GateCount > 0 && (i + GateEvery / 2) % GateEvery == 0)
 				{	
 					AFenceGate* FenceGate = GetWorld()->SpawnActor<AFenceGate>(FenceGateClass, FVector::ZeroVector, FRotator::ZeroRotator);
-					FenceGate->Create(GetActorLocation() + LastPosition, GetActorLocation() + Pos);
+					FenceGate->Create(GetActorLocation() + LastBottomPosition, GetActorLocation() + BottomPos);
 					Gates.Add(FenceGate);
 					
 					GateCount--;
 				} else {
 					// Gen fence and wire
-					UEcoscapeProcMeshStatics::AddCuboid(Verticies, Indicies, UV0, Normals, Tangents, LastPosition + FVector(0, 0, 200), Pos + FVector(0, 0, 200), FVector2D(20, 20), true,
+					UEcoscapeProcMeshStatics::AddCuboid(Verticies, Indicies, UV0, Normals, Tangents, LastTopPosition, TopPos + FVector(0, 0, -10), FVector2D(20, 20), true,
 							  FVector2D(0.01, 0.01));
 
 					int VertIndex = Verticies.Num();
-					const float Distance = FVector::Distance(LastPosition, Pos);
-					Verticies.Add(LastPosition - FVector(0, 0, 80));
-					Verticies.Add(LastPosition + FVector(0, 0, 160));
-					Verticies.Add(Pos - FVector(0, 0, 80));
-					Verticies.Add(Pos + FVector(0, 0, 160));
+					const float Distance = FVector::Distance(LastBottomPosition, BottomPos);
+					Verticies.Add(LastBottomPosition - FVector(0, 0, 80));
+					Verticies.Add(LastTopPosition + FVector(0, 0, -50));
+					Verticies.Add(BottomPos - FVector(0, 0, 80));
+					Verticies.Add(TopPos + FVector(0, 0, -50));
 					Indicies.Append({ VertIndex + 2, VertIndex + 3, VertIndex + 1, VertIndex + 2, VertIndex + 1, VertIndex });
 					UV0.Append({ FVector2D(0, 0.0625), FVector2D(0, .5), FVector2D(Distance / 200, 0.0625), FVector2D(Distance / 200, .5) });
 				}
 			}
 			
-			LastPosition = Pos;
+			LastBottomPosition = BottomPos;
+			LastTopPosition    = TopPos;
 		}
 	}
 

@@ -25,7 +25,9 @@ public:
 	void Regenerate();
 	
 	UPROPERTY(EditAnywhere)
-	USplineComponent* SplineComponent;
+	USplineComponent* BottomSplineComponent;
+	UPROPERTY(EditAnywhere)
+	USplineComponent* TopSplineComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bShouldGenerateGate = false;

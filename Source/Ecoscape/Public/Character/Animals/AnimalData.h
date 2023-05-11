@@ -22,6 +22,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float BaseHealth = 100;
 
+	/**
+	 * Fullness this animal looses per second
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float HungerRate = 0.005f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* Icon;
 

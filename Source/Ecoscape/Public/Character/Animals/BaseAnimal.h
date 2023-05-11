@@ -8,6 +8,8 @@
 #include "GameFramework/Character.h"
 #include "BaseAnimal.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAnimalDies);
+
 UCLASS(BlueprintType, Blueprintable)
 class ECOSCAPE_API ABaseAnimal : public ACharacter
 {
@@ -33,6 +35,18 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FString GivenName;
+
+	UPROPERTY(BlueprintReadWrite)
+	float Health = 100;
+	
+	/**
+	 * The hunger of this animal. 1 is not hungry, 0 is starving.
+	 */
+	UPROPERTY(BlueprintReadWrite)
+	float Hunger = 1;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnAnimalDies OnDeath;
 
 private:
 	FRotator TargetRotation;

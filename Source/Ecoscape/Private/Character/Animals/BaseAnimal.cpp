@@ -20,6 +20,9 @@ ABaseAnimal::ABaseAnimal()
 	GetCharacterMovement()->RotationRate.Yaw = 180;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
+	// Enable avoidance
+	GetCharacterMovement()->bUseRVOAvoidance = true;
+
 	GetMesh()->SetCollisionProfileName(UCollisionProfile::Pawn_ProfileName);
 	GetMesh()->SetCollisionResponseToChannel(ECC_BLOCKS_ITEM_PLACEMENT, ECR_Block);
 }
@@ -41,6 +44,21 @@ void ABaseAnimal::BeginPlay()
 void ABaseAnimal::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+
+	// Do hunger
+	if (Hunger <= 0)
+		Health -= 1 * DeltaSeconds; // Panda will die in ~60 seconds from no food
+	else
+		Hunger = FMath::Max(0, Hunger -= DeltaSeconds * AnimalData->HungerRate);
+
+	if (Health <= 0)
+	{
+		OnDeath.Broadcast();
+		Destroy();
+	}
+
+	DrawDebugString(GetWorld(), GetActorLocation() + FVector(0, 0, 100),
+	                FString::Printf(TEXT("HP: %f, Hunger: %f"), Health, Hunger), nullptr, FColor::White, DeltaSeconds);
 
 	// Find target rotation
 	FRotator CurrentRotation = GetMesh()->GetComponentRotation();
@@ -91,6 +109,8 @@ void ABaseAnimal::SetAnimalData(UAnimalData* Data, bool bRecreateAI)
 	{
 		// Setup basic data
 		GivenName = Data->SpeciesName.ToString();
+		Health = Data->BaseHealth;
+		Hunger = 1;
 		GetCharacterMovement()->MaxWalkSpeed = Data->MoveSpeed;
 
 		// Setup mesh

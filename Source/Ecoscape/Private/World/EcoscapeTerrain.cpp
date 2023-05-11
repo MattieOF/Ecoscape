@@ -412,22 +412,41 @@ void AEcoscapeTerrain::GenerateFence()
 			FenceMesh->AssociatedTerrain = this;
 			FenceMesh->bDestroyable = false;
 			FenceMesh->Outline->DestroyComponent();
-			FenceMesh->SplineComponent->ClearSplinePoints();
-			FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+			FenceMesh->BottomSplineComponent->ClearSplinePoints();
+			FenceMesh->BottomSplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+			FenceMesh->TopSplineComponent->ClearSplinePoints();
+			FenceMesh->TopSplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 250));
 
 			X += 2;
 			for (; X < Width - ExteriorTileCount - 1; X += 2)
-				FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+			{
+				FVector Position = GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30);
+				FenceMesh->BottomSplineComponent->AddSplineWorldPoint(Position);
+				FenceMesh->TopSplineComponent->AddSplineWorldPoint(Position + FVector(0, 0, 250));
+			}
 			for (; Y < Height - ExteriorTileCount - 1; Y += 2)
-				FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+			{
+				FVector Position = GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30);
+				FenceMesh->BottomSplineComponent->AddSplineWorldPoint(Position);
+				FenceMesh->TopSplineComponent->AddSplineWorldPoint(Position + FVector(0, 0, 250));
+			}
 			for (; X > ExteriorTileCount + 1; X -= 2)
-				FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+			{
+				FVector Position = GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30);
+				FenceMesh->BottomSplineComponent->AddSplineWorldPoint(Position);
+				FenceMesh->TopSplineComponent->AddSplineWorldPoint(Position + FVector(0, 0, 250));
+			}
 			for (; Y > ExteriorTileCount + 1; Y -= 2)
-				FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+			{
+				FVector Position = GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30);
+				FenceMesh->BottomSplineComponent->AddSplineWorldPoint(Position);
+				FenceMesh->TopSplineComponent->AddSplineWorldPoint(Position + FVector(0, 0, 250));
+			}
 
 			X = ExteriorTileCount + 1;
 			Y = ExteriorTileCount + 1;
-			FenceMesh->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));	
+			FenceMesh->BottomSplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));	
+			FenceMesh->TopSplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 250));	
 	
 			FenceMesh->Regenerate();
 #if WITH_EDITOR
@@ -607,21 +626,40 @@ AProceduralFenceMesh* AEcoscapeTerrain::CreateFence(FVector2D Start, FVector2D E
 	AProceduralFenceMesh* Fence = GetWorld()->SpawnActor<AProceduralFenceMesh>(FenceClass, GetVertexPositionWorld(GetVertexIndex(X, Y)), FRotator::ZeroRotator);
 	Fence->bShouldGenerateGate = true;
 	Fence->AssociatedTerrain = this;
-	Fence->SplineComponent->ClearSplinePoints();
-	Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+	Fence->BottomSplineComponent->ClearSplinePoints();
+	Fence->BottomSplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+	Fence->TopSplineComponent->ClearSplinePoints();
+	Fence->TopSplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 250));
 
 	for (; X < HighX; X = FMath::Min(HighX, X + Step))
-		Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+	{
+		FVector Position = GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30);
+		Fence->BottomSplineComponent->AddSplineWorldPoint(Position);
+		Fence->TopSplineComponent->AddSplineWorldPoint(Position + FVector(0, 0, 250));
+	}
 	for (; Y < HighY; Y = FMath::Min(HighY, Y + Step))
-		Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+	{
+		FVector Position = GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30);
+		Fence->BottomSplineComponent->AddSplineWorldPoint(Position);
+		Fence->TopSplineComponent->AddSplineWorldPoint(Position + FVector(0, 0, 250));
+	}
 	for (; X > LowX; X = FMath::Max(LowX, X - Step))
-		Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+	{
+		FVector Position = GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30);
+		Fence->BottomSplineComponent->AddSplineWorldPoint(Position);
+		Fence->TopSplineComponent->AddSplineWorldPoint(Position + FVector(0, 0, 250));
+	}
 	for (; Y > LowY; Y = FMath::Max(LowY, Y - Step))
-		Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));
+	{
+		FVector Position = GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30);
+		Fence->BottomSplineComponent->AddSplineWorldPoint(Position);
+		Fence->TopSplineComponent->AddSplineWorldPoint(Position + FVector(0, 0, 250));
+	}
 
 	X = LowX;
 	Y = LowY;
-	Fence->SplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));	
+	Fence->BottomSplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 30));	
+	Fence->TopSplineComponent->AddSplineWorldPoint(GetVertexPositionWorld(GetVertexIndex(X, Y)) + FVector(0, 0, 250));	
 	
 	Fence->Regenerate();
 

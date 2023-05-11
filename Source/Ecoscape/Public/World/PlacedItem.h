@@ -23,7 +23,7 @@ public:
 	void SetItemData(UPlaceableItemData* NewItem);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FORCEINLINE UPlaceableItemData* GetItemData() { return ItemData; }
+	FORCEINLINE UPlaceableItemData* GetItemData() const { return ItemData; }
 
 	UFUNCTION(BlueprintCallable, meta=(WorldContext=World))
 	static APlacedItem* SpawnItem(UWorld* World, UPlaceableItemData* ItemData, 
