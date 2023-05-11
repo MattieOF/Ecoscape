@@ -650,7 +650,7 @@ AProceduralFenceMesh* AEcoscapeTerrain::CreateFence(FVector2D Start, FVector2D E
 		FVector TopPosition = Position + FVector(0, 0, 250);
 		if (bEnableWater)
 			TopPosition.Z = FMath::Max(TopPosition.Z, Water->GetActorLocation().Z + 250);
-		FenceMesh->TopSplineComponent->AddSplineWorldPoint(TopPosition);
+		Fence->TopSplineComponent->AddSplineWorldPoint(TopPosition);
 	}
 	for (; Y < HighY; Y = FMath::Min(HighY, Y + Step))
 	{
@@ -659,7 +659,7 @@ AProceduralFenceMesh* AEcoscapeTerrain::CreateFence(FVector2D Start, FVector2D E
 		FVector TopPosition = Position + FVector(0, 0, 250);
 		if (bEnableWater)
 			TopPosition.Z = FMath::Max(TopPosition.Z, Water->GetActorLocation().Z + 250);
-		FenceMesh->TopSplineComponent->AddSplineWorldPoint(TopPosition);
+		Fence->TopSplineComponent->AddSplineWorldPoint(TopPosition);
 	}
 	for (; X > LowX; X = FMath::Max(LowX, X - Step))
 	{
@@ -668,7 +668,7 @@ AProceduralFenceMesh* AEcoscapeTerrain::CreateFence(FVector2D Start, FVector2D E
 		FVector TopPosition = Position + FVector(0, 0, 250);
 		if (bEnableWater)
 			TopPosition.Z = FMath::Max(TopPosition.Z, Water->GetActorLocation().Z + 250);
-		FenceMesh->TopSplineComponent->AddSplineWorldPoint(TopPosition);
+		Fence->TopSplineComponent->AddSplineWorldPoint(TopPosition);
 	}
 	for (; Y > LowY; Y = FMath::Max(LowY, Y - Step))
 	{
@@ -677,7 +677,7 @@ AProceduralFenceMesh* AEcoscapeTerrain::CreateFence(FVector2D Start, FVector2D E
 		FVector TopPosition = Position + FVector(0, 0, 250);
 		if (bEnableWater)
 			TopPosition.Z = FMath::Max(TopPosition.Z, Water->GetActorLocation().Z + 250);
-		FenceMesh->TopSplineComponent->AddSplineWorldPoint(TopPosition);
+		Fence->TopSplineComponent->AddSplineWorldPoint(TopPosition);
 	}
 
 	X = LowX;
