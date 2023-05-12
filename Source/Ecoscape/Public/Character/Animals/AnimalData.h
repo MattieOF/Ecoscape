@@ -28,6 +28,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float HungerRate = 0.005f;
 
+	/**
+	 * Thirstiness this animals gains per second
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float ThirstRate = 0.008f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* Icon;
 
@@ -39,6 +45,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector MeshOffset;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FRotator MeshRotation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector MeshScale = FVector::OneVector;

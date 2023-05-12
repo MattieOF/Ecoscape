@@ -78,7 +78,7 @@ void AEcoscapeTDCharacter::DoPaintTool()
 			if (Terrain == EcoscapePlayerController->GetCurrentTerrain())
 			{
 				Terrain->PlacedItems.Remove(Item);
-				auto Verts = Terrain->GetVerticiesInSphere(Item->GetActorLocation(), Item->GetItemData()->ColourRange * Item->GetActorScale().X, true);
+				auto Verts = Terrain->GetVerticiesInSphere(Item->GetActorLocation(), (Item->GetItemData()->ColourRange * Item->GetActorScale().X) + 150, true);
 				for (auto& [Vertex, _] : Verts)
 				{
 					if (bDrawDebug)
@@ -311,7 +311,7 @@ void AEcoscapeTDCharacter::OnToolUsed()
 				if (AEcoscapeTerrain* Terrain = Item->AssociatedTerrain)
 				{
 					Terrain->PlacedItems.Remove(Item);
-					auto Verts = Terrain->GetVerticiesInSphere(Item->GetActorLocation(), Item->GetItemData()->ColourRange * Item->GetActorScale().X, true);
+					auto Verts = Terrain->GetVerticiesInSphere(Item->GetActorLocation(), (Item->GetItemData()->ColourRange * Item->GetActorScale().X) + 150, true);
 					for (auto& [Vertex, _] : Verts)
 					{
 						if (bDrawDebug)

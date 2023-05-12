@@ -66,11 +66,11 @@ bool AEcoscapeTerrain::GetClosestDrinkLocation(FVector Origin, FDrinkLocation& O
 		return false;
 	
 	int ClosestIndex = 0;
-	float ClosestDist = 10000000;
+	float ClosestDist = MAX_FLT;
 
 	for (int i = 0; i < DrinkLocations.Num(); i++)
 	{
-		const float Dist = FVector::Distance(Origin, DrinkLocations[i].Location);
+		const float Dist = FVector::DistSquared(Origin, DrinkLocations[i].Location);
 		if (Dist < ClosestDist)
 		{
 			ClosestIndex = i;
@@ -694,12 +694,12 @@ void AEcoscapeTerrain::CalculateVertColour(int Index, bool Flush)
 	
 	for (const APlacedItem* Item : PlacedItems)
 	{
-		const float DistanceSquared = FVector::DistSquared(Position, Item->GetActorLocation());
+		const float DistSquared = FVector::DistSquared(Position, Item->GetActorLocation());
 		const auto Data = Item->GetItemData();
 		// Only using the X scale here. Assumes uniform scale
 		const FColor Remainder = Data->MaxLandColour.ToFColor(false) - VertexColors[Index];
 		const FColor Offset = UEcoscapeStatics::ClampColor(
-			Data->LandColour.ToFColor(false) * FMath::Clamp(1 - (DistanceSquared / Data->ColourRangeSquared), 0, 1),
+			Data->LandColour.ToFColor(false) * FMath::Clamp(1 - (DistSquared / (Data->ColourRange * Data->ColourRange)), 0, 1),
 			FColor(0, 0, 0), Remainder);
 		VertexColors[Index] += Offset;
 	}

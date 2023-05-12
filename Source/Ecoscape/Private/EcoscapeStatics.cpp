@@ -2,7 +2,9 @@
 
 #include "EcoscapeStatics.h"
 
+#include "Ecoscape.h"
 #include "EngineUtils.h"
+#include "MessageLogModule.h"
 #include "Engine/PostProcessVolume.h"
 #include "Kismet/GameplayStatics.h"
 #include "World/PlaceableItemData.h"
@@ -160,4 +162,9 @@ bool UEcoscapeStatics::InActualGame()
 #else
 	return true;
 #endif
+}
+
+void UEcoscapeStatics::LogEcoscapeError(FText Text)
+{
+	ECO_LOG_ERROR(Text.ToString());
 }

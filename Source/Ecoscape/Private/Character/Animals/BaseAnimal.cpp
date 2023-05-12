@@ -52,7 +52,12 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 	if (Hunger <= 0)
 		Health -= 1 * DeltaSeconds; // Panda will die in ~60 seconds from no food
 	else
-		Hunger = FMath::Max(0, Hunger -= DeltaSeconds * AnimalData->HungerRate);
+		Hunger = FMath::Max(0, Hunger - DeltaSeconds * AnimalData->HungerRate);
+
+	if (Thirst <= 0)
+		Health -= 2 * DeltaSeconds;
+	else
+		Thirst = FMath::Max(0, Thirst - DeltaSeconds * AnimalData->ThirstRate);
 
 	if (Health <= 0)
 	{
@@ -61,7 +66,7 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 	}
 
 	DrawDebugString(GetWorld(), GetActorLocation() + FVector(0, 0, 100),
-	                FString::Printf(TEXT("HP: %f, Hunger: %f"), Health, Hunger), nullptr, FColor::White, DeltaSeconds);
+	                FString::Printf(TEXT("HP: %f, Hunger: %f, Thirst: %f"), Health, Hunger, Thirst), nullptr, FColor::White, DeltaSeconds);
 
 	// Find target rotation
 	FRotator CurrentRotation = GetMesh()->GetComponentRotation();
@@ -120,6 +125,7 @@ void ABaseAnimal::SetAnimalData(UAnimalData* Data, bool bRecreateAI)
 		GetMesh()->SetSkeletalMesh(Data->Mesh);
 		GetMesh()->SetAnimInstanceClass(Data->AnimationClass);
 		GetMesh()->SetRelativeLocation(Data->MeshOffset);
+		GetMesh()->SetRelativeRotation(Data->MeshRotation);
 		GetMesh()->SetWorldScale3D(Data->MeshScale);
 
 		// Setup capsule

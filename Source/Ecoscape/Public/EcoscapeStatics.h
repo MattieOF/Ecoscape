@@ -198,4 +198,7 @@ public:
 	static bool InActualGame();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static FORCEINLINE bool InEditor() { return !InActualGame(); }
+
+	UFUNCTION(BlueprintCallable)
+	static void LogEcoscapeError(FText Text);
 };

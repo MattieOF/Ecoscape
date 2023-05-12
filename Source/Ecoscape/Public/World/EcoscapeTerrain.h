@@ -94,6 +94,14 @@ struct FDrinkLocation
 	FVector DrinkerOrientation;
 };
 
+FORCEINLINE FArchive& operator<<(FArchive& LHS, FDrinkLocation& RHS)
+{
+	LHS << RHS.Location;
+	LHS << RHS.DrinkerOrientation;
+	
+	return LHS;
+}
+
 // USTRUCT(BlueprintType)
 // struct FFenceInfo
 // {
@@ -211,9 +219,12 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	void GetPlayablePoints(TArray<FVector>& OutPoints);
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool GetRandomDrinkLocation(FDrinkLocation& OutDrinkLocation);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool GetClosestDrinkLocation(FVector Origin, FDrinkLocation& OutDrinkLocation);
 
+	UPROPERTY(BlueprintReadOnly)
 	TArray<FDrinkLocation> DrinkLocations;
 
 	// -----------------------

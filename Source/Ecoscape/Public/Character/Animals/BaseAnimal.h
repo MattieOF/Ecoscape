@@ -8,6 +8,8 @@
 #include "GameFramework/Character.h"
 #include "BaseAnimal.generated.h"
 
+class AEcoscapeTerrain;
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAnimalDies);
 
 UCLASS(BlueprintType, Blueprintable)
@@ -45,8 +47,17 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	float Hunger = 1;
 
+	/**
+	 * The thirst of the animal. 1 is not thirsty, 0 is dying of dehydration.
+	 */
+	UPROPERTY(BlueprintReadWrite)
+	float Thirst = 1;
+
 	UPROPERTY(BlueprintAssignable)
 	FOnAnimalDies OnDeath;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	AEcoscapeTerrain* AssociatedTerrain;
 
 private:
 	FRotator TargetRotation;
