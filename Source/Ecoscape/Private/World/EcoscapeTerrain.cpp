@@ -36,11 +36,51 @@ void AEcoscapeTerrain::BeginPlay()
 {
 	Super::BeginPlay();
 
+	GIIndex = UEcoscapeGameInstance::GetEcoscapeGameInstance(GetWorld())->AddTerrain(this);
+
 	Regenerate();
 }
 
 void AEcoscapeTerrain::Tick(float DeltaSeconds)
 {
+}
+
+void AEcoscapeTerrain::GetPlayablePoints(TArray<FVector>& OutPoints)
+{
+	for (int x = ExteriorTileCount + 2; x < Width - (ExteriorTileCount + 1); x++)
+		for (int y = ExteriorTileCount + 2; y < Height - (ExteriorTileCount + 1); y++)
+			OutPoints.Add(GetVertexPositionWorld(GetVertexIndex(x, y)));
+}
+
+bool AEcoscapeTerrain::GetRandomDrinkLocation(FDrinkLocation& OutDrinkLocation)
+{
+	if (!Water || DrinkLocations.IsEmpty())
+		return false;
+	OutDrinkLocation = DrinkLocations[FMath::RandRange(0, DrinkLocations.Num() - 1)];
+	return true;
+}
+
+bool AEcoscapeTerrain::GetClosestDrinkLocation(FVector Origin, FDrinkLocation& OutDrinkLocation)
+{
+	if (!Water || DrinkLocations.IsEmpty())
+		return false;
+	
+	int ClosestIndex = 0;
+	float ClosestDist = 10000000;
+
+	for (int i = 0; i < DrinkLocations.Num(); i++)
+	{
+		const float Dist = FVector::Distance(Origin, DrinkLocations[i].Location);
+		if (Dist < ClosestDist)
+		{
+			ClosestIndex = i;
+			ClosestDist = Dist;
+		}
+	}
+
+	OutDrinkLocation = DrinkLocations[ClosestIndex];
+	
+	return true;
 }
 
 void AEcoscapeTerrain::SerialiseTerrain(FArchive& Archive)
@@ -247,9 +287,14 @@ void AEcoscapeTerrain::ResetMeshData()
 
 void AEcoscapeTerrain::GenerateVerticies()
 {
-	static FastNoiseLite Noise; // Declare noise here so we don't have to include FastNoise.h in the header file
+	HighestHeight = -9999999;
+	LowestHeight  =  9999999;
 	
-	int VertCount = 0;
+	static FastNoiseLite Noise; // Declare noise here so we don't have to include FastNoise.h in the header file
+
+	Heights.Init(0, ((Width - ExteriorTileCount * 2) + 1) * ((Height - ExteriorTileCount * 2) + 1));
+	
+	int VertCount = 0, PlayableVertCount = 0;
 	for (int x = 0; x <= Width; x++)
 	{
 		for (int y = 0; y <= Height; y++)
@@ -285,6 +330,13 @@ void AEcoscapeTerrain::GenerateVerticies()
 			AverageHeight += Z;
 			HighestHeight = FMath::Max(HighestHeight, Z);
 			LowestHeight = FMath::Min(LowestHeight, Z);
+
+			if (x >= ExteriorTileCount && x <= Width - ExteriorTileCount
+				&& y >= ExteriorTileCount && y <= Height - ExteriorTileCount)
+			{
+				Heights[PlayableVertCount] = Z;
+				PlayableVertCount++;
+			}
 			
 			Verticies.Add(FVector(x * Scale, y * Scale, Z));
 			UV0.Add(FVector2D(x * UVScale, y * UVScale));
@@ -305,6 +357,7 @@ void AEcoscapeTerrain::GenerateVerticies()
 	}
 
 	AverageHeight /= VertCount;
+	Heights.Sort();
 }
 
 void AEcoscapeTerrain::GenerateIndicies()
@@ -482,6 +535,81 @@ void AEcoscapeTerrain::CreateNavVolume()
 	// NavMeshVolume = BoundsVolume;
 }
 
+void AEcoscapeTerrain::GenerateDrinkLocations()
+{
+	if (!Water)
+		return;
+
+	DrinkLocations.Empty();
+	
+	const float WaterZ = Water->GetActorLocation().Z;
+	bool PreviousInWater = false;
+	FVector PreviousLocation;
+	bool First = true;
+	
+	for (int x = ExteriorTileCount + 2; x < Width - (ExteriorTileCount + 1); x++)
+	{
+		for (int y = ExteriorTileCount + 2; y < Height - (ExteriorTileCount + 1); y++)
+		{
+			const FVector Pos = GetVertexPositionWorld(GetVertexIndex(x, y));
+			const bool PointIsInWater = Pos.Z < WaterZ;
+			
+			if (!First && PointIsInWater && !PreviousInWater)
+			{
+				// The previous is a drink location
+				// Orientation is towards current
+				FDrinkLocation DrinkLocation;
+				DrinkLocation.Location = PreviousLocation;
+				DrinkLocation.DrinkerOrientation = (Pos - PreviousLocation).GetSafeNormal();
+				DrinkLocations.Add(DrinkLocation);
+			} else if (!First && !PointIsInWater && PreviousInWater)
+			{
+				// The current is a drink location
+				// Orientation is towards previous
+				FDrinkLocation DrinkLocation;
+				DrinkLocation.Location = Pos;
+				DrinkLocation.DrinkerOrientation = (PreviousLocation - Pos).GetSafeNormal();
+				DrinkLocations.Add(DrinkLocation);
+			}
+
+			PreviousInWater = PointIsInWater;
+			PreviousLocation = Pos; 
+			First = false;
+		}
+		First = true;
+	}
+
+	// TODO: A lot of repeated code here...
+	First = true;
+	for (int y = ExteriorTileCount + 2; y < Height - (ExteriorTileCount + 1); y++)
+	{
+		for (int x = ExteriorTileCount + 2; x < Width - (ExteriorTileCount + 1); x++)
+		{
+			const FVector Pos = GetVertexPositionWorld(GetVertexIndex(x, y));
+			const bool PointIsInWater = Pos.Z < WaterZ;
+			
+			if (!First && PointIsInWater && !PreviousInWater)
+			{
+				FDrinkLocation DrinkLocation;
+				DrinkLocation.Location = PreviousLocation;
+				DrinkLocation.DrinkerOrientation = (Pos - PreviousLocation).GetSafeNormal();
+				DrinkLocations.Add(DrinkLocation);
+			} else if (!First && !PointIsInWater && PreviousInWater)
+			{
+				FDrinkLocation DrinkLocation;
+				DrinkLocation.Location = Pos;
+				DrinkLocation.DrinkerOrientation = (PreviousLocation - Pos).GetSafeNormal();
+				DrinkLocations.Add(DrinkLocation);
+			}
+
+			PreviousInWater = PointIsInWater;
+			PreviousLocation = Pos; 
+			First = false;
+		}
+		First = true;
+	}
+}
+
 // TODO: This function SUCKS
 // Look into converting to using instanced static meshes: https://docs.unrealengine.com/4.27/en-US/BlueprintAPI/Components/InstancedStaticMesh/
 void AEcoscapeTerrain::GenerateExteriorDetail()
@@ -564,7 +692,7 @@ void AEcoscapeTerrain::CalculateVertColour(int Index, bool Flush)
 	const float Alpha = 1 - (static_cast<float>(Distance - 3) / static_cast<float>(ExteriorTileCount - 3));
 	VertexColors[Index] = UKismetMathLibrary::LinearColorLerp(FloorColour, ExteriorColour, FMath::Clamp(Alpha * 7, 0, 1)).ToFColor(false);
 	
-	for (APlacedItem* Item : PlacedItems)
+	for (const APlacedItem* Item : PlacedItems)
 	{
 		const float DistanceSquared = FVector::DistSquared(Position, Item->GetActorLocation());
 		const auto Data = Item->GetItemData();
@@ -736,6 +864,46 @@ TArray<FVertexOverlapInfo> AEcoscapeTerrain::GetVerticiesInSphere(FVector Positi
 	return Indicies;
 }
 
+FVector AEcoscapeTerrain::FindSpawnPoint()
+{
+	int Tries = 75;
+	FVector Current;
+
+	const FCollisionShape CollisionCheckShape = FCollisionShape::MakeBox(FVector(50, 50, 100));
+	
+	while (Tries > 0)
+	{
+		Current = GetVertexPositionWorld(GetVertexIndex(
+			FMath::RandRange(ExteriorTileCount + 2, Width - (ExteriorTileCount + 2)),
+			FMath::RandRange(ExteriorTileCount + 2, Height - (ExteriorTileCount + 2))));
+
+		bool bValid = true;
+
+		// Check it's not underwater
+		if (Water)
+		{
+			if (Current.Z <= Water->GetActorLocation().Z)
+				bValid = false;
+		}
+
+		// Check it doesn't collide with any objects
+		DrawDebugBox(GetWorld(), Current + FVector(0, 0, 110), CollisionCheckShape.GetExtent(), FColor::Red, false, 5);
+		if (bValid && GetWorld()->OverlapBlockingTestByProfile(Current + FVector(0, 0, 110), FQuat::Identity, UCollisionProfile::Pawn_ProfileName, CollisionCheckShape))
+			bValid = false;
+
+		if (bValid)
+		{
+			// UE_LOG(LogEcoscape, Log, TEXT("Took %i tries to find spawn pos."), 75 - Tries);
+			return Current;
+		}
+			
+		Tries--;
+	}
+	
+	UE_LOG(LogEcoscape, Log, TEXT("Didn't find valid spawn."));
+	return Current;
+}
+
 void AEcoscapeTerrain::AddVertexColour(int Index, FColor AddedColor, bool Flush)
 {
 	SCOPE_CYCLE_COUNTER(STAT_AddVertColor);
@@ -767,6 +935,16 @@ void AEcoscapeTerrain::DrawIndicies()
 {
 	for (int i = 0; i < Verticies.Num(); i++)
 		DrawDebugString(GetWorld(), GetVertexPositionWorld(i) + FVector(0, 0, 100), FString::FromInt(i), nullptr, FColor::White, 3);
+}
+
+void AEcoscapeTerrain::DrawDrinkLocations()
+{
+	for (const auto& DrinkLoc : DrinkLocations)
+	{
+		DrawDebugSphere(GetWorld(), DrinkLoc.Location, 20, 6, FColor::Red, false, 5);
+		DrawDebugDirectionalArrow(GetWorld(), DrinkLoc.Location + FVector(0, 0, 50) - (DrinkLoc.DrinkerOrientation * 100),
+		                          DrinkLoc.Location + FVector(0, 0, 50) + (DrinkLoc.DrinkerOrientation * 100), 5, FColor::Red, false, 5);
+	}
 }
 #endif
 
@@ -809,12 +987,30 @@ void AEcoscapeTerrain::Regenerate()
 	if (bEnableWater)
 	{
 		FVector WaterPosition = GetActorLocation() + FVector((Width * Scale) / 2, (Height * Scale) / 2, 3000);
-		WaterPosition.Z = FMath::Lerp(LowestHeight, AverageHeight, WaterHeight);
+		WaterPosition.Z = Heights[static_cast<int>(static_cast<float>(Heights.Num() - 1) * WaterHeight)]; // Clamp as * 1 occasionally puts it at size + 1
 		Water = GetWorld()->SpawnActor<AActor>(WaterClass, WaterPosition, FRotator::ZeroRotator);
+		GenerateDrinkLocations();
 	}
 	
 	GenerateFence();
-	CreateNavVolume();
+
+	if (TerrainName == "Desert")
+	{
+		// If we're desert, generate the oasis hole
+		const FVector Center = GetActorLocation() + FVector(Width * Scale / 2, Height * Scale / 2, 0);
+		const double Target = static_cast<double>(LowestHeight) - 250;
+		const float Radius = 8 * Scale;
+		auto Verts = GetVerticiesInSphere(Center, Radius);
+
+		for (const auto& Vert : Verts)
+		{
+			FVector Pos = Verticies[Vert.Index];
+			const float Distance = Vert.Distance / Radius;
+			Pos.Z = FMath::InterpEaseOut(Target, Pos.Z, Distance, 3);
+			Verticies[Vert.Index] = Pos;
+		}
+	}
+	
 	CreateMesh();
 	GenerateExteriorDetail();
 

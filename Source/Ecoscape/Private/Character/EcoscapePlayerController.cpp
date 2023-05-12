@@ -34,8 +34,8 @@ bool AEcoscapePlayerController::GoToTerrain(AEcoscapeTerrain* Terrain)
 	OnPlayerTerrainChanged.Broadcast(CurrentTerrain, Terrain);
 	
 	CurrentTerrain = Terrain;
+	FPCharacter->SetActorLocation(Terrain->FindSpawnPoint() + FVector(0, 0, 60));
 	FVector TerrainCenter = Terrain->GetCenterPosition();
-	FPCharacter->SetActorLocation(TerrainCenter + FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(FPCharacter)));
 	TerrainCenter.Z = TopDownSpawnHeight;
 	TDCharacter->SetActorLocation(TerrainCenter);
 	TDCharacter->GoToTerrain(Terrain);

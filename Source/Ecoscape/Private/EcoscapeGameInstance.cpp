@@ -46,10 +46,10 @@ UTextPopup* UEcoscapeGameInstance::ShowPopup(FString Title, FString Message)
 
 AEcoscapeTerrain* UEcoscapeGameInstance::GetTerrain(FString TerrainName)
 {
-	TArray<AActor*> Terrains;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEcoscapeTerrain::StaticClass(), Terrains);
+	TArray<AActor*> AllTerrains;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEcoscapeTerrain::StaticClass(), AllTerrains);
 
-	for (AActor* TerrainActor : Terrains)
+	for (AActor* TerrainActor : AllTerrains)
 	{
 		AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(TerrainActor);
 		if (Terrain->TerrainName == TerrainName)
@@ -60,12 +60,26 @@ AEcoscapeTerrain* UEcoscapeGameInstance::GetTerrain(FString TerrainName)
 	return nullptr;
 }
 
+int UEcoscapeGameInstance::AddTerrain(AEcoscapeTerrain* Terrain)
+{
+	Terrains.Add(CurrentTerrainIndex, Terrain);
+	CurrentTerrainIndex++;
+	return CurrentTerrainIndex - 1;
+}
+
+AEcoscapeTerrain* UEcoscapeGameInstance::GetTerrainFromIndex(int Index)
+{
+	if (!Terrains.Contains(Index))
+		return nullptr;
+	return Terrains[Index];
+}
+
 void UEcoscapeGameInstance::SaveTerrain(const FString& TerrainName, const FString& Filename) const
 {
-	TArray<AActor*> Terrains;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEcoscapeTerrain::StaticClass(), Terrains);
+	TArray<AActor*> AllTerrains;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEcoscapeTerrain::StaticClass(), AllTerrains);
 
-	for (AActor* TerrainActor : Terrains)
+	for (AActor* TerrainActor : AllTerrains)
 	{
 		AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(TerrainActor);
 		if (Terrain->TerrainName != TerrainName)
@@ -77,10 +91,10 @@ void UEcoscapeGameInstance::SaveTerrain(const FString& TerrainName, const FStrin
 
 void UEcoscapeGameInstance::LoadTerrain(const FString& TerrainName, const FString& Filename) const
 {
-	TArray<AActor*> Terrains;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEcoscapeTerrain::StaticClass(), Terrains);
+	TArray<AActor*> AllTerrains;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEcoscapeTerrain::StaticClass(), AllTerrains);
 
-	for (AActor* TerrainActor : Terrains)
+	for (AActor* TerrainActor : AllTerrains)
 	{
 		AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(TerrainActor);
 		if (Terrain->TerrainName != TerrainName)
@@ -95,10 +109,10 @@ void UEcoscapeGameInstance::LoadTerrain(const FString& TerrainName, const FStrin
 
 void UEcoscapeGameInstance::RegenerateTerrain(const FString& TerrainName) const
 {
-	TArray<AActor*> Terrains;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEcoscapeTerrain::StaticClass(), Terrains);
+	TArray<AActor*> AllTerrains;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEcoscapeTerrain::StaticClass(), AllTerrains);
 
-	for (AActor* TerrainActor : Terrains)
+	for (AActor* TerrainActor : AllTerrains)
 	{
 		AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(TerrainActor);
 		if (Terrain->TerrainName != TerrainName)

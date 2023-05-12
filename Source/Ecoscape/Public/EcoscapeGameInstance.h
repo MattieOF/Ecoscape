@@ -87,6 +87,11 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	AEcoscapeTerrain* GetTerrain(FString TerrainName);
 
+	UFUNCTION(BlueprintCallable)
+	int AddTerrain(AEcoscapeTerrain* Terrain);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	AEcoscapeTerrain* GetTerrainFromIndex(int Index);
+
 	UFUNCTION(Exec)
 	void SaveTerrain(const FString& TerrainName, const FString& Filename) const;
 	UFUNCTION(Exec)
@@ -103,4 +108,8 @@ public:
 private:
 	void AddWithIndent(FString& Output, FString Message, int Indent, bool NewLine = true);
 	void SearchItemDirFolder(UItemFolder* Folder, FString& Output, int Level);
+
+	int CurrentTerrainIndex = 0;
+	UPROPERTY()
+	TMap<int, AEcoscapeTerrain*> Terrains;
 };

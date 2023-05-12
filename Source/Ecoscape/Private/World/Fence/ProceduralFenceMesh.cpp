@@ -86,7 +86,7 @@ void AProceduralFenceMesh::Regenerate()
 					GateCount--;
 				} else {
 					// Gen fence and wire
-					UEcoscapeProcMeshStatics::AddCuboid(Verticies, Indicies, UV0, Normals, Tangents, LastTopPosition, TopPos + FVector(0, 0, -10), FVector2D(20, 20), true,
+					UEcoscapeProcMeshStatics::AddCuboid(Verticies, Indicies, UV0, Normals, Tangents, LastTopPosition, TopPos, FVector2D(20, 20), true,
 							  FVector2D(0.01, 0.01));
 
 					int VertIndex = Verticies.Num();

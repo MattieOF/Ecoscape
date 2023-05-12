@@ -83,6 +83,17 @@ FORCEINLINE FArchive& operator<<(FArchive& LHS, FTerrainDetailActor& RHS)
 	return LHS;
 }
 
+USTRUCT(BlueprintType)
+struct FDrinkLocation
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite)
+	FVector Location;
+	UPROPERTY(BlueprintReadWrite)
+	FVector DrinkerOrientation;
+};
+
 // USTRUCT(BlueprintType)
 // struct FFenceInfo
 // {
@@ -134,6 +145,9 @@ public:
 	TSubclassOf<AProceduralFenceMesh> FenceClass;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE int GetGIIndex() { return GIIndex; }
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE FVector GetVertexPositionLocal(int Index) { return Verticies[Index]; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE FVector GetVertexPositionWorld(int Index) { return GetActorLocation() + GetVertexPositionLocal(Index); }
@@ -176,6 +190,9 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	TArray<FVertexOverlapInfo> GetVerticiesInSphere(FVector Position, float Radius, bool CheckZ = false);
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FVector FindSpawnPoint();
+
 	UFUNCTION(BlueprintCallable)
 	void AddVertexColour(int Index, FColor AddedColor, bool Flush = true);
 
@@ -190,6 +207,14 @@ public:
 	
 	UPROPERTY(EditAnywhere)
 	int ExteriorTileCount = 10;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	void GetPlayablePoints(TArray<FVector>& OutPoints);
+
+	bool GetRandomDrinkLocation(FDrinkLocation& OutDrinkLocation);
+	bool GetClosestDrinkLocation(FVector Origin, FDrinkLocation& OutDrinkLocation);
+
+	TArray<FDrinkLocation> DrinkLocations;
 
 	// -----------------------
 	// Serialisation functions
@@ -218,6 +243,7 @@ protected:
 	void GenerateNormals();
 	void GenerateFence();
 	void CreateNavVolume();
+	void GenerateDrinkLocations();
 	void CreateMesh() const;
 	void GenerateExteriorDetail();
 
@@ -227,6 +253,9 @@ protected:
 	
 	UFUNCTION(BlueprintCallable, CallInEditor)
 	void DrawIndicies();
+	
+	UFUNCTION(BlueprintCallable, CallInEditor)
+	void DrawDrinkLocations();
 #endif
 	
 	UPROPERTY(EditAnywhere)
@@ -295,9 +324,14 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	float ColorOffsetSeed = 0;
 	UPROPERTY(BlueprintReadOnly)
-	float LowestHeight = 0;
+	float LowestHeight = 100000; // Set to a large number so it does get set
 	UPROPERTY(BlueprintReadOnly)
 	float HighestHeight = 0;
 	UPROPERTY(BlueprintReadOnly)
 	float AverageHeight = 0;
+	UPROPERTY(BlueprintReadOnly)
+	TArray<float> Heights;
+
+	int GIIndex = 0;
+
 };
