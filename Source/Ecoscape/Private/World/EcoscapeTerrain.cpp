@@ -207,12 +207,16 @@ void AEcoscapeTerrain::SerialiseTerrain(FArchive& Archive)
 			AStaticMeshActor* MeshActor = GetWorld()->SpawnActor<AStaticMeshActor>(DetailInfo.Pos, FRotator::ZeroRotator);
 			MeshActor->SetMobility(EComponentMobility::Movable);
 			MeshActor->GetStaticMeshComponent()->SetStaticMesh(Item->Mesh);
-			MeshActor->SetFolderPath("ExteriorDetail/");
+#if WITH_EDITOR
+			MeshActor->SetFolderPath(FName(FString::Printf(TEXT("ExteriorDetail/%s"), *TerrainName)));
+#endif
 			MeshActor->SetMobility(EComponentMobility::Static);
 			DetailInfo.Actor = MeshActor;
 			DetailActors.Add(DetailInfo);
 		}
 	}
+
+	Archive << DrinkLocations;
 }
 
 bool AEcoscapeTerrain::SerialiseTerrainToFile(FString Filename)
@@ -652,7 +656,9 @@ void AEcoscapeTerrain::GenerateExteriorDetail()
 			Mesh->SetMobility(EComponentMobility::Movable);
 			Mesh->GetStaticMeshComponent()->SetStaticMesh(Item->Mesh);
 			Mesh->AddActorLocalOffset(FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(Mesh) + Item->ZOffset));
-			Mesh->SetFolderPath("ExteriorDetail/");
+#if WITH_EDITOR
+			Mesh->SetFolderPath(FName(FString::Printf(TEXT("ExteriorDetail/%s"), *TerrainName)));
+#endif
 
 			if (bDoRotationForExteriorItems)
 			{

@@ -18,7 +18,7 @@ ABaseAnimal::ABaseAnimal()
 	
 	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->RotationRate.Yaw = 180;
-	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->bOrientRotationToMovement = false;
 
 	// Enable avoidance
 	GetCharacterMovement()->bUseRVOAvoidance = true;
@@ -71,6 +71,16 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 	// Find target rotation
 	FRotator CurrentRotation = GetMesh()->GetComponentRotation();
 	double CurrentYaw = CurrentRotation.Yaw;
+	
+	if (GetCharacterMovement()->GetCurrentAcceleration().SizeSquared() < KINDA_SMALL_NUMBER)
+	{
+		// AI path following request can orient us in that direction (it's effectively an acceleration)
+		if (GetCharacterMovement()->RequestedVelocity.SizeSquared() > KINDA_SMALL_NUMBER)
+			TargetYaw = GetCharacterMovement()->RequestedVelocity.GetSafeNormal().Rotation().Yaw;
+	}
+	else
+		TargetYaw = GetCharacterMovement()->GetCurrentAcceleration().GetSafeNormal().Rotation().Yaw;
+	
 	FHitResult Hit;
 	if (GetWorld()->LineTraceSingleByChannel(Hit, GetActorLocation(), GetActorLocation() + FVector(0, 0, -350),
 	                                         ECC_ITEM_PLACEABLE_ON))
@@ -98,6 +108,11 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 
 	// Interpolate towards target rotation
 	GetMesh()->SetWorldRotation(UKismetMathLibrary::RInterpTo_Constant(CurrentRotation, TargetRotation, DeltaSeconds, 15));
+
+	FRotator CurrentRot = GetActorRotation();
+	FRotator TargetRot = CurrentRot;
+	TargetRot.Yaw = TargetYaw;
+	SetActorRotation(UKismetMathLibrary::RInterpTo_Constant(CurrentRot, TargetRot, DeltaSeconds, 160));
 }
 
 #if WITH_EDITOR

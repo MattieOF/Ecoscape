@@ -53,6 +53,9 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	float Thirst = 1;
 
+	UPROPERTY(BlueprintReadWrite)
+	float TargetYaw;
+
 	UPROPERTY(BlueprintAssignable)
 	FOnAnimalDies OnDeath;
 

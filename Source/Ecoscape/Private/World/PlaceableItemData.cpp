@@ -6,7 +6,6 @@
 #include "World/PlaceableItemData.h"
 
 #include "EcoscapeLog.h"
-#include "ObjectTools.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Kismet/KismetStringLibrary.h"
@@ -15,6 +14,7 @@
 #include "World/PlacedItem.h"
 
 #if WITH_EDITOR
+#include "ObjectTools.h"
 #include "Editor.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Engine/SceneCapture2D.h"

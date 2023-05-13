@@ -8,8 +8,10 @@
 #include "ProceduralMeshComponent.h"
 #include "EcoscapeTerrain.generated.h"
 
+class AStaticMeshActor;
 class AFenceGate;
 class AProceduralFenceMesh;
+
 FORCEINLINE FArchive& operator<<(FArchive& LHS, FProcMeshTangent& RHS)
 {
 	LHS << RHS.TangentX;
@@ -67,11 +69,17 @@ public:
 	float Offset = .1f;
 };
 
+USTRUCT()
 struct FTerrainDetailActor
 {
+	GENERATED_BODY()
+
+	UPROPERTY()
 	FString ItemName;
+	UPROPERTY()
 	FVector Pos;
 
+	UPROPERTY()
 	AStaticMeshActor* Actor;
 };
 
