@@ -31,7 +31,10 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetAnimalData(UAnimalData* Data, bool bRecreateAI = true);
-	
+
+	UFUNCTION(BlueprintCallable, meta=(WorldContext=World))
+	static ABaseAnimal* SpawnAnimal(UObject* World, UAnimalData* Data, AEcoscapeTerrain* Terrain, FVector Position);
+
 	UPROPERTY(EditAnywhere)
 	UAnimalData* AnimalData;
 
@@ -61,6 +64,11 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	AEcoscapeTerrain* AssociatedTerrain;
+
+	UPROPERTY(BlueprintReadWrite)
+	bool bIsEating = false;
+	UPROPERTY(BlueprintReadWrite)
+	bool bIsDrinking = false;
 
 private:
 	FRotator TargetRotation;

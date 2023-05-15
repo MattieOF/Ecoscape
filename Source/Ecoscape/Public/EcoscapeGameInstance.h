@@ -9,6 +9,8 @@
 #include "World/PlaceableItemData.h"
 #include "EcoscapeGameInstance.generated.h"
 
+class UAnimalData;
+
 UCLASS(BlueprintType)
 class UItemFolder : public UObject
 {
@@ -74,6 +76,8 @@ public:
 	
 	UPROPERTY(BlueprintReadOnly)
 	TMap<FString, UPlaceableItemData*> ItemTypes;
+	UPROPERTY(BlueprintReadOnly)
+	TMap<FString, UAnimalData*> AnimalTypes;
 
 	UPROPERTY(BlueprintReadOnly)
 	UItemDirectory* ItemDirectory;

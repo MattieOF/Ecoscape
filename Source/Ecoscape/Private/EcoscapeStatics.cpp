@@ -158,7 +158,7 @@ FString UEcoscapeStatics::JoinStringArray(const TArray<FString>& Array, const FS
 bool UEcoscapeStatics::InActualGame()
 {
 #if WITH_EDITOR
-	return ( GEditor->bIsSimulatingInEditor || ( GEditor->PlayWorld != NULL ) );
+	return ( !GEditor || GEditor->bIsSimulatingInEditor || ( GEditor->PlayWorld != NULL ) );
 #else
 	return true;
 #endif

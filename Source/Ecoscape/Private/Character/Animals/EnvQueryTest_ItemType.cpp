@@ -24,15 +24,15 @@ void UEnvQueryTest_ItemType::RunTest(FEnvQueryInstance& QueryInstance) const
 		// Check it is in fact a placed item
 		if (!PlacedItem)
 		{
-			It.SetScore(TestPurpose, FilterType, false, true);
+			It.ForceItemState(EEnvItemStatus::Failed, 0);
 			continue;
 		}
-
+		
 		// Now check the type
 		if (ValidTypes.Contains(PlacedItem->GetItemData()->GetName()))
-			It.SetScore(TestPurpose, FilterType, true, true);
+			It.ForceItemState(EEnvItemStatus::Passed, 1);
 		else
-			It.SetScore(TestPurpose, FilterType, false, true);
+			It.ForceItemState(EEnvItemStatus::Failed, 0);
 	}	
 }
 

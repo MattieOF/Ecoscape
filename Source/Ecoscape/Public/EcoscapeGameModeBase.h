@@ -23,4 +23,7 @@ public:
 	{
 		return Cast<AEcoscapeGameModeBase>(UGameplayStatics::GetGameMode(WorldContext));
 	}
+	
+	UFUNCTION(BlueprintCallable, Exec)
+	void SpawnAnimalAtCursor(FString Animal);
 };

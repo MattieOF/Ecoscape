@@ -6,9 +6,11 @@
 #include "EcoscapeStatics.h"
 #include "MessageLogModule.h"
 #include "Animation/AnimInstance.h"
+#include "Character/EcoscapePlayerController.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "World/EcoscapeTerrain.h"
 
 ABaseAnimal::ABaseAnimal()
 {
@@ -49,12 +51,12 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	// Do hunger
-	if (Hunger <= 0)
+	if (Hunger <= 0 && !bIsEating)
 		Health -= 1 * DeltaSeconds; // Panda will die in ~60 seconds from no food
 	else
 		Hunger = FMath::Max(0, Hunger - DeltaSeconds * AnimalData->HungerRate);
 
-	if (Thirst <= 0)
+	if (Thirst <= 0 && !bIsDrinking)
 		Health -= 2 * DeltaSeconds;
 	else
 		Thirst = FMath::Max(0, Thirst - DeltaSeconds * AnimalData->ThirstRate);
@@ -66,7 +68,7 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 	}
 
 	DrawDebugString(GetWorld(), GetActorLocation() + FVector(0, 0, 100),
-	                FString::Printf(TEXT("HP: %f, Hunger: %f, Thirst: %f"), Health, Hunger, Thirst), nullptr, FColor::White, DeltaSeconds);
+	                 FString::Printf(TEXT("HP: %f, Hunger: %f, Thirst: %f"), Health, Hunger, Thirst), nullptr, FColor::White, DeltaSeconds);
 
 	// Find target rotation
 	FRotator CurrentRotation = GetMesh()->GetComponentRotation();
@@ -173,4 +175,17 @@ void ABaseAnimal::SetAnimalData(UAnimalData* Data, bool bRecreateAI)
 			}
 		}
 	}
+}
+
+ABaseAnimal* ABaseAnimal::SpawnAnimal(UObject* World, UAnimalData* Data, AEcoscapeTerrain* Terrain, FVector Position)
+{
+	const FTransform TF(Position);
+	ABaseAnimal* Animal = World->GetWorld()->SpawnActorDeferred<ABaseAnimal>(ABaseAnimal::StaticClass(), TF);
+	if (Animal)
+	{
+		Animal->AnimalData = Data;
+		Animal->AssociatedTerrain = Terrain;
+		Animal->FinishSpawning(TF);
+	}
+	return Animal;
 }

@@ -6,6 +6,7 @@
 #include "EcoscapeStatics.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Character/EcoscapePlayerController.h"
+#include "Character/Animals/AnimalData.h"
 #include "Kismet/KismetStringLibrary.h"
 #include "World/EcoscapeTerrain.h"
 
@@ -34,6 +35,18 @@ void UEcoscapeGameInstance::Init()
 	}
 
 	GenerateItemDirectory();
+	
+	ContentPaths[0] = TEXT("/Game/Blueprints/Character/Animals/");
+	AssetRegistry.ScanPathsSynchronous(ContentPaths);
+
+	// Find all the resource data assets and add them to the resources map
+	TArray<FAssetData> AnimalAssetData;
+	AssetRegistry.GetAssetsByClass(UAnimalData::StaticClass()->GetFName(), AnimalAssetData, true);
+	for (auto& Asset : AnimalAssetData)
+	{
+		UAnimalData* Animal = Cast<UAnimalData>(Asset.GetAsset());
+		AnimalTypes.Add(Animal->GetName(), Animal);
+	}
 }
 
 UTextPopup* UEcoscapeGameInstance::ShowPopup(FString Title, FString Message)
