@@ -261,7 +261,7 @@ void AEcoscapeTDCharacter::OnToolUsed()
 		{
 			// Check we have an item
 			if (CurrentItemData.GetItem() == nullptr)
-				return;
+				break;
 			
 			// Check position is valid
 			if (!ItemPreview || !ItemPreview->IsValidPlacement())
@@ -595,6 +595,16 @@ bool AEcoscapeTDCharacter::TryPlaceItemAtHit(UPlaceableItemData* Item, FHitResul
 	// Check position is within playable space
 	if (!EcoscapePlayerController->GetCurrentTerrain()->IsPositionWithinPlayableSpace(Hit.ImpactPoint))
 		return false;
+
+	// Check we aren't too deep underwater
+	float WaterDepth = EcoscapePlayerController->GetCurrentTerrain()->GetWaterHeight() - Hit.ImpactPoint.Z;
+	auto ItemData = CurrentItemData.GetItem();
+	if ((ItemData->bHasMaxWaterDepth && WaterDepth > ItemData->MaxWaterDepth)
+		|| (ItemData->bHasMinWaterDepth && WaterDepth < ItemData->MinWaterDepth))
+	{
+		OnFailedPlacementAttempt();
+		return false;
+	}
 	
 	float Yaw = FMath::RandRange(0, 360);
 	

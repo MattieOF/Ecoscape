@@ -85,12 +85,26 @@ void APlaceableItemPreview::UpdateWithHitInfo(FHitResult Hit)
 
 	AddActorLocalOffset(FVector(0, 0, CurrentItem->ZOffset));
 
-	// Check position is in playable area of current terrain
-	if (CurrentTerrain && !CurrentTerrain->IsPositionWithinPlayableSpace(Hit.ImpactPoint))
+	// Terrain dependent checks
+	if (CurrentTerrain)
 	{
-		bIsValidPlacement = false;
-		UEcoscapeStatics::SetAllMaterials(MainMesh, InvalidMaterial);
-		return;
+		// Check position is in playable area of current terrain
+		if (!CurrentTerrain->IsPositionWithinPlayableSpace(Hit.ImpactPoint))
+		{
+			bIsValidPlacement = false;
+			UEcoscapeStatics::SetAllMaterials(MainMesh, InvalidMaterial);
+			return;
+		}
+		
+		// Check we aren't too deep underwater
+		float WaterDepth = CurrentTerrain->GetWaterHeight() - Hit.ImpactPoint.Z;
+		if ((CurrentItem->bHasMaxWaterDepth && WaterDepth > CurrentItem->MaxWaterDepth)
+			|| (CurrentItem->bHasMinWaterDepth && WaterDepth < CurrentItem->MinWaterDepth))
+		{
+			bIsValidPlacement = false;
+			UEcoscapeStatics::SetAllMaterials(MainMesh, InvalidMaterial);
+			return;
+		}
 	}
 
 	// Check to see if position is valid or not

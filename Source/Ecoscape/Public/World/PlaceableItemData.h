@@ -86,6 +86,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
 	float ZOffset = 0;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
+	bool bHasMaxWaterDepth = true;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
+	float MaxWaterDepth = 25;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
+	bool bHasMinWaterDepth = false;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
+	float MinWaterDepth = 0;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Colour")
 	float ColourRange = 150 * 6;
 

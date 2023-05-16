@@ -114,7 +114,7 @@ void UEcoscapeGameInstance::LoadTerrain(const FString& TerrainName, const FStrin
 			continue;
 		Terrain->DeserialiseTerrainFromFile(Filename);
 		AEcoscapePlayerController* Player = AEcoscapePlayerController::GetEcoscapePlayerController(GetWorld());
-		if (Player->GetCurrentTerrain() == Terrain)
+		if (Player && Player->GetCurrentTerrain() == Terrain)
 			Player->GoToTerrain(Terrain); // Reposition player on new terrain
 		UE_LOG(LogEcoscape, Log, TEXT("Loaded terrain %s from %s"), *TerrainName, *Filename);
 	}
