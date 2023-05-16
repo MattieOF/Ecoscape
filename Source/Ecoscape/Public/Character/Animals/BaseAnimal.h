@@ -66,9 +66,11 @@ public:
 	AEcoscapeTerrain* AssociatedTerrain;
 
 	UPROPERTY(BlueprintReadWrite)
-	bool bIsEating = false;
+	bool bIsEating   = false;
 	UPROPERTY(BlueprintReadWrite)
 	bool bIsDrinking = false;
+	UPROPERTY(BlueprintReadWrite)
+	bool bIsSleeping = false;
 
 private:
 	FRotator TargetRotation;

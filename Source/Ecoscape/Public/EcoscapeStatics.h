@@ -201,4 +201,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	static void LogEcoscapeError(FText Text);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static FORCEINLINE FRotator RotatorFromVector(FVector V) { return V.ToOrientationRotator(); }
 };
