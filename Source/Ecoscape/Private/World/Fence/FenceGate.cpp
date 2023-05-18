@@ -2,6 +2,7 @@
 
 #include "World/Fence/FenceGate.h"
 
+#include "EcoscapeStatics.h"
 #include "ProceduralMeshComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "UObject/ConstructorHelpers.h"
@@ -14,6 +15,8 @@ AFenceGate::AFenceGate()
 
 	Mesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("Mesh"));
 	DoorMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Door Mesh"));
+	DoorMesh->SetCollisionResponseToChannel(ECC_BLOCKS_HABITAT, ECR_Block);
+	DoorMesh->SetCollisionResponseToChannel(ECC_BLOCKS_ITEM_PLACEMENT, ECR_Block);
 	DoorMesh->ComponentTags.Add("Outline");
 	DoorMesh->SetupAttachment(Mesh);
 	Interactable = CreateDefaultSubobject<UInteractableComponent>(TEXT("Interactable"));

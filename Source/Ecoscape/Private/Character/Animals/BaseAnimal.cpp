@@ -16,6 +16,127 @@
 
 DECLARE_CYCLE_STAT(TEXT("Terrain/Animal: Check Happiness"), STAT_CheckHappiness, STATGROUP_EcoscapeTerrain);
 
+TSharedPtr<FUpdateHappiness> ABaseAnimal::HappinessUpdateRunnable;
+
+FUpdateHappiness::FUpdateHappiness()
+{
+	Thread = FRunnableThread::Create( this, TEXT("Animal Available Space Check") );
+}
+
+FUpdateHappiness::~FUpdateHappiness()
+{
+	if ( Thread != nullptr )
+	{
+		Thread->Kill( true );
+		delete Thread;
+	}
+}
+
+bool FUpdateHappiness::Init()
+{
+	return true;
+}
+
+uint32 FUpdateHappiness::Run()
+{
+	bStopThread = false;
+	
+	if (bStopThread || !Animals.IsEmpty())
+	{
+		ABaseAnimal* Animal;
+		Animals.Dequeue(Animal);
+
+		// -------------
+		// SIMPLE FLOOD FILL ALGORITHM
+		// Copied from Wikipedia
+		// Takes about ~30ms per animal. Pretty slow, so we do it on a seperate thread.
+		// TODO: Could be optimised by updating walkability values when fences or items are placed and then just doing a flood fill on some booleans
+		// -------------
+		if (!Animal->AssociatedTerrain)
+			return 1;
+		const int TheoreticalWalkablePointsNum = Animal->AssociatedTerrain->GetWalkableVertCount();
+		const int StartIndex = Animal->AssociatedTerrain->GetClosestVertex(Animal->GetActorLocation());
+		const FVector2D Pos = Animal->AssociatedTerrain->GetVertexXY(StartIndex);
+		TArray<int> WalkablePoints;
+		if (!Animal->AssociatedTerrain->IsVertWalkable(StartIndex))
+			return 0;
+		TQueue<FVector4> PointsToSearch;
+		PointsToSearch.Enqueue(FVector4(Pos.X, Pos.X, Pos.Y, 1));
+		PointsToSearch.Enqueue(FVector4(Pos.X, Pos.X, Pos.Y - 1, -1));
+		while (!PointsToSearch.IsEmpty())
+		{
+			FVector4 Current;
+			PointsToSearch.Dequeue(Current);
+			float X = Current.X;
+			int I = Animal->AssociatedTerrain->GetVertexIndex(X, Current.Z);
+			if (!WalkablePoints.Contains(I) && Animal->AssociatedTerrain->IsVertWalkable(I))
+			{
+				I = Animal->AssociatedTerrain->GetVertexIndex(X - 1, Current.Z);
+				while (!WalkablePoints.Contains(I) && Animal->AssociatedTerrain->IsVertWalkable(I))
+				{
+					WalkablePoints.AddUnique(I);
+					X--;
+				
+					I = Animal->AssociatedTerrain->GetVertexIndex(X - 1, Current.Z);
+				}
+			}
+		
+			if (X < Current.X)
+				PointsToSearch.Enqueue(FVector4(X, Current.X - 1, Current.Z - Current.W, -Current.W));
+			while (Current.X <= Current.Y)
+			{
+				I = Animal->AssociatedTerrain->GetVertexIndex(Current.X,Current.Z);
+				while (!WalkablePoints.Contains(I) && Animal->AssociatedTerrain->IsVertWalkable(I))
+				{
+					WalkablePoints.AddUnique(I);
+					Current.X++;
+					PointsToSearch.Enqueue(FVector4(X, Current.X - 1, Current.Z + Current.W, Current.W));
+					if (Current.X - 1 > Current.Y)
+						PointsToSearch.Enqueue(FVector4(Current.Y + 1, Current.X - 1, Current.Z - Current.W, -Current.W));
+				
+					I = Animal->AssociatedTerrain->GetVertexIndex(Current.X,Current.Z);
+				}
+				Current.X++;
+				I = Animal->AssociatedTerrain->GetVertexIndex(Current.X, Current.Z);
+				while (Current.X < Current.Y && !(!WalkablePoints.Contains(I) && Animal->AssociatedTerrain->IsVertWalkable(I)))
+				{
+					Current.X++;
+					I = Animal->AssociatedTerrain->GetVertexIndex(Current.X, Current.Z);
+				}
+				X = Current.X; 
+			}
+		}
+
+		FHappinessUpdateInfo UpdateInfo;
+		UpdateInfo.PercentageOfHabitatAvailable = static_cast<float>(WalkablePoints.Num()) / TheoreticalWalkablePointsNum;
+		Animal->OnHappinessUpdated.Broadcast(UpdateInfo);
+
+		CurrentlyQueued.Remove(Animal);
+	}
+	
+	return 0;
+}
+
+void FUpdateHappiness::Exit()
+{
+}
+
+void FUpdateHappiness::Stop()
+{
+	bStopThread = true;
+}
+
+void FUpdateHappiness::EnqueueAnimalForUpdate(ABaseAnimal* Animal, bool bRunIfNot)
+{
+	if (!CurrentlyQueued.Contains(Animal))
+	{
+		Animals.Enqueue(Animal);
+		CurrentlyQueued.Add(Animal);
+	}
+
+	Run();
+}
+
 ABaseAnimal::ABaseAnimal()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -40,9 +161,8 @@ void ABaseAnimal::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// TODO: MULTITHREAD
-	// FFindAvailableHabitat* Runnable = NewObject<FFindAvailableHabitat>();
-	// GetHabitatSizeRunnable = FRunnableThread::Create();
+	if (!HappinessUpdateRunnable)
+		HappinessUpdateRunnable = MakeShared<FUpdateHappiness>();
 	
 	if (!AnimalData)
 	{
@@ -204,6 +324,9 @@ ABaseAnimal* ABaseAnimal::SpawnAnimal(UObject* World, UAnimalData* Data, AEcosca
 void ABaseAnimal::UpdateHappiness()
 {
 	SCOPE_CYCLE_COUNTER(STAT_CheckHappiness);
+
+	HappinessUpdateRunnable->EnqueueAnimalForUpdate(this);
+	
 	//
 	// int WalkablePointsNum = AssociatedTerrain->GetWalkableVertCount();
 	// int StartIndex = AssociatedTerrain->GetClosestVertex(GetActorLocation());
@@ -266,71 +389,13 @@ void ABaseAnimal::UpdateHappiness()
 	// ----
 	// FLOOD FILL 1
 	// ----
-	if (!AssociatedTerrain)
-		return;
-	int WalkablePointsNum = AssociatedTerrain->GetWalkableVertCount();
-	int StartIndex = AssociatedTerrain->GetClosestVertex(GetActorLocation());
-	FVector2D Pos = AssociatedTerrain->GetVertexXY(StartIndex);
-	TArray<int> WalkablePoints;
-		if (!AssociatedTerrain->IsVertWalkable(StartIndex))
-			return;
-	TQueue<FVector4> PointsToSearch;
-	PointsToSearch.Enqueue(FVector4(Pos.X, Pos.X, Pos.Y, 1));
-	PointsToSearch.Enqueue(FVector4(Pos.X, Pos.X, Pos.Y - 1, -1));
-	while (!PointsToSearch.IsEmpty())
-	{
-		FVector4 Current;
-		PointsToSearch.Dequeue(Current);
-		float X = Current.X;
-		int I = AssociatedTerrain->GetVertexIndex(X, Current.Z);
-		if (!WalkablePoints.Contains(I) && AssociatedTerrain->IsVertWalkable(I))
-		{
-			I = AssociatedTerrain->GetVertexIndex(X - 1, Current.Z);
-			while (!WalkablePoints.Contains(I) && AssociatedTerrain->IsVertWalkable(I))
-			{
-				WalkablePoints.AddUnique(I);
-				X--;
-				
-				I = AssociatedTerrain->GetVertexIndex(X - 1, Current.Z);
-			}
-		}
-		
-		if (X < Current.X)
-		PointsToSearch.Enqueue(FVector4(X, Current.X - 1, Current.Z - Current.W, -Current.W));
-		while (Current.X <= Current.Y)
-		{
-			I = AssociatedTerrain->GetVertexIndex(Current.X,Current.Z);
-			while (!WalkablePoints.Contains(I) && AssociatedTerrain->IsVertWalkable(I))
-			{
-				WalkablePoints.AddUnique(I);
-				Current.X++;
-				PointsToSearch.Enqueue(FVector4(X, Current.X - 1, Current.Z + Current.W, Current.W));
-				if (Current.X - 1 > Current.Y)
-					PointsToSearch.Enqueue(FVector4(Current.Y + 1, Current.X - 1, Current.Z - Current.W, -Current.W));
-				
-				I = AssociatedTerrain->GetVertexIndex(Current.X,Current.Z);
-			}
-				Current.X++;
-			I = AssociatedTerrain->GetVertexIndex(Current.X, Current.Z);
-			while (Current.X < Current.Y && !(!WalkablePoints.Contains(I) && AssociatedTerrain->IsVertWalkable(I)))
-			{
-				Current.X++;
-				I = AssociatedTerrain->GetVertexIndex(Current.X, Current.Z);
-			}
-			X = Current.X; 
-		}
-	}
 	
-	if (bDrawNav)
-	{
-		for (const auto& WalkablePoint : WalkablePoints)
-			DrawDebugSphere(GetWorld(), AssociatedTerrain->GetVertexPositionWorld(WalkablePoint), 30, 6, FColor::Red, false, 1, 0, 2);
-	}
-}
-
-void ABaseAnimal::TerrainFloodFill(TQueue<FVector2D>& Stack, float LX, float RX, float Y, float S)
-{
 	
+	// if (bDrawNav)
+	// {
+	// 	for (const auto& WalkablePoint : WalkablePoints)
+	// 		DrawDebugSphere(GetWorld(), AssociatedTerrain->GetVertexPositionWorld(WalkablePoint), 30, 6, FColor::Red, false, 1, 0, 2);
+	// }
 }
 
 // void ABaseAnimal::OnNavTest()

@@ -6,22 +6,41 @@
 #include "AnimalData.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Character.h"
-#include "NavMesh/RecastNavMesh.h"
 #include "BaseAnimal.generated.h"
 
+class ABaseAnimal;
 class AEcoscapeTerrain;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAnimalDies);
+USTRUCT()
+struct ECOSCAPE_API FHappinessUpdateInfo
+{
+	GENERATED_BODY()
+	
+	float PercentageOfHabitatAvailable;
+};
 
-class FFindAvailableHabitat : public FRunnable
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAnimalDies);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHappinessUpdated, FHappinessUpdateInfo, Info);
+
+class ECOSCAPE_API FUpdateHappiness : public FRunnable
 {
 public:
-	FFindAvailableHabitat();
+	FUpdateHappiness();
+	virtual ~FUpdateHappiness() override;
 
-	virtual bool Init() override;
+	virtual bool   Init() override;
 	virtual uint32 Run() override;
-	virtual void Exit() override;
-	virtual void Stop() override;
+	virtual void   Exit() override;
+	virtual void   Stop() override;
+
+	void EnqueueAnimalForUpdate(ABaseAnimal* Animal, bool bRunIfNot = false);
+
+private:
+	TQueue<ABaseAnimal*> Animals;
+	TArray<ABaseAnimal*> CurrentlyQueued;
+	
+	FRunnableThread* Thread;
+	bool bStopThread = false;
 };
 
 UCLASS(BlueprintType, Blueprintable)
@@ -49,8 +68,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, CallInEditor)
 	void UpdateHappiness();
-
-	void TerrainFloodFill(TQueue<FVector2D>& Stack, float LX, float RX, float Y, float S);
 	
 	UPROPERTY(EditAnywhere)
 	UAnimalData* AnimalData;
@@ -92,8 +109,14 @@ public:
 	UPROPERTY(EditAnywhere)
 	bool bDrawNav = false;
 
+	UPROPERTY(BlueprintReadWrite)
+	float PercentageOfHabitatAvailable = 0;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnHappinessUpdated OnHappinessUpdated;
+
 private:
 	FRotator TargetRotation;
-
-	FRunnableThread* GetHabitatSizeRunnable;
+	
+	static TSharedPtr<FUpdateHappiness> HappinessUpdateRunnable;
 };
