@@ -6,11 +6,23 @@
 #include "AnimalData.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Character.h"
+#include "NavMesh/RecastNavMesh.h"
 #include "BaseAnimal.generated.h"
 
 class AEcoscapeTerrain;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAnimalDies);
+
+class FFindAvailableHabitat : public FRunnable
+{
+public:
+	FFindAvailableHabitat();
+
+	virtual bool Init() override;
+	virtual uint32 Run() override;
+	virtual void Exit() override;
+	virtual void Stop() override;
+};
 
 UCLASS(BlueprintType, Blueprintable)
 class ECOSCAPE_API ABaseAnimal : public ACharacter
@@ -35,6 +47,11 @@ public:
 	UFUNCTION(BlueprintCallable, meta=(WorldContext=World))
 	static ABaseAnimal* SpawnAnimal(UObject* World, UAnimalData* Data, AEcoscapeTerrain* Terrain, FVector Position);
 
+	UFUNCTION(BlueprintCallable, CallInEditor)
+	void UpdateHappiness();
+
+	void TerrainFloodFill(TQueue<FVector2D>& Stack, float LX, float RX, float Y, float S);
+	
 	UPROPERTY(EditAnywhere)
 	UAnimalData* AnimalData;
 
@@ -72,6 +89,11 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	bool bIsSleeping = false;
 
+	UPROPERTY(EditAnywhere)
+	bool bDrawNav = false;
+
 private:
 	FRotator TargetRotation;
+
+	FRunnableThread* GetHabitatSizeRunnable;
 };

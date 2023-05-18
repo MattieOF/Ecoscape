@@ -237,6 +237,12 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool GetClosestDrinkLocation(FVector Origin, FDrinkLocation& OutDrinkLocation);
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE int GetWalkableVertCount() { return (Width - (ExteriorTileCount + 1)) * (Height - (ExteriorTileCount + 1)) - WaterHeight * Heights.Num(); }
+
+	UFUNCTION(BlueprintCallable)
+	bool IsVertWalkable(int Index, bool bDiscountWet = true);
+	
 	UPROPERTY(BlueprintReadOnly)
 	TArray<FDrinkLocation> DrinkLocations;
 

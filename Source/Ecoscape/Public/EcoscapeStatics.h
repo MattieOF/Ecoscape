@@ -9,6 +9,7 @@
 #define ECC_BLOCKS_ITEM_PLACEMENT ECC_GameTraceChannel1
 #define ECC_HIGHLIGHTABLE         ECC_GameTraceChannel2
 #define ECC_ITEM_PLACEABLE_ON     ECC_GameTraceChannel3
+#define ECC_BLOCKS_HABITAT        ECC_GameTraceChannel4
 
 class UPlaceableItemData;
 FORCEINLINE FColor operator-(const FColor& LHS, const FColor& RHS)

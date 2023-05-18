@@ -8,6 +8,7 @@
 #include "EcoscapeStats.h"
 #include "KismetProceduralMeshLibrary.h"
 #include "NavigationSystem.h"
+#include "Character/Animals/BaseAnimal.h"
 #include "Engine/StaticMeshActor.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Misc/FileHelper.h"
@@ -22,6 +23,7 @@ DECLARE_CYCLE_STAT(TEXT("Terrain: Generate"), STAT_GenTerrain, STATGROUP_Ecoscap
 DECLARE_CYCLE_STAT(TEXT("Terrain: Get Nearest Vertex"), STAT_GetNearestVert, STATGROUP_EcoscapeTerrain);
 DECLARE_CYCLE_STAT(TEXT("Terrain: Add Vertex Color"), STAT_AddVertColor, STATGROUP_EcoscapeTerrain);
 DECLARE_CYCLE_STAT(TEXT("Terrain: Get Verticies In Sphere"), STAT_VertsInSphere, STATGROUP_EcoscapeTerrain);
+DECLARE_CYCLE_STAT(TEXT("Terrain: Is Vert Walkable"), STAT_VertWalkableTest, STATGROUP_EcoscapeTerrain);
 
 AEcoscapeTerrain::AEcoscapeTerrain()
 {
@@ -79,6 +81,35 @@ bool AEcoscapeTerrain::GetClosestDrinkLocation(FVector Origin, FDrinkLocation& O
 	}
 
 	OutDrinkLocation = DrinkLocations[ClosestIndex];
+	
+	return true;
+}
+
+bool AEcoscapeTerrain::IsVertWalkable(int Index, bool bDiscountWet)
+{
+	SCOPE_CYCLE_COUNTER(STAT_VertWalkableTest);
+	
+	// Check range
+	if (Index < 0 || Index >= Verticies.Num())
+		return false;
+
+	FVector2D Pos = GetVertexXY(Index);
+	if (Pos.X < ExteriorTileCount || Pos.X > Width - ExteriorTileCount
+		|| Pos.Y < ExteriorTileCount || Pos.Y > Height - ExteriorTileCount)
+	{
+		return false;
+	}
+
+	// Check water height
+	if (bDiscountWet && Water && Verticies[Index].Z < Water->GetActorLocation().Z)
+		return false;
+
+	// Check collisions
+	// TODO: heavy
+	static FCollisionShape Box = FCollisionShape::MakeBox(FVector(Scale / 2, Scale / 2, Scale * 2));
+	TArray<FOverlapResult> Overlaps;
+	if (GetWorld()->OverlapBlockingTestByChannel(Verticies[Index], FQuat::Identity, ECC_BLOCKS_HABITAT, Box))
+		return false;
 	
 	return true;
 }

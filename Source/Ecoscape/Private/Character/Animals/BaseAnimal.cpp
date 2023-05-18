@@ -4,13 +4,17 @@
 
 #include "Ecoscape.h"
 #include "EcoscapeStatics.h"
+#include "EcoscapeStats.h"
 #include "MessageLogModule.h"
+#include "NavigationSystem.h"
 #include "Animation/AnimInstance.h"
 #include "Character/EcoscapePlayerController.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "World/EcoscapeTerrain.h"
+
+DECLARE_CYCLE_STAT(TEXT("Terrain/Animal: Check Happiness"), STAT_CheckHappiness, STATGROUP_EcoscapeTerrain);
 
 ABaseAnimal::ABaseAnimal()
 {
@@ -35,6 +39,10 @@ ABaseAnimal::ABaseAnimal()
 void ABaseAnimal::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// TODO: MULTITHREAD
+	// FFindAvailableHabitat* Runnable = NewObject<FFindAvailableHabitat>();
+	// GetHabitatSizeRunnable = FRunnableThread::Create();
 	
 	if (!AnimalData)
 	{
@@ -44,6 +52,9 @@ void ABaseAnimal::BeginPlay()
 	}
 
 	SetAnimalData(AnimalData);
+
+	FTimerHandle NavTest;
+	GetWorld()->GetTimerManager().SetTimer(NavTest, FTimerDelegate::CreateUFunction(this, "UpdateHappiness"), 2, true, 0);
 }
 
 void ABaseAnimal::Tick(float DeltaSeconds)
@@ -129,7 +140,7 @@ void ABaseAnimal::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedE
 void ABaseAnimal::SetAnimalData(UAnimalData* Data, bool bRecreateAI)
 {
 	AnimalData = Data;
-	
+
 	if (Data)
 	{
 		// Setup basic data
@@ -189,3 +200,174 @@ ABaseAnimal* ABaseAnimal::SpawnAnimal(UObject* World, UAnimalData* Data, AEcosca
 	}
 	return Animal;
 }
+
+void ABaseAnimal::UpdateHappiness()
+{
+	SCOPE_CYCLE_COUNTER(STAT_CheckHappiness);
+	//
+	// int WalkablePointsNum = AssociatedTerrain->GetWalkableVertCount();
+	// int StartIndex = AssociatedTerrain->GetClosestVertex(GetActorLocation());
+	// FVector2D Pos = AssociatedTerrain->GetVertexXY(StartIndex);
+	// TArray<int> WalkablePoints;
+	//
+	// if (!AssociatedTerrain->IsVertWalkable(StartIndex))
+	// 	return;
+	//
+	// TQueue<FVector2D> Queue;
+	// Queue.Enqueue(Pos);
+	//
+	// while (!Queue.IsEmpty())
+	// {
+	// 	FVector2D Current;
+	// 	Queue.Dequeue(Current);
+	// 	float LX = Current.X;
+	//
+	// 	while (!WalkablePoints.Contains())
+	// }
+	
+	// ----
+	// NAV TEST 2
+	// ----
+	// UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+	//
+	// INavigationDataInterface* const NavData = NavSys->GetNavDataForActor(*GetOwner());
+	//
+	// const ARecastNavMesh* const RecastNavMesh = Cast<const ARecastNavMesh>(NavData);
+	// 					
+	// FRecastDebugGeometry NavMeshTileGeo;
+	// NavMeshTileGeo.bGatherNavMeshEdges = true;
+	//
+	// TArray<FVector> PointsToGatherTiles = { GetActorLocation() };
+	// TSet<int32> AddedTileIndices;
+	//
+	// for (const FVector& GatherPoint : PointsToGatherTiles)
+	// {
+	// 	int32 TileX, TileY;
+	// 	RecastNavMesh->GetNavMeshTileXY(GatherPoint, TileX, TileY);
+	//
+	// 	TArray<int32> TileIndices;
+	// 	RecastNavMesh->GetNavMeshTilesAt(TileX, TileY, TileIndices);
+	//
+	// 	for (int32 i = 0; i < TileIndices.Num(); ++i)
+	// 	{
+	// 		if (!AddedTileIndices.Contains(TileIndices[i]))
+	// 		{
+	// 			RecastNavMesh->GetDebugGeometry(NavMeshTileGeo, TileIndices[i]);
+	// 			AddedTileIndices.Add(TileIndices[i]);
+	// 		}
+	// 	}
+	// }
+	//
+	// for (int32 i = 0; i < NavMeshTileGeo.NavMeshEdges.Num(); i += 2)
+	// {
+	// 	DrawDebugLine(GetWorld(), NavMeshTileGeo.NavMeshEdges[i], NavMeshTileGeo.NavMeshEdges[i + 1], FColor::Red, false, 2, 0, 5);
+	// }
+	
+	// ----
+	// FLOOD FILL 1
+	// ----
+	if (!AssociatedTerrain)
+		return;
+	int WalkablePointsNum = AssociatedTerrain->GetWalkableVertCount();
+	int StartIndex = AssociatedTerrain->GetClosestVertex(GetActorLocation());
+	FVector2D Pos = AssociatedTerrain->GetVertexXY(StartIndex);
+	TArray<int> WalkablePoints;
+		if (!AssociatedTerrain->IsVertWalkable(StartIndex))
+			return;
+	TQueue<FVector4> PointsToSearch;
+	PointsToSearch.Enqueue(FVector4(Pos.X, Pos.X, Pos.Y, 1));
+	PointsToSearch.Enqueue(FVector4(Pos.X, Pos.X, Pos.Y - 1, -1));
+	while (!PointsToSearch.IsEmpty())
+	{
+		FVector4 Current;
+		PointsToSearch.Dequeue(Current);
+		float X = Current.X;
+		int I = AssociatedTerrain->GetVertexIndex(X, Current.Z);
+		if (!WalkablePoints.Contains(I) && AssociatedTerrain->IsVertWalkable(I))
+		{
+			I = AssociatedTerrain->GetVertexIndex(X - 1, Current.Z);
+			while (!WalkablePoints.Contains(I) && AssociatedTerrain->IsVertWalkable(I))
+			{
+				WalkablePoints.AddUnique(I);
+				X--;
+				
+				I = AssociatedTerrain->GetVertexIndex(X - 1, Current.Z);
+			}
+		}
+		
+		if (X < Current.X)
+		PointsToSearch.Enqueue(FVector4(X, Current.X - 1, Current.Z - Current.W, -Current.W));
+		while (Current.X <= Current.Y)
+		{
+			I = AssociatedTerrain->GetVertexIndex(Current.X,Current.Z);
+			while (!WalkablePoints.Contains(I) && AssociatedTerrain->IsVertWalkable(I))
+			{
+				WalkablePoints.AddUnique(I);
+				Current.X++;
+				PointsToSearch.Enqueue(FVector4(X, Current.X - 1, Current.Z + Current.W, Current.W));
+				if (Current.X - 1 > Current.Y)
+					PointsToSearch.Enqueue(FVector4(Current.Y + 1, Current.X - 1, Current.Z - Current.W, -Current.W));
+				
+				I = AssociatedTerrain->GetVertexIndex(Current.X,Current.Z);
+			}
+				Current.X++;
+			I = AssociatedTerrain->GetVertexIndex(Current.X, Current.Z);
+			while (Current.X < Current.Y && !(!WalkablePoints.Contains(I) && AssociatedTerrain->IsVertWalkable(I)))
+			{
+				Current.X++;
+				I = AssociatedTerrain->GetVertexIndex(Current.X, Current.Z);
+			}
+			X = Current.X; 
+		}
+	}
+	
+	if (bDrawNav)
+	{
+		for (const auto& WalkablePoint : WalkablePoints)
+			DrawDebugSphere(GetWorld(), AssociatedTerrain->GetVertexPositionWorld(WalkablePoint), 30, 6, FColor::Red, false, 1, 0, 2);
+	}
+}
+
+void ABaseAnimal::TerrainFloodFill(TQueue<FVector2D>& Stack, float LX, float RX, float Y, float S)
+{
+	
+}
+
+// void ABaseAnimal::OnNavTest()
+// {
+// 	if (!bDrawNav)
+// 		return;
+// 	
+// 	auto Nav = UNavigationSystemV1::GetCurrent(GetWorld());
+// 	const auto NavData = Nav->GetMainNavData();
+// 	ARecastNavMesh* NavMesh = Cast<ARecastNavMesh>(NavData);
+// 	NavMesh->FindDistanceToWall()
+//
+// 	FVector Origin, Extents;
+// 	GetActorBounds(true, Origin, Extents);
+// 	auto Nearest = NavMesh->FindNearestPoly(Origin, Extents, NavMesh->GetDefaultQueryFilter());
+//
+// 	TArray<FVector> Points;
+// 	TArray<NavNodeRef> VisitedNodes;
+// 	NavSearch(NavMesh, Points, VisitedNodes, Nearest);
+// }
+//
+// void ABaseAnimal::NavSearch(ARecastNavMesh* NavMesh, TArray<FVector>& Points, TArray<NavNodeRef>& Visited, NavNodeRef Nav)
+// {
+// 	if (Visited.Contains(Nav))
+// 		return;
+// 	Visited.Add(Nav);
+// 	
+// 	TArray<FNavigationPortalEdge> Edges;
+// 	NavMesh->GetPolyEdges(Nav, Edges);
+// 	for (const auto& Edge : Edges)
+// 	{
+// 		Points.Add(Edge.GetMiddlePoint());
+// 		DrawDebugSphere(GetWorld(), Edge.GetMiddlePoint(), 30, 6, FColor::Red, false, 1, 0, 5);
+// 	}
+//
+// 	TArray<FNavigationPortalEdge> Neighbours;
+// 	NavMesh->GetPolyNeighbors(Nav, Neighbours);
+// 	for (const auto& Neighbour : Neighbours)
+// 		NavSearch(NavMesh, Points, Visited, Neighbour.ToRef);
+// }

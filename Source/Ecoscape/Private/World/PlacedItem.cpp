@@ -13,6 +13,7 @@ APlacedItem::APlacedItem()
 	
 	MainMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Main Mesh"));
 	MainMesh->SetCollisionResponseToChannel(ECC_BLOCKS_ITEM_PLACEMENT, ECR_Block);
+	MainMesh->SetCollisionResponseToChannel(ECC_BLOCKS_HABITAT, ECR_Block);
 	MainMesh->SetCollisionResponseToChannel(ECC_HIGHLIGHTABLE, ECR_Block);
 	MainMesh->ComponentTags.Add("Outline");
 
@@ -52,13 +53,6 @@ void APlacedItem::BeginPlay()
 {
 	Super::BeginPlay();
 
-	FScriptDelegate MouseOver;
-	MouseOver.BindUFunction(this, "OnMouseOver");
-	MainMesh->OnBeginCursorOver.Add(MouseOver);
-	FScriptDelegate MouseLeave;
-	MouseLeave.BindUFunction(this, "OnMouseLeave");
-	MainMesh->OnEndCursorOver.Add(MouseLeave);
-	
 	if (ItemData != nullptr)
 		SetItemData(ItemData);
 }

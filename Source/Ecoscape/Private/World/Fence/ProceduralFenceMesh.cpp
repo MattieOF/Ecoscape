@@ -26,6 +26,7 @@ AProceduralFenceMesh::AProceduralFenceMesh()
 	ProceduralMeshComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 	ProceduralMeshComponent->SetCollisionResponseToChannel(ECC_BLOCKS_ITEM_PLACEMENT, ECR_Block);
 	ProceduralMeshComponent->SetCollisionResponseToChannel(ECC_HIGHLIGHTABLE, ECR_Block);
+	ProceduralMeshComponent->SetCollisionResponseToChannel(ECC_BLOCKS_HABITAT, ECR_Block);
 	ProceduralMeshComponent->SetMaterial(0, Material);
 	ProceduralMeshComponent->ComponentTags.Add("Outline");
 	BottomSplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("BottomPoints"));
