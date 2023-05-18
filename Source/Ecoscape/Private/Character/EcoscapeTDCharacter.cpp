@@ -86,9 +86,17 @@ void AEcoscapeTDCharacter::DoPaintTool()
 					Terrain->CalculateVertColour(Vertex);
 				}
 
+				FVector Origin, Extents;
+				Item->GetActorBounds(true, Origin, Extents);
+				auto AffectedVertices = Terrain->GetVertexesWithinBounds(Origin, Extents, false);
+
 				bTerrainChanged = true;
 				
 				Item->Destroy();
+				
+				for (const int Index : AffectedVertices)
+					Terrain->Walkable[Index] = Terrain->IsVertWalkable(Index);
+				Terrain->WalkabilityUpdated.Broadcast();
 			}
 		}
 
@@ -284,6 +292,7 @@ void AEcoscapeTDCharacter::OnToolUsed()
 				{
 					Item->AssociatedTerrain = Terrain; 
 					Terrain->PlacedItems.Add(Item);
+					Terrain->OnItemPlaced(Item);
 					auto Verts = Terrain->GetVerticiesInSphere(Hit.ImpactPoint, CurrentItemData.GetItem()->ColourRange * PlacedItemScale, true);
 					for (auto& [Vertex, _] : Verts)
 					{
@@ -308,6 +317,10 @@ void AEcoscapeTDCharacter::OnToolUsed()
 		{
 			if (APlacedItem* Item = Cast<APlacedItem>(HighlightedObject))
 			{
+				FVector Origin, Extents;
+				Item->GetActorBounds(true, Origin, Extents);
+				Item->Destroy();
+				
 				if (AEcoscapeTerrain* Terrain = Item->AssociatedTerrain)
 				{
 					Terrain->PlacedItems.Remove(Item);
@@ -319,21 +332,32 @@ void AEcoscapeTDCharacter::OnToolUsed()
 						Terrain->CalculateVertColour(Vertex);
 					}
 					Terrain->FlushMesh();
+					
+					auto AffectedVertices = Terrain->GetVertexesWithinBounds(Origin, Extents, false);
+					for (const int Index : AffectedVertices)
+						Terrain->Walkable[Index] = Terrain->IsVertWalkable(Index);
+					Terrain->WalkabilityUpdated.Broadcast();
 				}
 				else
 					UE_LOG(LogEcoscape, Error, TEXT("Placed item being destroyed by TDCharacter has no associated terrain!"));
 				
-				Item->Destroy();
 				HighlightObject(nullptr);
 			} else if (AProceduralFenceMesh* Fence = Cast<AProceduralFenceMesh>(HighlightedObject))
 			{
 				if (!Fence->bDestroyable)
 					return;
 
-				if (Fence->AssociatedTerrain)
-					Fence->AssociatedTerrain->PlacedFences.Remove(Fence);
-				
 				Fence->Destroy();
+				
+				if (Fence->AssociatedTerrain)
+				{
+					Fence->AssociatedTerrain->PlacedFences.Remove(Fence);
+					auto Verts = Fence->AssociatedTerrain->GetFenceVerticies(Fence->Start, Fence->End);
+					for (int Vert : Verts)
+						Fence->AssociatedTerrain->Walkable[Vert] = Fence->AssociatedTerrain->IsVertWalkable(Vert);
+					Fence->AssociatedTerrain->WalkabilityUpdated.Broadcast();
+				}
+				
 				HighlightObject(nullptr);
 			}
 		}
@@ -602,7 +626,6 @@ bool AEcoscapeTDCharacter::TryPlaceItemAtHit(UPlaceableItemData* Item, FHitResul
 	if ((ItemData->bHasMaxWaterDepth && WaterDepth > ItemData->MaxWaterDepth)
 		|| (ItemData->bHasMinWaterDepth && WaterDepth < ItemData->MinWaterDepth))
 	{
-		OnFailedPlacementAttempt();
 		return false;
 	}
 	
@@ -651,6 +674,7 @@ bool AEcoscapeTDCharacter::TryPlaceItemAtHit(UPlaceableItemData* Item, FHitResul
 	{
 		PlacedItem->AssociatedTerrain = Terrain; 
 		Terrain->PlacedItems.Add(PlacedItem);
+		Terrain->OnItemPlaced(PlacedItem);
 		auto Verts = Terrain->GetVerticiesInSphere(Hit.ImpactPoint, CurrentItemData.GetItem()->ColourRange, true);
 		for (auto& [Vertex, _] : Verts)
 		{

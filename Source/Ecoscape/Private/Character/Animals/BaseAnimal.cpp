@@ -8,6 +8,7 @@
 #include "MessageLogModule.h"
 #include "NavigationSystem.h"
 #include "Animation/AnimInstance.h"
+#include "Async/Async.h"
 #include "Character/EcoscapePlayerController.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -20,7 +21,7 @@ TSharedPtr<FUpdateHappiness> ABaseAnimal::HappinessUpdateRunnable;
 
 FUpdateHappiness::FUpdateHappiness()
 {
-	Thread = FRunnableThread::Create( this, TEXT("Animal Available Space Check") );
+	Thread = FRunnableThread::Create( this, TEXT("Animal Available Space Check"), 0, TPri_Lowest);
 }
 
 FUpdateHappiness::~FUpdateHappiness()
@@ -49,16 +50,17 @@ uint32 FUpdateHappiness::Run()
 		// -------------
 		// SIMPLE FLOOD FILL ALGORITHM
 		// Copied from Wikipedia
-		// Takes about ~30ms per animal. Pretty slow, so we do it on a seperate thread.
-		// TODO: Could be optimised by updating walkability values when fences or items are placed and then just doing a flood fill on some booleans
 		// -------------
-		if (!Animal->AssociatedTerrain)
+		if (!Animal->GetTerrain())
 			return 1;
-		const int TheoreticalWalkablePointsNum = Animal->AssociatedTerrain->GetWalkableVertCount();
-		const int StartIndex = Animal->AssociatedTerrain->GetClosestVertex(Animal->GetActorLocation());
-		const FVector2D Pos = Animal->AssociatedTerrain->GetVertexXY(StartIndex);
+		float Width = Animal->GetTerrain()->Width, Height = Animal->GetTerrain()->Height;
+		const int TheoreticalWalkablePointsNum = Animal->GetTerrain()->GetWalkableVertCount();
+		const int StartIndex = Animal->GetTerrain()->GetClosestVertex(Animal->GetActorLocation());
+		const FVector2D Pos = Animal->GetTerrain()->GetVertexXY(StartIndex);
+		const TArray Walkable = Animal->GetTerrain()->Walkable;
+		
 		TArray<int> WalkablePoints;
-		if (!Animal->AssociatedTerrain->IsVertWalkable(StartIndex))
+		if (!Walkable[StartIndex])
 			return 0;
 		TQueue<FVector4> PointsToSearch;
 		PointsToSearch.Enqueue(FVector4(Pos.X, Pos.X, Pos.Y, 1));
@@ -68,16 +70,16 @@ uint32 FUpdateHappiness::Run()
 			FVector4 Current;
 			PointsToSearch.Dequeue(Current);
 			float X = Current.X;
-			int I = Animal->AssociatedTerrain->GetVertexIndex(X, Current.Z);
-			if (!WalkablePoints.Contains(I) && Animal->AssociatedTerrain->IsVertWalkable(I))
+			int I = (X * (Width + 1)) + Current.Z;
+			if (!WalkablePoints.Contains(I) && I >= 0 && I < Walkable.Num() && Walkable[I])
 			{
-				I = Animal->AssociatedTerrain->GetVertexIndex(X - 1, Current.Z);
-				while (!WalkablePoints.Contains(I) && Animal->AssociatedTerrain->IsVertWalkable(I))
+				I = ((X - 1) * (Width + 1)) + Current.Z;
+				while (!WalkablePoints.Contains(I) && I >= 0 && I < Walkable.Num() && Walkable[I])
 				{
 					WalkablePoints.AddUnique(I);
 					X--;
 				
-					I = Animal->AssociatedTerrain->GetVertexIndex(X - 1, Current.Z);
+					I = ((X - 1) * (Width + 1)) + Current.Z;
 				}
 			}
 		
@@ -85,8 +87,8 @@ uint32 FUpdateHappiness::Run()
 				PointsToSearch.Enqueue(FVector4(X, Current.X - 1, Current.Z - Current.W, -Current.W));
 			while (Current.X <= Current.Y)
 			{
-				I = Animal->AssociatedTerrain->GetVertexIndex(Current.X,Current.Z);
-				while (!WalkablePoints.Contains(I) && Animal->AssociatedTerrain->IsVertWalkable(I))
+				I = (Current.X * (Width + 1)) + Current.Z;
+				while (!WalkablePoints.Contains(I) && I >= 0 && I < Walkable.Num() && Walkable[I])
 				{
 					WalkablePoints.AddUnique(I);
 					Current.X++;
@@ -94,22 +96,27 @@ uint32 FUpdateHappiness::Run()
 					if (Current.X - 1 > Current.Y)
 						PointsToSearch.Enqueue(FVector4(Current.Y + 1, Current.X - 1, Current.Z - Current.W, -Current.W));
 				
-					I = Animal->AssociatedTerrain->GetVertexIndex(Current.X,Current.Z);
+					I = (Current.X * (Width + 1)) + Current.Z;
 				}
 				Current.X++;
-				I = Animal->AssociatedTerrain->GetVertexIndex(Current.X, Current.Z);
-				while (Current.X < Current.Y && !(!WalkablePoints.Contains(I) && Animal->AssociatedTerrain->IsVertWalkable(I)))
+				I = (Current.X * (Width + 1)) + Current.Z;
+				while (Current.X < Current.Y && !(!WalkablePoints.Contains(I) && I >= 0 && I < Walkable.Num() && Walkable[I]))
 				{
 					Current.X++;
-					I = Animal->AssociatedTerrain->GetVertexIndex(Current.X, Current.Z);
+					I = (Current.X * (Width + 1)) + Current.Z;
 				}
 				X = Current.X; 
 			}
 		}
 
 		FHappinessUpdateInfo UpdateInfo;
-		UpdateInfo.PercentageOfHabitatAvailable = static_cast<float>(WalkablePoints.Num()) / TheoreticalWalkablePointsNum;
+		UpdateInfo.PercentageOfHabitatAvailable = FMath::Clamp(static_cast<float>(WalkablePoints.Num()) / TheoreticalWalkablePointsNum, 0, 1);
+		UpdateInfo.Reachable = WalkablePoints;
 		Animal->OnHappinessUpdated.Broadcast(UpdateInfo);
+		// AsyncTask(ENamedThreads::GameThread, [UpdateInfo, Animal] ()
+		// 			{
+		// 				Animal->OnHappinessUpdated.Broadcast(UpdateInfo); 
+		// 			});
 
 		CurrentlyQueued.Remove(Animal);
 	}
@@ -173,8 +180,15 @@ void ABaseAnimal::BeginPlay()
 
 	SetAnimalData(AnimalData);
 
-	FTimerHandle NavTest;
-	GetWorld()->GetTimerManager().SetTimer(NavTest, FTimerDelegate::CreateUFunction(this, "UpdateHappiness"), 2, true, 0);
+	FTimerHandle HappinessTest;
+	GetWorld()->GetTimerManager().SetTimer(HappinessTest, FTimerDelegate::CreateUFunction(this, "UpdateHappiness"), 2, true, 0);
+
+	FScriptDelegate Binding;
+	Binding.BindUFunction(this, "OnReceiveHappinessUpdated");
+	OnHappinessUpdated.AddUnique(Binding);
+
+	if (AssociatedTerrain)
+		SetTerrain(AssociatedTerrain);
 }
 
 void ABaseAnimal::Tick(float DeltaSeconds)
@@ -199,7 +213,7 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 	}
 
 	DrawDebugString(GetWorld(), GetActorLocation() + FVector(0, 0, 100),
-	                 FString::Printf(TEXT("HP: %f, Hunger: %f, Thirst: %f"), Health, Hunger, Thirst), nullptr, FColor::White, DeltaSeconds);
+	                 FString::Printf(TEXT("HP: %f, Hunger: %f, Thirst: %f, Freedom: %f"), Health, Hunger, Thirst, PercentageOfHabitatAvailable), nullptr, FColor::White, DeltaSeconds);
 
 	// Find target rotation
 	FRotator CurrentRotation = GetMesh()->GetComponentRotation();
@@ -308,6 +322,15 @@ void ABaseAnimal::SetAnimalData(UAnimalData* Data, bool bRecreateAI)
 	}
 }
 
+void ABaseAnimal::SetTerrain(AEcoscapeTerrain* Terrain)
+{
+	if (TerrainWalkabilityHandle.IsValid())
+		AssociatedTerrain->WalkabilityUpdated.Remove(TerrainWalkabilityHandle);
+	AssociatedTerrain = Terrain;
+	if (AssociatedTerrain)
+		AssociatedTerrain->WalkabilityUpdated.AddLambda([this] { bNeedsFreedomUpdate = true; } );
+}
+
 ABaseAnimal* ABaseAnimal::SpawnAnimal(UObject* World, UAnimalData* Data, AEcoscapeTerrain* Terrain, FVector Position)
 {
 	const FTransform TF(Position);
@@ -325,7 +348,11 @@ void ABaseAnimal::UpdateHappiness()
 {
 	SCOPE_CYCLE_COUNTER(STAT_CheckHappiness);
 
-	HappinessUpdateRunnable->EnqueueAnimalForUpdate(this);
+	if (bNeedsFreedomUpdate)
+	{
+		HappinessUpdateRunnable->EnqueueAnimalForUpdate(this);
+		bNeedsFreedomUpdate = false;
+	}
 	
 	//
 	// int WalkablePointsNum = AssociatedTerrain->GetWalkableVertCount();
@@ -396,6 +423,19 @@ void ABaseAnimal::UpdateHappiness()
 	// 	for (const auto& WalkablePoint : WalkablePoints)
 	// 		DrawDebugSphere(GetWorld(), AssociatedTerrain->GetVertexPositionWorld(WalkablePoint), 30, 6, FColor::Red, false, 1, 0, 2);
 	// }
+}
+
+void ABaseAnimal::OnReceiveHappinessUpdated(FHappinessUpdateInfo Info)
+{
+	PercentageOfHabitatAvailable = Info.PercentageOfHabitatAvailable;
+
+	if (bDrawNav)
+	{
+		for (int Vert : Info.Reachable)
+		{
+			DrawDebugSphere(GetWorld(), AssociatedTerrain->GetVertexPositionWorld(Vert), 30, 6, FColor::Red, false, 2);
+		}
+	}
 }
 
 // void ABaseAnimal::OnNavTest()

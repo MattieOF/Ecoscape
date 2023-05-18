@@ -94,8 +94,8 @@ bool AEcoscapeTerrain::IsVertWalkable(int Index, bool bDiscountWet)
 		return false;
 
 	FVector2D Pos = GetVertexXY(Index);
-	if (Pos.X < ExteriorTileCount || Pos.X > Width - ExteriorTileCount
-		|| Pos.Y < ExteriorTileCount || Pos.Y > Height - ExteriorTileCount)
+	if (Pos.X < ExteriorTileCount + 2 || Pos.X > Width - ExteriorTileCount + 2
+		|| Pos.Y < ExteriorTileCount + 2 || Pos.Y > Height - ExteriorTileCount + 2)
 	{
 		return false;
 	}
@@ -108,10 +108,82 @@ bool AEcoscapeTerrain::IsVertWalkable(int Index, bool bDiscountWet)
 	// TODO: heavy
 	static FCollisionShape Box = FCollisionShape::MakeBox(FVector(Scale / 2, Scale / 2, Scale * 2));
 	TArray<FOverlapResult> Overlaps;
-	if (GetWorld()->OverlapBlockingTestByChannel(Verticies[Index], FQuat::Identity, ECC_BLOCKS_HABITAT, Box))
+	if (GetWorld()->OverlapBlockingTestByChannel(GetActorLocation() + Verticies[Index], FQuat::Identity, ECC_BLOCKS_HABITAT, Box))
 		return false;
 	
 	return true;
+}
+
+TArray<int> AEcoscapeTerrain::GetVertexesWithinBounds(FVector Origin, FVector Extents, bool bIgnoreZ)
+{
+	TArray<int> Vertices;
+
+	Origin -= GetActorLocation();
+	// HACK - to prevent some verticies not getting checked
+	Extents += FVector(50, 50, 50);
+
+	int StartX = floor(Origin.X - Extents.X) + Scale - 1;
+	StartX -= FMath::Fmod(StartX, Scale);
+	int StartY = floor(Origin.Y - Extents.Y) + Scale - 1;
+	StartY -= FMath::Fmod(StartY, Scale);
+	
+	for (float X = StartX; X <= Origin.X + Extents.X; X += Scale)
+	{
+		for (float Y = StartY; Y <= Origin.Y + Extents.Y; Y += Scale)
+		{
+			int Index = GetVertexIndex(X / Scale, Y / Scale);
+			if (!bIgnoreZ)
+			{
+				const float Z = GetVertexPositionWorld(Index).Z;
+				if (Z < Origin.Z - Extents.Z || Z > Origin.Z + Extents.Z)
+					continue;
+			}
+			Vertices.Add(Index);
+		}
+	}
+	
+	return Vertices;
+}
+
+void AEcoscapeTerrain::OnItemPlaced(APlacedItem* NewItem)
+{
+	FVector Origin, Extents;
+	NewItem->GetActorBounds(true, Origin, Extents);
+	auto AffectedVertices = GetVertexesWithinBounds(Origin, Extents, false);
+	for (const int Index : AffectedVertices)
+		Walkable[Index] = IsVertWalkable(Index);
+	WalkabilityUpdated.Broadcast();
+}
+
+TArray<int> AEcoscapeTerrain::GetFenceVerticies(FVector2D Start, FVector2D End)
+{
+	const FVector StartLoc = GetVertexPositionWorld(GetVertexIndex(Start.X, Start.Y));
+	const FVector EndLoc = GetVertexPositionWorld(GetVertexIndex(End.X, End.Y));
+	const float LowX = StartLoc.X < EndLoc.X ? StartLoc.X : EndLoc.X;
+	const float HighX = StartLoc.X > EndLoc.X ? StartLoc.X : EndLoc.X;
+	const float LowY = StartLoc.Y < EndLoc.Y ? StartLoc.Y : EndLoc.Y;
+	const float HighY = StartLoc.Y > EndLoc.Y ? StartLoc.Y : EndLoc.Y;
+
+	FCollisionShape CollisionShape;
+
+	TArray<int> AffectedVertices;
+	
+	CollisionShape.SetBox(FVector3f((HighX - LowX) / 2, 30, 5000));
+	AffectedVertices.Append(GetVertexesWithinBounds(FVector(LowX + (HighX - LowX) / 2, LowY, 0), CollisionShape.GetExtent(), false));
+	AffectedVertices.Append(GetVertexesWithinBounds(FVector(LowX + (HighX - LowX) / 2, HighY, 0), CollisionShape.GetExtent(), false));
+	CollisionShape.SetBox(FVector3f(30, (HighY - LowY) / 2, 5000));
+	AffectedVertices.Append(GetVertexesWithinBounds(FVector(LowX, LowY + (HighY - LowY) / 2, 0), CollisionShape.GetExtent(), false));
+	AffectedVertices.Append(GetVertexesWithinBounds(FVector(HighX, LowY + (HighY - LowY) / 2, 0), CollisionShape.GetExtent(), false));
+
+	return AffectedVertices;
+}
+
+void AEcoscapeTerrain::OnFencePlaced(FVector2D Start, FVector2D End)
+{
+	TArray<int> AffectedVertices = GetFenceVerticies(Start, End);
+	for (const int Vertex : AffectedVertices)
+		Walkable[Vertex] = IsVertWalkable(Vertex);
+	WalkabilityUpdated.Broadcast();
 }
 
 void AEcoscapeTerrain::SerialiseTerrain(FArchive& Archive)
@@ -248,6 +320,8 @@ void AEcoscapeTerrain::SerialiseTerrain(FArchive& Archive)
 	}
 
 	Archive << DrinkLocations;
+
+	InitWalkable();
 }
 
 bool AEcoscapeTerrain::SerialiseTerrainToFile(FString Filename)
@@ -714,6 +788,19 @@ void AEcoscapeTerrain::GenerateExteriorDetail()
 	}
 }
 
+void AEcoscapeTerrain::InitWalkable()
+{
+	Walkable.Init(false, (Width + 1) * (Height + 1));
+	for (int X = 0; X < Width + 1; X++)
+	{
+		for (int Y = 0; Y < Height + 1; Y++)
+		{
+			int Index = GetVertexIndex(X, Y);
+			Walkable[Index] = IsVertWalkable(Index);
+		}
+	}
+}
+
 void AEcoscapeTerrain::CreateMesh() const
 {
 	ProceduralMeshComponent->CreateMeshSection(0, Verticies, Triangles, Normals, UV0, VertexColors, Tangents, true);
@@ -801,6 +888,8 @@ AProceduralFenceMesh* AEcoscapeTerrain::CreateFence(FVector2D Start, FVector2D E
 	
 	int X = LowX, Y = LowY;
 	AProceduralFenceMesh* Fence = GetWorld()->SpawnActor<AProceduralFenceMesh>(FenceClass, GetVertexPositionWorld(GetVertexIndex(X, Y)), FRotator::ZeroRotator);
+	Fence->Start = Start;
+	Fence->End = End;
 	Fence->bShouldGenerateGate = true;
 	Fence->AssociatedTerrain = this;
 	Fence->BottomSplineComponent->ClearSplinePoints();
@@ -853,6 +942,8 @@ AProceduralFenceMesh* AEcoscapeTerrain::CreateFence(FVector2D Start, FVector2D E
 	Fence->Regenerate();
 
 	PlacedFences.Add(Fence);
+
+	OnFencePlaced(Start, End);
 	
 	return Fence;
 }
@@ -983,6 +1074,15 @@ void AEcoscapeTerrain::DrawDrinkLocations()
 		                          DrinkLoc.Location + FVector(0, 0, 50) + (DrinkLoc.DrinkerOrientation * 100), 5, FColor::Red, false, 5);
 	}
 }
+
+void AEcoscapeTerrain::DrawWalkability()
+{
+	for (int i = 0; i < Verticies.Num(); i++)
+	{
+		if (IsPositionWithinPlayableSpace(GetVertexPositionWorld(i)))
+			DrawDebugSphere(GetWorld(), GetVertexPositionWorld(i), 30, 6, Walkable[i] ? FColor::Green : FColor::Red, false, 3);
+	}
+}
 #endif
 
 void AEcoscapeTerrain::Regenerate()
@@ -1047,10 +1147,12 @@ void AEcoscapeTerrain::Regenerate()
 			Verticies[Vert.Index] = Pos;
 		}
 	}
-	
+
 	CreateMesh();
 	GenerateExteriorDetail();
 
+	InitWalkable();
+	
 	// Update the navigation
 	FNavigationSystem::UpdateComponentData(*ProceduralMeshComponent);
 }

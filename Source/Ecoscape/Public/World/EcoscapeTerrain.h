@@ -12,6 +12,8 @@ class AStaticMeshActor;
 class AFenceGate;
 class AProceduralFenceMesh;
 
+DECLARE_MULTICAST_DELEGATE(FTerrainWalkabilityUpdated);
+
 FORCEINLINE FArchive& operator<<(FArchive& LHS, FProcMeshTangent& RHS)
 {
 	LHS << RHS.TangentX;
@@ -149,6 +151,11 @@ public:
 
 	TArray<FTerrainDetailActor> DetailActors; 
 
+	UPROPERTY(EditAnywhere)
+	int Width = 50;
+	UPROPERTY(EditAnywhere)
+	int Height = 50;
+
 	// UPROPERTY()
 	// TArray<FFenceInfo> PlacedFenceInfo;
 	
@@ -169,12 +176,12 @@ public:
 	FORCEINLINE FVector GetVertexPositionWorld(int Index) { return GetActorLocation() + GetVertexPositionLocal(Index); }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FORCEINLINE float GetScale() { return Scale; }
+	FORCEINLINE float GetScale() const { return Scale; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FORCEINLINE float GetHighestHeight() { return HighestHeight; }
+	FORCEINLINE float GetHighestHeight() const { return HighestHeight; }
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FORCEINLINE float GetLowestHeight() { return LowestHeight; }
+	FORCEINLINE float GetLowestHeight() const { return LowestHeight; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FVector GetCenterPosition();
@@ -227,7 +234,7 @@ public:
 	void Regenerate();
 	
 	UPROPERTY(EditAnywhere)
-	int ExteriorTileCount = 10;
+	int ExteriorTileCount = 30;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	void GetPlayablePoints(TArray<FVector>& OutPoints);
@@ -238,7 +245,8 @@ public:
 	bool GetClosestDrinkLocation(FVector Origin, FDrinkLocation& OutDrinkLocation);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FORCEINLINE int GetWalkableVertCount() { return (Width - (ExteriorTileCount + 1)) * (Height - (ExteriorTileCount + 1)) - WaterHeight * Heights.Num(); }
+	FORCEINLINE int GetWalkableVertCount() { return (Width - (ExteriorTileCount * 2 + 4)) * (Height - (ExteriorTileCount * 2 + 4)) - WaterHeight * Heights.Num(); }
+	// FORCEINLINE int GetWalkableVertCount() { int Num = 0; for (bool b : Walkable) if (b) Num++; return Num; }
 
 	UFUNCTION(BlueprintCallable)
 	bool IsVertWalkable(int Index, bool bDiscountWet = true);
@@ -246,6 +254,22 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	TArray<FDrinkLocation> DrinkLocations;
 
+	UPROPERTY(BlueprintReadOnly)
+	TArray<bool> Walkable;
+	
+	TArray<int> GetVertexesWithinBounds(FVector Origin, FVector Extents, bool bIgnoreZ);
+	
+	UFUNCTION(BlueprintCallable)
+	void OnItemPlaced(APlacedItem* NewItem);
+
+	UFUNCTION(BlueprintCallable)
+	TArray<int> GetFenceVerticies(FVector2D Start, FVector2D End);
+	
+	UFUNCTION(BlueprintCallable)
+	void OnFencePlaced(FVector2D Start, FVector2D End);
+	
+	FTerrainWalkabilityUpdated WalkabilityUpdated;
+	
 	// -----------------------
 	// Serialisation functions
 	// -----------------------
@@ -276,6 +300,7 @@ protected:
 	void GenerateDrinkLocations();
 	void CreateMesh() const;
 	void GenerateExteriorDetail();
+	void InitWalkable();
 
 #if WITH_EDITOR
 	UFUNCTION(BlueprintCallable, CallInEditor)
@@ -286,15 +311,13 @@ protected:
 	
 	UFUNCTION(BlueprintCallable, CallInEditor)
 	void DrawDrinkLocations();
+
+	UFUNCTION(BlueprintCallable, CallInEditor)
+	void DrawWalkability();
 #endif
 	
 	UPROPERTY(EditAnywhere)
 	UProceduralMeshComponent* ProceduralMeshComponent;
-
-	UPROPERTY(EditAnywhere)
-	int Width = 50;
-	UPROPERTY(EditAnywhere)
-	int Height = 50;
 
 	UPROPERTY(EditAnywhere)
 	float ExteriorHeightOffset = 1500;
@@ -363,5 +386,4 @@ protected:
 	TArray<float> Heights;
 
 	int GIIndex = 0;
-
 };

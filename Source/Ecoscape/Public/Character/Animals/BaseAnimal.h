@@ -17,6 +17,7 @@ struct ECOSCAPE_API FHappinessUpdateInfo
 	GENERATED_BODY()
 	
 	float PercentageOfHabitatAvailable;
+	TArray<int> Reachable;
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAnimalDies);
@@ -36,6 +37,7 @@ public:
 	void EnqueueAnimalForUpdate(ABaseAnimal* Animal, bool bRunIfNot = false);
 
 private:
+	
 	TQueue<ABaseAnimal*> Animals;
 	TArray<ABaseAnimal*> CurrentlyQueued;
 	
@@ -62,6 +64,12 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetAnimalData(UAnimalData* Data, bool bRecreateAI = true);
+
+	UFUNCTION(BlueprintCallable)
+	void SetTerrain(AEcoscapeTerrain* Terrain);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE AEcoscapeTerrain* GetTerrain() { return AssociatedTerrain; }
 
 	UFUNCTION(BlueprintCallable, meta=(WorldContext=World))
 	static ABaseAnimal* SpawnAnimal(UObject* World, UAnimalData* Data, AEcoscapeTerrain* Terrain, FVector Position);
@@ -96,9 +104,6 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnAnimalDies OnDeath;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	AEcoscapeTerrain* AssociatedTerrain;
-
 	UPROPERTY(BlueprintReadWrite)
 	bool bIsEating   = false;
 	UPROPERTY(BlueprintReadWrite)
@@ -115,8 +120,19 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnHappinessUpdated OnHappinessUpdated;
 
+	UFUNCTION()
+	void OnReceiveHappinessUpdated(FHappinessUpdateInfo Info);
+
+	bool bNeedsFreedomUpdate = true;
+
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	AEcoscapeTerrain* AssociatedTerrain;
+	
 private:
 	FRotator TargetRotation;
 	
 	static TSharedPtr<FUpdateHappiness> HappinessUpdateRunnable;
+
+	FDelegateHandle TerrainWalkabilityHandle;
 };

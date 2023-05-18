@@ -125,6 +125,9 @@ void AProceduralFenceMesh::SerialiseFence(FArchive& Ar)
 	Ar << Normals;
 	Ar << UV0;
 	Ar << Tangents;
+
+	Ar << Start;
+	Ar << End;
 	
 	if (Ar.IsLoading())
 		ProceduralMeshComponent->CreateMeshSection(0, Verticies, Indicies, Normals, UV0, TArray<FColor>(), Tangents, true);

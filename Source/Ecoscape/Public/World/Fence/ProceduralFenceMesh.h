@@ -44,6 +44,8 @@ public:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AFenceGate> FenceGateClass;
 
+	FVector2D Start, End;
+
 	virtual void Destroyed() override;
 
 	void SerialiseFence(FArchive& Ar);
