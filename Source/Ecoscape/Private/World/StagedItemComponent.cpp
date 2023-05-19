@@ -29,6 +29,8 @@ void UStagedItemComponent::BeginPlay()
 		GrowthTimer = -1;
 	else
 		GrowthTimer = FMath::FRandRange(Item->GetItemData()->GrowthTimeRangeSecs.X, Item->GetItemData()->GrowthTimeRangeSecs.Y);
+
+	Super::BeginPlay();
 }
 
 // Called every frame
