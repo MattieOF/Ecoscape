@@ -109,6 +109,9 @@ public:
 	UFUNCTION(Exec, BlueprintCallable)
 	void PrintItemDirectory();
 
+	UFUNCTION(Exec)
+	void SetTimeDilation(float NewTimeDilation) const;
+
 private:
 	void AddWithIndent(FString& Output, FString Message, int Indent, bool NewLine = true);
 	void SearchItemDirFolder(UItemFolder* Folder, FString& Output, int Level);

@@ -728,7 +728,7 @@ void AEcoscapeTerrain::GenerateExteriorDetail()
 	
 	FVector TerrainLoc = GetActorLocation();
 	
-	for (int i = 0; i < 600; i++)
+	for (int i = 0; i < ExteriorItemCount; i++)
 	{
 		float X, Y;
 

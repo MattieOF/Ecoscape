@@ -142,6 +142,9 @@ public:
 	TArray<UPlaceableItemData*> ExteriorItems;
 
 	UPROPERTY(EditAnywhere)
+	int ExteriorItemCount = 600;
+
+	UPROPERTY(EditAnywhere)
 	FLinearColor FloorColour;
 	UPROPERTY(EditAnywhere)
 	FLinearColor ExteriorColour;

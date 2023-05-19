@@ -164,6 +164,11 @@ void UEcoscapeGameInstance::PrintItemDirectory()
 	ShowPopup("Item Directory", Directory);
 }
 
+void UEcoscapeGameInstance::SetTimeDilation(float NewTimeDilation) const
+{
+	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), NewTimeDilation);
+}
+
 void UEcoscapeGameInstance::AddWithIndent(FString& Output, FString Message, int Indent, bool NewLine)
 {
 	for (int i = 0; i < Indent; i++)
