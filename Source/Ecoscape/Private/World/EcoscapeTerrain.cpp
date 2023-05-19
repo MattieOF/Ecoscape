@@ -1015,7 +1015,7 @@ FVector AEcoscapeTerrain::FindSpawnPoint()
 		}
 
 		// Check it doesn't collide with any objects
-		DrawDebugBox(GetWorld(), Current + FVector(0, 0, 110), CollisionCheckShape.GetExtent(), FColor::Red, false, 5);
+		// DrawDebugBox(GetWorld(), Current + FVector(0, 0, 110), CollisionCheckShape.GetExtent(), FColor::Red, false, 5);
 		if (bValid && GetWorld()->OverlapBlockingTestByProfile(Current + FVector(0, 0, 110), FQuat::Identity, UCollisionProfile::Pawn_ProfileName, CollisionCheckShape))
 			bValid = false;
 
