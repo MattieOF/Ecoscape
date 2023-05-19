@@ -61,7 +61,7 @@ void UStagedItemComponent::SetStage(int Stage, float NewGrowthTime)
 	// Reposition if it can
 	FHitResult Hit;
 	if (GetWorld()->LineTraceSingleByChannel(Hit, Item->GetActorLocation() + FVector(0, 0, 1000), Item->GetActorLocation() + FVector(0, 0, -1000), ECC_ITEM_PLACEABLE_ON))
-		Item->SetActorLocation(Hit.ImpactPoint + FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(Item)));
+		Item->SetActorLocation(Hit.ImpactPoint + FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(Item)) + ItemData->ZOffset);
 
 	// Reroll growth time if suitable
 	if (Stage == ItemData->StageMeshes.Num() - 1)

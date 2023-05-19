@@ -71,7 +71,7 @@ void APlaceableItemPreview::UpdateWithHitInfo(FHitResult Hit)
 	
 	SetActorRotation(FRotator(0, TargetItemRotation, 0));
 	FVector UpVector = GetActorUpVector();
-	FVector NormalVector = UKismetMathLibrary::VLerp(UpVector, Hit.ImpactNormal, 0.4f);
+	FVector NormalVector = UKismetMathLibrary::VLerp(UpVector, Hit.ImpactNormal, CurrentItem->NormalAlpha);
 	FVector RotationAxis = FVector::CrossProduct(UpVector, NormalVector);
 	RotationAxis.Normalize();
 	float DotProduct = FVector::DotProduct(UpVector, NormalVector);

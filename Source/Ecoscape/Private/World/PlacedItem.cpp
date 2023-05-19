@@ -23,7 +23,7 @@ APlacedItem::APlacedItem()
 void APlacedItem::SetItemData(UPlaceableItemData* NewItem)
 {
 	ItemData = NewItem;
-	MainMesh->SetStaticMesh(NewItem->Mesh);
+	MainMesh->SetStaticMesh(NewItem->GetFirstMesh());
 }
 
 APlacedItem* APlacedItem::SpawnItem(UWorld* World, UPlaceableItemData* ItemData, const FVector Position, const FVector Scale, const FRotator Rotation)

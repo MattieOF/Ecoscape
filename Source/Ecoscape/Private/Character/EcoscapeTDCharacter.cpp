@@ -126,7 +126,7 @@ void AEcoscapeTDCharacter::DoPaintTool()
 		if (TryPlaceItemAtHit(CurrentItemData.GetItem(), Hit))
 		{
 			CurrentItemData.RerollItem();
-			PaintTimer = 1 / PaintSpeed;	
+			PaintTimer = 1 / PaintSpeed;
 		}
 	}
 }
@@ -638,7 +638,7 @@ bool AEcoscapeTDCharacter::TryPlaceItemAtHit(UPlaceableItemData* Item, FHitResul
 	
 	auto Rotation = UKismetMathLibrary::Conv_VectorToRotator(Hit.ImpactNormal);
 	FVector UpVector = PlacedItem->GetActorUpVector();
-	FVector NormalVector = UKismetMathLibrary::VLerp(UpVector, Hit.ImpactNormal, 0.4f);
+	FVector NormalVector = UKismetMathLibrary::VLerp(UpVector, Hit.ImpactNormal, Item->NormalAlpha);
 	FVector RotationAxis = FVector::CrossProduct(UpVector, NormalVector);
 	RotationAxis.Normalize();
 	float DotProduct = FVector::DotProduct(UpVector, NormalVector);

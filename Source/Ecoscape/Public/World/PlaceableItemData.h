@@ -57,6 +57,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Icon")
 	UTexture2D* Icon;
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE UStaticMesh* GetFirstMesh() { return StagedGrowth ? StageMeshes[0] : Mesh; }
+	
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Icon")
 	float IconFOV = 70;
@@ -98,6 +101,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
 	float MinWaterDepth = 0;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
+	float NormalAlpha = 0.4f;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Colour")
 	float ColourRange = 150 * 6;
 
