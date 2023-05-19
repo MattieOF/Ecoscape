@@ -10,6 +10,7 @@
 #include "Animation/AnimInstance.h"
 #include "Async/Async.h"
 #include "Character/EcoscapePlayerController.h"
+#include "Components/AudioComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -162,6 +163,9 @@ ABaseAnimal::ABaseAnimal()
 
 	GetCapsuleComponent()->CanCharacterStepUpOn = ECB_Yes;
 	GetMesh()->CanCharacterStepUpOn = ECB_Yes;
+
+	Audio = CreateDefaultSubobject<UAudioComponent>("Audio");
+	Audio->SetupAttachment(RootComponent);
 }
 
 void ABaseAnimal::BeginPlay()
@@ -215,6 +219,17 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 	DrawDebugString(GetWorld(), GetActorLocation() + FVector(0, 0, 100),
 	                 FString::Printf(TEXT("HP: %f, Hunger: %f, Thirst: %f, Freedom: %f"), Health, Hunger, Thirst, PercentageOfHabitatAvailable), nullptr, FColor::White, DeltaSeconds);
 
+	// Do sound
+	if (AnimalData)
+	{
+		SoundTimer -= DeltaSeconds;
+		if (SoundTimer <= 0)
+		{
+			Audio->Play();
+			SoundTimer = FMath::FRandRange(AnimalData->SoundTimeRange.X, AnimalData->SoundTimeRange.Y);
+		}
+	}
+	
 	// Find target rotation
 	FRotator CurrentRotation = GetMesh()->GetComponentRotation();
 	double CurrentYaw = CurrentRotation.Yaw;
@@ -293,6 +308,11 @@ void ABaseAnimal::SetAnimalData(UAnimalData* Data, bool bRecreateAI)
 		// Setup capsule
 		GetCapsuleComponent()->SetCapsuleHalfHeight(Data->ColliderHalfHeight);
 		GetCapsuleComponent()->SetCapsuleRadius(Data->ColliderRadius);
+
+		// Setup sound
+		Audio->SetSound(Data->Sound);
+		Audio->AttenuationSettings = Data->Sound->AttenuationSettings;
+		SoundTimer = FMath::FRandRange(Data->SoundTimeRange.X, Data->SoundTimeRange.Y);
 		
 		// Setup AI
 		AIControllerClass = Data->AI;

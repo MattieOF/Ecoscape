@@ -127,12 +127,14 @@ public:
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UAudioComponent* Audio;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	AEcoscapeTerrain* AssociatedTerrain;
 	
 private:
+	float SoundTimer = 0;
 	FRotator TargetRotation;
-	
 	static TSharedPtr<FUpdateHappiness> HappinessUpdateRunnable;
-
 	FDelegateHandle TerrainWalkabilityHandle;
 };
