@@ -1,9 +1,12 @@
 #pragma once
 
+#include "AssetActions.h"
 #include "Modules/ModuleInterface.h"
 #include "Modules/ModuleManager.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogEcoscapeEditor, All, All)
+
+extern EAssetTypeCategories::Type EcoscapeAssetCategory;
 
 class FEcoscapeEditorModule: public IModuleInterface
 {
@@ -16,4 +19,6 @@ private:
 	void GeneratePlaceableData();
 	void RefreshItemDir();
 
+	TSharedPtr<FPlaceableItemAssetActions> PlaceableItemAssetActions;
+	TSharedPtr<FAnimalDataAssetActions> AnimalDataItemAssetActions;
 };

@@ -8,6 +8,7 @@
 #include "GameFramework/Actor.h"
 #include "PlacedItem.generated.h"
 
+class UNavModifierComponent;
 class AEcoscapeTerrain;
 class UStagedItemComponent;
 
@@ -49,4 +50,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UStaticMeshComponent* MainMesh;
+
+	UPROPERTY()
+	UNavModifierComponent* NavModifierComponent = nullptr;
 };

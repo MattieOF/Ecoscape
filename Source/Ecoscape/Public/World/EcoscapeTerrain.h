@@ -82,7 +82,7 @@ struct FTerrainDetailActor
 	FVector Pos;
 
 	UPROPERTY()
-	AStaticMeshActor* Actor;
+	AStaticMeshActor* Actor = nullptr;
 };
 
 FORCEINLINE FArchive& operator<<(FArchive& LHS, FTerrainDetailActor& RHS)

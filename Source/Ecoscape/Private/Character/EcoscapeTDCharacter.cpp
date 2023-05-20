@@ -48,6 +48,9 @@ void AEcoscapeTDCharacter::BeginPlay()
 
 void AEcoscapeTDCharacter::DoPaintTool()
 {
+	if (!CurrentItemData.GetItem() || !CurrentItemData.GetItem()->bIsItemPaintable)
+		return;
+	
 	if (EcoscapePlayerController->IsAltUseDown())
 	{
 		// Try delete stuff

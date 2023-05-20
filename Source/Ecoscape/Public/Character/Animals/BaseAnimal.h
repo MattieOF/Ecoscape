@@ -77,7 +77,7 @@ public:
 	UFUNCTION(BlueprintCallable, CallInEditor)
 	void UpdateHappiness();
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(BlueprintReadOnly, EditAnywhere)
 	UAnimalData* AnimalData;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

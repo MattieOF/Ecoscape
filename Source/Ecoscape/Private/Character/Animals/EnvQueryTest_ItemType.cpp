@@ -2,26 +2,33 @@
 
 #include "Character\Animals\EnvQueryTest_ItemType.h"
 
+#include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
+#include "EnvironmentQuery/Items/EnvQueryItemType_ActorBase.h"
 #include "Kismet/KismetStringLibrary.h"
 #include "World/PlacedItem.h"
 
 UEnvQueryTest_ItemType::UEnvQueryTest_ItemType()
 {
-	Cost = EEnvTestCost::Low;
+	Cost = EEnvTestCost::Medium;
 	TestPurpose = EEnvTestPurpose::Filter;
+	ValidItemType = UEnvQueryItemType_ActorBase::StaticClass();
 }
 
 void UEnvQueryTest_ItemType::RunTest(FEnvQueryInstance& QueryInstance) const
 {
 	const TArray<FString> ValidTypes = UKismetStringLibrary::ParseIntoArray(ValidItemTypes, ";");
 
+	UE_LOG(LogEcoscape, Log, TEXT("Begin item type query"));
+	
 	for (FEnvQueryInstance::ItemIterator It(this, QueryInstance); It; ++It)
 	{
 		AActor* Item = GetItemActor(QueryInstance, It.GetIndex());
 		const APlacedItem* PlacedItem = Cast<APlacedItem>(Item);
 
-		// Check it is in fact a placed item
+		UE_LOG(LogEcoscape, Log, TEXT("Checking item %s, type: %s"), *PlacedItem->GetName(), *PlacedItem->GetItemData()->GetName());
+		
+		// Check it isin fact a placed item
 		if (!PlacedItem)
 		{
 			It.ForceItemState(EEnvItemStatus::Failed, 0);
@@ -30,9 +37,15 @@ void UEnvQueryTest_ItemType::RunTest(FEnvQueryInstance& QueryInstance) const
 		
 		// Now check the type
 		if (ValidTypes.Contains(PlacedItem->GetItemData()->GetName()))
+		{
+			UE_LOG(LogEcoscape, Log, TEXT("PASS POG"));
 			It.ForceItemState(EEnvItemStatus::Passed, 1);
+		}
 		else
+		{
+			UE_LOG(LogEcoscape, Log, TEXT("FAILUREEE"));
 			It.ForceItemState(EEnvItemStatus::Failed, 0);
+		}
 	}	
 }
 

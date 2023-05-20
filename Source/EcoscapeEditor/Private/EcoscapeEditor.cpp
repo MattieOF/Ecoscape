@@ -14,6 +14,8 @@ DEFINE_LOG_CATEGORY(LogEcoscapeEditor);
 
 #define LOCTEXT_NAMESPACE "EcoscapeEditor"
 
+EAssetTypeCategories::Type EcoscapeAssetCategory;
+
 void FEcoscapeEditorModule::StartupModule()
 {
 	UE_LOG(LogEcoscapeEditor, Warning, TEXT("EcoscapeEditor: Log Started"));
@@ -25,6 +27,13 @@ void FEcoscapeEditorModule::StartupModule()
 	auto Extender = MakeShareable(new FExtender());
 	Extender.Object->AddMenuExtension("Tools", EExtensionHook::After, nullptr, FMenuExtensionDelegate::CreateRaw(this, &FEcoscapeEditorModule::AddMenuEntries));
 	ExtensibilityManager->AddExtender(Extender);
+
+	IAssetTools &AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
+	EcoscapeAssetCategory = AssetTools.RegisterAdvancedAssetCategory(FName(TEXT("EcoscapeCategory")),LOCTEXT("EcoscapeCategory", "Ecoscape"));
+	PlaceableItemAssetActions = MakeShared<FPlaceableItemAssetActions>();
+	AssetTools.RegisterAssetTypeActions(PlaceableItemAssetActions.ToSharedRef());
+	AnimalDataItemAssetActions = MakeShared<FAnimalDataAssetActions>();
+	AssetTools.RegisterAssetTypeActions(AnimalDataItemAssetActions.ToSharedRef());
 }
 
 void FEcoscapeEditorModule::ShutdownModule()
@@ -72,6 +81,11 @@ void FEcoscapeEditorModule::GeneratePlaceableData()
     	Item->CreateIcon();
     	Item->CreateValidTerrainsArray();
     }
+
+	if (!FModuleManager::Get().IsModuleLoaded("AssetTools"))
+	{
+		FAssetToolsModule::GetModule().Get().UnregisterAssetTypeActions(PlaceableItemAssetActions.ToSharedRef());
+	}
 }
 
 void FEcoscapeEditorModule::RefreshItemDir()

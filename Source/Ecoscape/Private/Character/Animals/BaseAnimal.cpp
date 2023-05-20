@@ -160,6 +160,7 @@ ABaseAnimal::ABaseAnimal()
 
 	GetMesh()->SetCollisionProfileName(UCollisionProfile::Pawn_ProfileName);
 	GetMesh()->SetCollisionResponseToChannel(ECC_BLOCKS_ITEM_PLACEMENT, ECR_Block);
+	GetMesh()->SetCollisionResponseToChannel(ECC_BLOCKS_GROWTH, ECR_Block);
 
 	GetCapsuleComponent()->CanCharacterStepUpOn = ECB_Yes;
 	GetMesh()->CanCharacterStepUpOn = ECB_Yes;
@@ -203,12 +204,12 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 	if (Hunger <= 0 && !bIsEating)
 		Health -= 1 * DeltaSeconds; // Panda will die in ~60 seconds from no food
 	else
-		Hunger = FMath::Max(0, Hunger - DeltaSeconds * AnimalData->HungerRate);
+		Hunger = FMath::Max(0, Hunger - (DeltaSeconds * AnimalData->HungerRate * (bIsSleeping ? 0.3f : 1));
 
 	if (Thirst <= 0 && !bIsDrinking)
 		Health -= 2 * DeltaSeconds;
 	else
-		Thirst = FMath::Max(0, Thirst - DeltaSeconds * AnimalData->ThirstRate);
+		Thirst = FMath::Max(0, Thirst - (DeltaSeconds * AnimalData->ThirstRate * (bIsSleeping ? 0.3f : 1)));
 
 	if (Health <= 0)
 	{
@@ -354,7 +355,7 @@ void ABaseAnimal::SetTerrain(AEcoscapeTerrain* Terrain)
 ABaseAnimal* ABaseAnimal::SpawnAnimal(UObject* World, UAnimalData* Data, AEcoscapeTerrain* Terrain, FVector Position)
 {
 	const FTransform TF(Position);
-	ABaseAnimal* Animal = World->GetWorld()->SpawnActorDeferred<ABaseAnimal>(ABaseAnimal::StaticClass(), TF);
+	ABaseAnimal* Animal = World->GetWorld()->SpawnActorDeferred<ABaseAnimal>(Data->AnimalClass, TF);
 	if (Animal)
 	{
 		Animal->AnimalData = Data;

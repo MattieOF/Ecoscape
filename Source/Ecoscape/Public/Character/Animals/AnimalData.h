@@ -7,6 +7,8 @@
 #include "Engine/DataAsset.h"
 #include "AnimalData.generated.h"
 
+class UEnvQuery;
+class ABaseAnimal;
 /**
  * Data for animals
  */
@@ -14,6 +16,8 @@ UCLASS(BlueprintType)
 class ECOSCAPE_API UAnimalData : public UDataAsset
 {
 	GENERATED_BODY()
+
+	UAnimalData();
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Basic")
@@ -37,6 +41,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Basic")
 	UTexture2D* Icon;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Basic")
+	TSubclassOf<ABaseAnimal> AnimalClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Basic")
+	UEnvQuery* FoodQuery;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0", ForceUnits="cm/s"), Category = "Basic")
 	float MoveSpeed = 600;
 	

@@ -78,6 +78,9 @@ public:
 	UStaticMesh* Mesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
+	bool bNavNotWalkable = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
 	TSubclassOf<APlacedItem> PlacedItemClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
@@ -103,6 +106,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
 	float NormalAlpha = 0.4f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
+	bool bIsItemPaintable = true;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Colour")
 	float ColourRange = 150 * 6;

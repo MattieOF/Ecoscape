@@ -5,6 +5,8 @@
 #include "Ecoscape.h"
 #include "EcoscapeStatics.h"
 #include "MessageLogModule.h"
+#include "NavModifierComponent.h"
+#include "NavAreas/NavArea_Null.h"
 #include "World/StagedItemComponent.h"
 
 APlacedItem::APlacedItem()
@@ -24,6 +26,15 @@ void APlacedItem::SetItemData(UPlaceableItemData* NewItem)
 {
 	ItemData = NewItem;
 	MainMesh->SetStaticMesh(NewItem->GetFirstMesh());
+
+	if (ItemData->bNavNotWalkable)
+	{
+		if (!NavModifierComponent)
+			NavModifierComponent = Cast<UNavModifierComponent>(AddComponentByClass(UNavModifierComponent::StaticClass(), false, FTransform::Identity, false));
+		NavModifierComponent->SetAreaClass(UNavArea_Null::StaticClass());
+	}
+	else if (NavModifierComponent)
+		NavModifierComponent->DestroyComponent();
 }
 
 APlacedItem* APlacedItem::SpawnItem(UWorld* World, UPlaceableItemData* ItemData, const FVector Position, const FVector Scale, const FRotator Rotation)

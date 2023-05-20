@@ -57,6 +57,9 @@ void UStagedItemComponent::SetStage(int Stage, float NewGrowthTime)
 		return;
 	}
 
+	FVector OldLocation = Item->GetActorLocation();
+	int OldStage = CurrentStage;
+	
 	CurrentStage = Stage;
 	Item->GetMesh()->SetStaticMesh(ItemData->StageMeshes[CurrentStage]);
 	
@@ -65,6 +68,18 @@ void UStagedItemComponent::SetStage(int Stage, float NewGrowthTime)
 	if (GetWorld()->LineTraceSingleByChannel(Hit, Item->GetActorLocation() + FVector(0, 0, 1000), Item->GetActorLocation() + FVector(0, 0, -1000), ECC_ITEM_PLACEABLE_ON))
 		Item->SetActorLocation(Hit.ImpactPoint + FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(Item)) + ItemData->ZOffset);
 
+	// Check we're not being blocked now
+	TArray<FOverlapResult> Overlaps;
+	Item->GetMesh()->ComponentOverlapMulti(Overlaps, GetWorld(), Item->GetActorLocation(), Item->GetActorRotation(), ECC_BLOCKS_GROWTH);
+	if (!Overlaps.IsEmpty())
+	{
+		Item->SetActorLocation(OldLocation);
+		CurrentStage = OldStage;
+		Item->GetMesh()->SetStaticMesh(ItemData->StageMeshes[CurrentStage]);
+		GrowthTimer = 1; // Check again in a second
+		return;
+	}
+	
 	// Reroll growth time if suitable
 	if (Stage == ItemData->StageMeshes.Num() - 1)
 		GrowthTimer = -1;

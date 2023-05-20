@@ -10,6 +10,7 @@
 #endif
 
 #include "EcoscapeLog.h"
+#include "EcoscapeStatics.h"
 #include "Components/CapsuleComponent.h"
 #include "HAL/IConsoleManager.h"
 
@@ -42,6 +43,7 @@ AEcoscapeFPPlayerCharacter::AEcoscapeFPPlayerCharacter(const FObjectInitializer&
 	GetCapsuleComponent()->InitCapsuleSize(30.48f, 68.58f);
 	// Set collision settings. We are the invisible player with no 3rd person mesh.
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_BLOCKS_GROWTH, ECR_Block);
 
 	// set our turn rates for input
 	BaseTurnRate = 45.0f;
