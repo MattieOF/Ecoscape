@@ -288,6 +288,14 @@ public:
 	UFUNCTION(BlueprintCallable, CallInEditor)
 	void DeserialiseTerrainFromTestFile() { DeserialiseTerrainFromFile(); }
 #endif
+
+	void CalculateDiversity();
+	
+	UPROPERTY(BlueprintReadOnly)
+	float Diversity = 0;
+
+	UPROPERTY(BlueprintReadOnly)
+	FText DiversityMessage = FText::FromString("");
 	
 protected:
 	virtual void BeginPlay() override;

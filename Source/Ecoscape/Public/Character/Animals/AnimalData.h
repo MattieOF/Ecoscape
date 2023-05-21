@@ -79,4 +79,23 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
 	USoundBase* Sound;
+
+#if WITH_EDITORONLY_DATA
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Icon")
+	float IconFOV = 70;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Icon")
+	FVector IconCameraOffset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Icon")
+	FRotator IconObjectRotation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Icon")
+	int32 IconSize = 512;
+#endif
+
+#if WITH_EDITOR
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = "Icon")
+	void CreateIcon();
+#endif
 };

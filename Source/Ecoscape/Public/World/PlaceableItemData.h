@@ -47,6 +47,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Basic Details")
 	FString Categorisation = "";
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Basic Details")
+	float DiversityWeight = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Basic Details")
+	FString ItemType = "";
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Placement")
 	// Either "All" or semi-colon seperated valid terrains
 	FString ValidTerrains = "All";
@@ -54,11 +60,11 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category="Placement")
 	TArray<FString> ValidTerrainsArray;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Icon")
-	UTexture2D* Icon;
-
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE UStaticMesh* GetFirstMesh() { return StagedGrowth ? StageMeshes[0] : Mesh; }
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Icon")
+	UTexture2D* Icon;
 	
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Icon")

@@ -55,6 +55,17 @@ APlacedItem* APlacedItem::SpawnItem(UWorld* World, UPlaceableItemData* ItemData,
 	return PlacedItem;
 }
 
+bool APlacedItem::TrySetStage(int Stage, bool bIsDelta)
+{
+	UStagedItemComponent* GrowthComp = Cast<UStagedItemComponent>(GetComponentByClass(UStagedItemComponent::StaticClass()));
+	if (!GrowthComp)
+		return false;
+
+	GrowthComp->SetStage(bIsDelta ? GrowthComp->CurrentStage + Stage : Stage);
+	
+	return true;
+}
+
 UStagedItemComponent* APlacedItem::AddStagedGrowthComponent()
 {
 	return Cast<UStagedItemComponent>(AddComponentByClass(UStagedItemComponent::StaticClass(), false, FTransform::Identity, false));

@@ -3,6 +3,8 @@
 #include "Character/Animals/BaseAnimal.h"
 
 #include "Ecoscape.h"
+#include "EcoscapeGameModeBase.h"
+#include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
 #include "EcoscapeStats.h"
 #include "MessageLogModule.h"
@@ -12,6 +14,7 @@
 #include "Character/EcoscapePlayerController.h"
 #include "Components/AudioComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "EnvironmentQuery/EnvQueryManager.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "World/EcoscapeTerrain.h"
@@ -204,7 +207,7 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 	if (Hunger <= 0 && !bIsEating)
 		Health -= 1 * DeltaSeconds; // Panda will die in ~60 seconds from no food
 	else
-		Hunger = FMath::Max(0, Hunger - (DeltaSeconds * AnimalData->HungerRate * (bIsSleeping ? 0.3f : 1));
+		Hunger = FMath::Max(0, Hunger - (DeltaSeconds * AnimalData->HungerRate * (bIsSleeping ? 0.3f : 1)));
 
 	if (Thirst <= 0 && !bIsDrinking)
 		Health -= 2 * DeltaSeconds;
@@ -448,8 +451,24 @@ void ABaseAnimal::UpdateHappiness()
 
 void ABaseAnimal::OnReceiveHappinessUpdated(FHappinessUpdateInfo Info)
 {
+	UE_LOG(LogEcoscape, Log, TEXT("Update happiness for %s"), *GivenName);
+	
 	PercentageOfHabitatAvailable = Info.PercentageOfHabitatAvailable;
+	FreedomHappiness = FMath::Clamp(Info.PercentageOfHabitatAvailable, 0, 1);
+	FoodHappiness    = FMath::Clamp(FoodSourcesAvailable / 6, 0, 1);
+	DrinkHappiness   = FMath::Clamp(0.5 + DrinkSourcesAvailable, 0, 1);
+	DiseaseHappiness = 1;
+	if (AssociatedTerrain)
+		EnvironmentHappiness = FMath::Clamp(AssociatedTerrain->Diversity * 1.15, 0, 1);
 
+	OverallHappiness = FMath::Clamp(FreedomHappiness, 0.25, 1)
+						* FMath::Clamp(FoodHappiness, 0.2, 1)
+						* FMath::Clamp(DrinkHappiness, 0.2, 1)
+						* FMath::Clamp(DiseaseHappiness, 0.2, 1)
+						* FMath::Clamp(EnvironmentHappiness, 0.25, 1);
+
+	AEcoscapeGameModeBase::GetEcoscapeBaseGameMode(GetWorld())->AnimalHappinessUpdated.Broadcast(this, OverallHappiness);
+	
 	if (bDrawNav)
 	{
 		for (int Vert : Info.Reachable)

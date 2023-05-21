@@ -9,13 +9,7 @@
 #include "UObject/ConstructorHelpers.h"
 #include "World/EcoscapeProcMeshStatics.h"
 #include "World/Fence/FenceGate.h"
-
-FORCEINLINE FArchive& operator<<(FArchive& LHS, FProcMeshTangent& RHS)
-{
-	LHS << RHS.TangentX;
-	LHS << RHS.bFlipTangentY;
-	return LHS;
-}
+#include "World/EcoscapeTerrain.h" // Not unused, used for archive overload
 
 // Sets default values
 AProceduralFenceMesh::AProceduralFenceMesh()

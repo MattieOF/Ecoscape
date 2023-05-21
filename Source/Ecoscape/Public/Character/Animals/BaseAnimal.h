@@ -117,6 +117,25 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	float PercentageOfHabitatAvailable = 0;
 
+	UPROPERTY(BlueprintReadWrite)
+	float FoodSourcesAvailable = 0;
+
+	UPROPERTY(BlueprintReadWrite)
+	float DrinkSourcesAvailable = 0;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Happiness")
+	float FreedomHappiness = 0;
+	UPROPERTY(BlueprintReadWrite, Category = "Happiness")
+	float FoodHappiness = 0;
+	UPROPERTY(BlueprintReadWrite, Category = "Happiness")
+	float DrinkHappiness = 0;
+	UPROPERTY(BlueprintReadWrite, Category = "Happiness")
+	float EnvironmentHappiness = 0;
+	UPROPERTY(BlueprintReadWrite, Category = "Happiness")
+	float DiseaseHappiness = 0;
+	UPROPERTY(BlueprintReadWrite, Category = "Happiness")
+	float OverallHappiness = 0;
+	
 	UPROPERTY(BlueprintAssignable)
 	FOnHappinessUpdated OnHappinessUpdated;
 

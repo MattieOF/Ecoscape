@@ -36,6 +36,9 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE UStaticMeshComponent* GetMesh() { return MainMesh; }
 
+	UFUNCTION(BlueprintCallable)
+	bool TrySetStage(int Stage, bool bIsDelta);
+
 	UStagedItemComponent* AddStagedGrowthComponent();
 
 protected:

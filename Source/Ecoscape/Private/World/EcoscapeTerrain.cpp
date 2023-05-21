@@ -9,6 +9,7 @@
 #include "KismetProceduralMeshLibrary.h"
 #include "NavigationSystem.h"
 #include "Character/Animals/BaseAnimal.h"
+#include "DSP/EnvelopeFollower.h"
 #include "Engine/StaticMeshActor.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Misc/FileHelper.h"
@@ -34,11 +35,112 @@ AEcoscapeTerrain::AEcoscapeTerrain()
 	ProceduralMeshComponent->SetCollisionResponseToChannel(ECC_ITEM_PLACEABLE_ON, ECR_Block);
 }
 
+void AEcoscapeTerrain::CalculateDiversity()
+{
+	if (PlacedItems.Num() == 0)
+	{
+		Diversity = 0;
+		DiversityMessage = FText::FromString("Your habitat could use some items.");
+		return;	
+	}
+	
+	TMap<FString, float> Values;
+	float TotalWeight = 0;
+
+	// Add up all the diversity weights into the map
+	for (APlacedItem* Item : PlacedItems)
+	{
+		FString Index = Item->GetItemData()->ItemType.IsEmpty() ? Item->GetItemData()->GetName() : Item->GetItemData()->ItemType;
+		if (Values.Contains(Index))
+			Values[Index] += Item->GetItemData()->DiversityWeight;
+		else
+			Values.Add(Index, Item->GetItemData()->DiversityWeight);
+
+		TotalWeight += Item->GetItemData()->DiversityWeight;
+	}
+	
+	// Item type factor
+	// int ItemTypes = 0;
+	// TArray<UPlaceableItemData*> ItemTypesArray;
+	// Values.GetKeys(ItemTypesArray);
+	// TArray<FString> SeenItemTypeStrings;
+	// // TODO: Use some custom int-based data type instead of strings to prevent a bunch of unnessesary allocs
+	// for (const UPlaceableItemData* Data : ItemTypesArray)
+	// {
+	// 	if (Data->ItemType.IsEmpty())
+	// 		ItemTypes++;
+	// 	else if (!SeenItemTypeStrings.Contains(Data->ItemType))
+	// 	{
+	// 		SeenItemTypeStrings.Add(Data->ItemType);
+	// 		ItemTypes++;
+	// 	}
+	// }
+	const double ItemTypeFactor = FMath::Clamp(0.1 + (static_cast<double>(Values.Num()) / 5 * 0.9), 0.1, 1); // From 0.5 to 1, depends on how many types of items we have
+
+	float WeightMean = 0;
+	for (const auto& Item : Values)
+		WeightMean += Item.Value;
+	WeightMean /= Values.Num();
+
+	double DifferencesMean = 0, TotalDifference = 0;
+	for (const auto& Item : Values)
+	{
+		float Diff = WeightMean - Item.Value;
+		if (Diff > 0) // If there's less than something than average, don't effect the values as much.
+			Diff *= 0.1;
+		DifferencesMean += abs(Diff);
+		TotalDifference += abs(Diff);
+	}
+	DifferencesMean /= Values.Num();
+
+	double WeightFactor = 0;
+		//WeightFactor = FMath::Exp((DifferencesMean / WeightMean) * -1.5);
+	if (WeightMean != 0)
+		WeightFactor = 1 + (FMath::Pow((TotalDifference / TotalWeight), 3) * -2);
+	// WeightFactor = FMath::Clamp(WeightFactor, 0.1f, 1);
+	
+	// float StandardDeviation = 0, Sum = 0;
+	// for (const UPlaceableItemData* Item : ItemTypesArray)
+	// {
+	// 	float Diff = Values[Item] - WeightMean;
+	// 	Sum += Diff * Diff;
+	// }
+	// StandardDeviation = FMath::Sqrt(Sum / ItemTypesArray.Num());
+	//
+	// const float CoefficientOfVariation = StandardDeviation / WeightMean;
+	// float WeightFactor = 1 - FMath::Pow(CoefficientOfVariation, -4);
+	// WeightFactor = FMath::Clamp(WeightFactor, 0, 1);
+	
+	double TotalWeightFactor = FMath::Clamp(TotalWeight / 250, 0.5f, 1.f);
+	
+	Diversity = ItemTypeFactor * WeightFactor * TotalWeightFactor;
+
+	if (Diversity < 0.8)
+	{
+		if (ItemTypeFactor < WeightFactor && ItemTypeFactor < TotalWeightFactor)
+			DiversityMessage = FText::FromString(FString::Printf(TEXT("Your terrain could use some more diversity in it's item types.")));
+		else if (WeightFactor < ItemTypeFactor && WeightFactor < TotalWeightFactor)
+			DiversityMessage = FText::FromString(FString::Printf(TEXT("Your habitat has too much of one thing!")));
+		else if (TotalWeightFactor < ItemTypeFactor && TotalWeightFactor < WeightFactor)
+			DiversityMessage = FText::FromString(FString::Printf(TEXT("Your habitat could use some more stuff to keep the animals happy.")));
+	} else
+	{
+		DiversityMessage = FText::FromString(FString::Printf(TEXT("Your animals love your %s!"), *TerrainName));
+	}
+	
+	// UE_LOG(LogEcoscape, Log, TEXT("%s: Diversity is %f (ITF: %f, WF: %f)"), *TerrainName, Diversity, ItemTypeFactor, WeightFactor);
+}
+
 void AEcoscapeTerrain::BeginPlay()
 {
 	Super::BeginPlay();
 
 	GIIndex = UEcoscapeGameInstance::GetEcoscapeGameInstance(GetWorld())->AddTerrain(this);
+
+	FTimerHandle Handle;
+	FTimerDelegate Delegate;
+	Delegate.BindLambda([this] { CalculateDiversity(); });
+	GetWorldTimerManager().SetTimer(Handle, Delegate, 5, true, 0);
 
 	Regenerate();
 }

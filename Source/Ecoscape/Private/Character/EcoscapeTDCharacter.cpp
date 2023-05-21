@@ -536,7 +536,12 @@ void AEcoscapeTDCharacter::GoToTerrain(AEcoscapeTerrain* Terrain)
 	PlayRangeMax.Y -= Terrain->ExteriorTileCount * Terrain->GetScale();
 
 	if (ItemPreview)
-		ItemPreview->CurrentTerrain = Terrain;
+	{
+		ItemPreview->Destroy();
+		ItemPreview = nullptr;
+		SetCurrentItem(nullptr);
+	}
+		//ItemPreview->CurrentTerrain = Terrain;
 	
 	CurrentItemData.CurrentTerrain = Terrain;
 }

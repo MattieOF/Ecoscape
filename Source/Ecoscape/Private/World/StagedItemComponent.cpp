@@ -61,6 +61,7 @@ void UStagedItemComponent::SetStage(int Stage, float NewGrowthTime)
 	int OldStage = CurrentStage;
 	
 	CurrentStage = Stage;
+	CurrentStage = FMath::Clamp(CurrentStage, 0, ItemData->StageMeshes.Num() - 1);
 	Item->GetMesh()->SetStaticMesh(ItemData->StageMeshes[CurrentStage]);
 	
 	// Reposition if it can
@@ -71,7 +72,7 @@ void UStagedItemComponent::SetStage(int Stage, float NewGrowthTime)
 	// Check we're not being blocked now
 	TArray<FOverlapResult> Overlaps;
 	Item->GetMesh()->ComponentOverlapMulti(Overlaps, GetWorld(), Item->GetActorLocation(), Item->GetActorRotation(), ECC_BLOCKS_GROWTH);
-	if (!Overlaps.IsEmpty())
+	if (!Overlaps.IsEmpty() && CurrentStage > OldStage) // Ignore overlaps if we're going backwards
 	{
 		Item->SetActorLocation(OldLocation);
 		CurrentStage = OldStage;

@@ -7,6 +7,10 @@
 #include "Kismet/GameplayStatics.h"
 #include "EcoscapeGameModeBase.generated.h"
 
+class ABaseAnimal;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAnimalHappinessUpdated, ABaseAnimal*, Animal, float, NewHappiness);
+
 /**
  * Base game mode for Ecoscape
  */
@@ -26,4 +30,7 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Exec)
 	void SpawnAnimalAtCursor(FString Animal);
+
+	UPROPERTY(BlueprintAssignable)
+	FOnAnimalHappinessUpdated AnimalHappinessUpdated;
 };
