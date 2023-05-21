@@ -17,10 +17,10 @@ class IAnimalUI
 	GENERATED_BODY()
 
 public:
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
 	void Show();
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
 	void Hide();
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
 	void SetAnimal(ABaseAnimal* Animal);
 };

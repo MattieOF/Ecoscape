@@ -142,6 +142,9 @@ public:
 	UFUNCTION()
 	void OnReceiveHappinessUpdated(FHappinessUpdateInfo Info);
 
+	UFUNCTION(BlueprintCallable)
+	void RecalculateHappiness();
+
 	bool bNeedsFreedomUpdate = true;
 
 protected:
@@ -152,7 +155,7 @@ protected:
 	AEcoscapeTerrain* AssociatedTerrain;
 	
 private:
-	float SoundTimer = 0;
+	float SoundTimer = 0, HappinessRecalcTimer = 1, FreedomCheckTimer = 2;
 	FRotator TargetRotation;
 	static TSharedPtr<FUpdateHappiness> HappinessUpdateRunnable;
 	FDelegateHandle TerrainWalkabilityHandle;

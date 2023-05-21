@@ -188,8 +188,10 @@ void ABaseAnimal::BeginPlay()
 
 	SetAnimalData(AnimalData);
 
-	FTimerHandle HappinessTest;
-	GetWorld()->GetTimerManager().SetTimer(HappinessTest, FTimerDelegate::CreateUFunction(this, "UpdateHappiness"), 2, true, 0);
+	// No idea why, but these timers are getting unset randomly.
+	// FTimerHandle HappinessTest, HappinessUpdate;
+	// GetWorld()->GetTimerManager().SetTimer(HappinessTest, FTimerDelegate::CreateUFunction(this, "UpdateHappiness"), 2, true, 0);
+	// GetWorld()->GetTimerManager().SetTimer(HappinessUpdate, FTimerDelegate::CreateUFunction(this, "RecalculateHappiness"), 1, true, 0);
 
 	FScriptDelegate Binding;
 	Binding.BindUFunction(this, "OnReceiveHappinessUpdated");
@@ -214,6 +216,10 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 	else
 		Thirst = FMath::Max(0, Thirst - (DeltaSeconds * AnimalData->ThirstRate * (bIsSleeping ? 0.3f : 1)));
 
+	// Healing
+	if (Hunger > 0 && Thirst > 0)
+		Health = FMath::Min(AnimalData->BaseHealth, Health + (DeltaSeconds * OverallHappiness * 3));
+	
 	if (Health <= 0)
 	{
 		OnDeath.Broadcast();
@@ -223,6 +229,19 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 	DrawDebugString(GetWorld(), GetActorLocation() + FVector(0, 0, 100),
 	                 FString::Printf(TEXT("HP: %f, Hunger: %f, Thirst: %f, Freedom: %f"), Health, Hunger, Thirst, PercentageOfHabitatAvailable), nullptr, FColor::White, DeltaSeconds);
 
+	if (HappinessRecalcTimer > 0)
+	{
+		HappinessRecalcTimer -= DeltaSeconds;
+		if (HappinessRecalcTimer <= 0)
+			RecalculateHappiness();
+	}
+	if (FreedomCheckTimer > 0)
+	{
+		FreedomCheckTimer    -= DeltaSeconds;
+		if (FreedomCheckTimer <= 0)
+			UpdateHappiness();
+	}
+	
 	// Do sound
 	if (AnimalData)
 	{
@@ -372,6 +391,8 @@ void ABaseAnimal::UpdateHappiness()
 {
 	SCOPE_CYCLE_COUNTER(STAT_CheckHappiness);
 
+	FreedomCheckTimer = 2;
+	
 	if (bNeedsFreedomUpdate)
 	{
 		HappinessUpdateRunnable->EnqueueAnimalForUpdate(this);
@@ -454,7 +475,20 @@ void ABaseAnimal::OnReceiveHappinessUpdated(FHappinessUpdateInfo Info)
 	UE_LOG(LogEcoscape, Log, TEXT("Update happiness for %s"), *GivenName);
 	
 	PercentageOfHabitatAvailable = Info.PercentageOfHabitatAvailable;
-	FreedomHappiness = FMath::Clamp(Info.PercentageOfHabitatAvailable, 0, 1);
+	RecalculateHappiness();
+	
+	if (bDrawNav)
+	{
+		for (int Vert : Info.Reachable)
+		{
+			DrawDebugSphere(GetWorld(), AssociatedTerrain->GetVertexPositionWorld(Vert), 30, 6, FColor::Red, false, 2);
+		}
+	}
+}
+
+void ABaseAnimal::RecalculateHappiness()
+{
+	FreedomHappiness = FMath::Clamp(PercentageOfHabitatAvailable, 0, 1);
 	FoodHappiness    = FMath::Clamp(FoodSourcesAvailable / 6, 0, 1);
 	DrinkHappiness   = FMath::Clamp(0.5 + DrinkSourcesAvailable, 0, 1);
 	DiseaseHappiness = 1;
@@ -468,14 +502,8 @@ void ABaseAnimal::OnReceiveHappinessUpdated(FHappinessUpdateInfo Info)
 						* FMath::Clamp(EnvironmentHappiness, 0.25, 1);
 
 	AEcoscapeGameModeBase::GetEcoscapeBaseGameMode(GetWorld())->AnimalHappinessUpdated.Broadcast(this, OverallHappiness);
-	
-	if (bDrawNav)
-	{
-		for (int Vert : Info.Reachable)
-		{
-			DrawDebugSphere(GetWorld(), AssociatedTerrain->GetVertexPositionWorld(Vert), 30, 6, FColor::Red, false, 2);
-		}
-	}
+
+	HappinessRecalcTimer = 1;
 }
 
 // void ABaseAnimal::OnNavTest()

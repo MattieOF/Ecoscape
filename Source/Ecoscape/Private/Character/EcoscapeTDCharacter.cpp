@@ -149,7 +149,7 @@ void AEcoscapeTDCharacter::Tick(float DeltaSeconds)
 		if (FMath::Abs(Diff) < 1)
 			Location.Z = TargetHeight;
 		else
-			Location.Z += -Diff * 10.f * DeltaSeconds;
+			Location.Z += -Diff * 10.f * GetWorld()->DeltaRealTimeSeconds;
 		SetActorLocation(Location);	
 	}
 
@@ -268,6 +268,18 @@ void AEcoscapeTDCharacter::OnToolUsed()
 {
 	switch (CurrentTool)
 	{
+	case ETNone:
+		{
+			FHitResult Hit;
+			if (UEcoscapeStatics::GetHitResultAtCursorByChannel(Cast<const APlayerController>(GetController()), ECC_WorldDynamic, false, Hit, TArray<AActor*>()))
+			{
+				if (ABaseAnimal* Animal = Cast<ABaseAnimal>(Hit.GetActor()))
+				{
+					AnimalUI->Execute_SetAnimal(AnimalUI.GetObject(), Animal);
+					AnimalUI->Execute_Show(AnimalUI.GetObject());
+				}
+			}
+		}
 	case ETPlaceObjects:
 		{
 			// Check we have an item

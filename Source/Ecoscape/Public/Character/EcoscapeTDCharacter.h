@@ -7,6 +7,7 @@
 #include "EcoscapeObject.h"
 #include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "UI/AnimalUI.h"
 #include "World/PlaceableItemPreview.h"
 #include "EcoscapeTDCharacter.generated.h"
 
@@ -176,6 +177,9 @@ public:
 	bool bDrawDebug = false;
 
 	FItemDataInterface CurrentItemData;
+
+	UPROPERTY(BlueprintReadWrite)
+	TScriptInterface<IAnimalUI> AnimalUI;
 	
 protected:
 	UPROPERTY(BlueprintReadOnly)
