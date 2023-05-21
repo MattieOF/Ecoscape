@@ -47,6 +47,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Basic")
 	UEnvQuery* FoodQuery;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Basic")
+	UEnvQuery* WaterQuery;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0", ForceUnits="cm/s"), Category = "Basic")
 	float MoveSpeed = 600;
 	

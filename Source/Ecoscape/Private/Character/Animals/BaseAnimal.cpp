@@ -18,6 +18,7 @@
 #include "EnvironmentQuery/EnvQueryManager.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Tasks/AITask_RunEQS.h"
 #include "World/EcoscapeTerrain.h"
 
 DECLARE_CYCLE_STAT(TEXT("Terrain/Animal: Check Happiness"), STAT_CheckHappiness, STATGROUP_EcoscapeTerrain);
@@ -52,8 +53,6 @@ uint32 FUpdateHappiness::Run()
 		ABaseAnimal* Animal;
 		Animals.Dequeue(Animal);
 
-		UE_LOG(LogEcoscape, Log, TEXT("Start for %s"), *Animal->GivenName);
-	
 		// -------------
 		// SIMPLE FLOOD FILL ALGORITHM
 		// Copied from Wikipedia
@@ -273,6 +272,13 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 	if (FreedomCheckTimer <= 0)
 		UpdateHappiness();
 	
+	if (FoodWaterCheckTimer > 0)
+	{
+		FoodWaterCheckTimer -= GetWorld()->DeltaRealTimeSeconds;
+		if (FoodWaterCheckTimer <= 0)
+			CheckFoodWater();
+	}
+	
 	// Do sound
 	if (AnimalData)
 	{
@@ -367,6 +373,12 @@ void ABaseAnimal::SetAnimalData(UAnimalData* Data, bool bRecreateAI)
 		Audio->SetSound(Data->Sound);
 		Audio->AttenuationSettings = Data->Sound->AttenuationSettings;
 		SoundTimer = FMath::FRandRange(Data->SoundTimeRange.X, Data->SoundTimeRange.Y);
+
+		// Setup EQS
+		if (Data->FoodQuery)
+			FoodRequest = FEnvQueryRequest(Data->FoodQuery, this);
+		if (Data->WaterQuery)
+			WaterRequest = FEnvQueryRequest(Data->WaterQuery, this);
 		
 		// Setup AI
 		AIControllerClass = Data->AI;
@@ -503,8 +515,6 @@ void ABaseAnimal::UpdateHappiness()
 
 void ABaseAnimal::OnReceiveHappinessUpdated(FHappinessUpdateInfo Info)
 {
-	UE_LOG(LogEcoscape, Log, TEXT("Update happiness for %s"), *GivenName);
-	
 	PercentageOfHabitatAvailable = Info.PercentageOfHabitatAvailable;
 	RecalculateHappiness();
 	
@@ -538,6 +548,29 @@ void ABaseAnimal::RecalculateHappiness()
 	AEcoscapeGameModeBase::GetEcoscapeBaseGameMode(GetWorld())->AnimalHappinessUpdated.Broadcast(this, OverallHappiness);
 
 	HappinessRecalcTimer = 1;
+}
+
+void ABaseAnimal::CheckFoodWater()
+{
+	if (AnimalData->FoodQuery)
+	{
+		FoodRequest.Execute(EEnvQueryRunMode::AllMatching, FQueryFinishedSignature::CreateLambda([this] (TSharedPtr<FEnvQueryResult> Result)
+		{
+			FoodSourcesAvailable = Result->Items.Num();
+			RecalculateHappiness();
+		}));
+	}
+
+	if (AnimalData->WaterQuery)
+	{
+		WaterRequest.Execute(EEnvQueryRunMode::AllMatching, FQueryFinishedSignature::CreateLambda([this] (TSharedPtr<FEnvQueryResult> Result)
+		{
+			DrinkSourcesAvailable = Result->Items.Num();
+			RecalculateHappiness();
+		}));
+	}
+	
+	FoodWaterCheckTimer = 5;
 }
 
 // void ABaseAnimal::OnNavTest()

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "AnimalData.h"
+#include "EnvironmentQuery/EnvQueryManager.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Character.h"
 #include "BaseAnimal.generated.h"
@@ -156,6 +157,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void RecalculateHappiness();
 
+	UFUNCTION()
+	void CheckFoodWater();
+
+	FEnvQueryRequest FoodRequest, WaterRequest;
+
 	bool bNeedsFreedomUpdate = true;
 
 protected:
@@ -166,7 +172,7 @@ protected:
 	AEcoscapeTerrain* AssociatedTerrain;
 	
 private:
-	float SoundTimer = 0, HappinessRecalcTimer = 1, FreedomCheckTimer = 2;
+	float SoundTimer = 0, HappinessRecalcTimer = 1, FreedomCheckTimer = 2, FoodWaterCheckTimer = 5;
 	FRotator TargetRotation;
 	static TSharedPtr<FUpdateHappiness> HappinessUpdateRunnable;
 	FDelegateHandle TerrainWalkabilityHandle;
