@@ -10,6 +10,7 @@
 class ABaseAnimal;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAnimalHappinessUpdated, ABaseAnimal*, Animal, float, NewHappiness);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAnyAnimalDies, ABaseAnimal*, Animal);
 
 /**
  * Base game mode for Ecoscape
@@ -33,4 +34,7 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnAnimalHappinessUpdated AnimalHappinessUpdated;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnAnyAnimalDies AnimalDies;
 };

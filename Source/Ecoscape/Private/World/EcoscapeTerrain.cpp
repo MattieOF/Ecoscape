@@ -2,14 +2,14 @@
 
 #include "World/EcoscapeTerrain.h"
 
+#include "Ecoscape.h"
 #include "EcoscapeGameInstance.h"
 #include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
 #include "EcoscapeStats.h"
 #include "KismetProceduralMeshLibrary.h"
+#include "MessageLogModule.h"
 #include "NavigationSystem.h"
-#include "Character/Animals/BaseAnimal.h"
-#include "DSP/EnvelopeFollower.h"
 #include "Engine/StaticMeshActor.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Misc/FileHelper.h"
@@ -25,6 +25,14 @@ DECLARE_CYCLE_STAT(TEXT("Terrain: Get Nearest Vertex"), STAT_GetNearestVert, STA
 DECLARE_CYCLE_STAT(TEXT("Terrain: Add Vertex Color"), STAT_AddVertColor, STATGROUP_EcoscapeTerrain);
 DECLARE_CYCLE_STAT(TEXT("Terrain: Get Verticies In Sphere"), STAT_VertsInSphere, STATGROUP_EcoscapeTerrain);
 DECLARE_CYCLE_STAT(TEXT("Terrain: Is Vert Walkable"), STAT_VertWalkableTest, STATGROUP_EcoscapeTerrain);
+
+FORCEINLINE void operator-=(FColor& LHS, const FColor& RHS)
+{
+	LHS.R = (uint8) FMath::Clamp((int32) LHS.R - (int32) RHS.R, 0, 255);
+	LHS.G = (uint8) FMath::Clamp((int32) LHS.G - (int32) RHS.G, 0, 255);
+	LHS.B = (uint8) FMath::Clamp((int32) LHS.B - (int32) RHS.B, 0, 255);
+	LHS.A = (uint8) FMath::Clamp((int32) LHS.A - (int32) RHS.A, 0, 255);
+}
 
 AEcoscapeTerrain::AEcoscapeTerrain()
 {
@@ -46,17 +54,23 @@ void AEcoscapeTerrain::CalculateDiversity()
 	
 	TMap<FString, float> Values;
 	float TotalWeight = 0;
+	float Deadness = 0;
 
 	// Add up all the diversity weights into the map
+	int ItemTypes = 0;
 	for (APlacedItem* Item : PlacedItems)
 	{
 		FString Index = Item->GetItemData()->ItemType.IsEmpty() ? Item->GetItemData()->GetName() : Item->GetItemData()->ItemType;
 		if (Values.Contains(Index))
 			Values[Index] += Item->GetItemData()->DiversityWeight;
 		else
+		{
+			ItemTypes += Item->GetItemData()->ItemTypesValue;
 			Values.Add(Index, Item->GetItemData()->DiversityWeight);
+		}
 
 		TotalWeight += Item->GetItemData()->DiversityWeight;
+		Deadness    += Item->GetItemData()->Deadness;
 	}
 	
 	// Item type factor
@@ -75,7 +89,7 @@ void AEcoscapeTerrain::CalculateDiversity()
 	// 		ItemTypes++;
 	// 	}
 	// }
-	const double ItemTypeFactor = FMath::Clamp(0.1 + (static_cast<double>(Values.Num()) / 5 * 0.9), 0.1, 1); // From 0.5 to 1, depends on how many types of items we have
+	const double ItemTypeFactor = FMath::Clamp(0.1 + (static_cast<double>(ItemTypes) / 5 * 0.9), 0.1, 1); // From 0.5 to 1, depends on how many types of items we have
 
 	float WeightMean = 0;
 	for (const auto& Item : Values)
@@ -96,7 +110,7 @@ void AEcoscapeTerrain::CalculateDiversity()
 	double WeightFactor = 0;
 		//WeightFactor = FMath::Exp((DifferencesMean / WeightMean) * -1.5);
 	if (WeightMean != 0)
-		WeightFactor = 1 + (FMath::Pow((TotalDifference / TotalWeight), 3) * -2);
+		WeightFactor = 1 + (FMath::Pow((TotalDifference / TotalWeight), 3) * -1.5);
 	// WeightFactor = FMath::Clamp(WeightFactor, 0.1f, 1);
 	
 	// float StandardDeviation = 0, Sum = 0;
@@ -112,17 +126,25 @@ void AEcoscapeTerrain::CalculateDiversity()
 	// WeightFactor = FMath::Clamp(WeightFactor, 0, 1);
 	
 	double TotalWeightFactor = FMath::Clamp(TotalWeight / 250, 0.5f, 1.f);
+
+	double DeadnessFactor = FMath::Clamp(1 - Deadness / 10, 0, 1);
 	
-	Diversity = ItemTypeFactor * WeightFactor * TotalWeightFactor;
+	Diversity = ItemTypeFactor * WeightFactor * TotalWeightFactor * DeadnessFactor;
 
 	if (Diversity < 0.8)
 	{
-		if (ItemTypeFactor < WeightFactor && ItemTypeFactor < TotalWeightFactor)
-			DiversityMessage = FText::FromString(FString::Printf(TEXT("Your terrain could use some more diversity in it's item types.")));
-		else if (WeightFactor < ItemTypeFactor && WeightFactor < TotalWeightFactor)
+		TArray<double> AllValues = { ItemTypeFactor, WeightFactor, TotalWeightFactor, DeadnessFactor };
+		int MinIndex = 0;
+		FMath::Min(AllValues, &MinIndex);
+		
+		if (MinIndex == 0)
+			DiversityMessage = FText::FromString(FString::Printf(TEXT("Your habitat could use some more diversity in it's item types.")));
+		else if (MinIndex == 1)
 			DiversityMessage = FText::FromString(FString::Printf(TEXT("Your habitat has too much of one thing!")));
-		else if (TotalWeightFactor < ItemTypeFactor && TotalWeightFactor < WeightFactor)
+		else if (MinIndex == 2)
 			DiversityMessage = FText::FromString(FString::Printf(TEXT("Your habitat could use some more stuff to keep the animals happy.")));
+		else if (MinIndex == 3)
+			DiversityMessage = FText::FromString(FString::Printf(TEXT("Your habitat is full of dead stuff!")));
 	} else
 	{
 		DiversityMessage = FText::FromString(FString::Printf(TEXT("Your animals love your %s!"), *TerrainName));
@@ -890,6 +912,78 @@ void AEcoscapeTerrain::GenerateExteriorDetail()
 	}
 }
 
+void AEcoscapeTerrain::GenerateStartingItems()
+{
+	for (int i = 0; i < StartingItemCount; i++)
+	{
+		FTerrainStartingObjectType& Object = StartingItems[FMath::RandRange(0, StartingItems.Num() - 1)];
+
+		AActor* SpawnedObject = nullptr;
+		float X = FMath::RandRange(ExteriorTileCount + 2, Width - (ExteriorTileCount + 2));	
+		float Y = FMath::RandRange(ExteriorTileCount + 2, Height - (ExteriorTileCount + 2));
+		FVector Location = GetActorLocation() + FVector(X * Scale, Y * Scale, 100000);
+		FHitResult Hit;
+		if (GetWorld()->LineTraceSingleByChannel(Hit, Location, Location + FVector(0, 0, -200000), ECC_ITEM_PLACEABLE_ON))
+		{
+			if (Object.Item != nullptr)
+			{
+				if (Object.Item->bHasMaxWaterDepth && Water)
+				{
+					if (Object.Item->MaxWaterDepth > Hit.ImpactPoint.Z - Water->GetActorLocation().Z)
+					{
+						i--;
+						continue;
+					}
+				}
+				APlacedItem* Item = APlacedItem::SpawnItem(GetWorld(), Object.Item, Hit.ImpactPoint + FVector(Object.Item->ZOffset));
+
+				TArray<FOverlapResult> Overlaps;
+				Item->GetMesh()->ComponentOverlapMulti(Overlaps, GetWorld(), Item->GetMesh()->GetComponentLocation(), Item->GetMesh()->GetComponentRotation(), ECC_BLOCKS_ITEM_PLACEMENT);
+				if (!Overlaps.IsEmpty())
+				{
+					Item->Destroy();
+					i--;
+					continue;
+				}
+				
+				PlacedItems.Add(Item);
+				Item->AssociatedTerrain = this;
+				SpawnedObject = Item;
+			}
+			else if (Object.ActorType != nullptr)
+			{
+					if (0 > Hit.ImpactPoint.Z - Water->GetActorLocation().Z)
+					{
+						i--;
+						continue;
+					}
+				SpawnedObject = GetWorld()->SpawnActor(Object.ActorType, &Hit.ImpactPoint, &FRotator::ZeroRotator);
+			} else
+			{
+				ECO_LOG_ERROR("In terrain, a placeable item was not either an item type or actor.");
+				continue;
+			}
+		}
+
+		if (!SpawnedObject)
+			continue;
+
+		SpawnedObject->AddActorWorldOffset(FVector(0, 0, UEcoscapeStatics::GetZUnderOrigin(SpawnedObject)));
+		auto Rotation = UKismetMathLibrary::Conv_VectorToRotator(Hit.ImpactNormal);
+		FVector UpVector = SpawnedObject->GetActorUpVector();
+		FVector NormalVector = UKismetMathLibrary::VLerp(UpVector, Hit.ImpactNormal, 0.4f);
+		FVector RotationAxis = FVector::CrossProduct(UpVector, NormalVector);
+		RotationAxis.Normalize();
+		float DotProduct = FVector::DotProduct(UpVector, NormalVector);
+		float RotationAngle = acosf(DotProduct);
+		FQuat Quat = FQuat(RotationAxis, RotationAngle);
+		FQuat RootQuat = SpawnedObject->GetActorQuat();
+		FQuat NewQuat = Quat * RootQuat;
+		Rotation = NewQuat.Rotator();
+		SpawnedObject->SetActorRotation(Rotation);
+	}
+}
+
 void AEcoscapeTerrain::InitWalkable()
 {
 	Walkable.Init(false, (Width + 1) * (Height + 1));
@@ -927,7 +1021,11 @@ void AEcoscapeTerrain::CalculateVertColour(int Index, bool Flush)
 		const FColor Offset = UEcoscapeStatics::ClampColor(
 			Data->LandColour.ToFColor(false) * FMath::Clamp(1 - (DistSquared / (Data->ColourRange * Data->ColourRange)), 0, 1),
 			FColor(0, 0, 0), Remainder);
-		VertexColors[Index] += Offset;
+
+		if (Data->bNegativeColour)
+			VertexColors[Index] -= Offset;
+		else
+			VertexColors[Index] += Offset;
 	}
 	VertexColors[Index] = UEcoscapeStatics::AddToColor(VertexColors[Index], ColorOffsets[Index]);
 	
@@ -1252,6 +1350,13 @@ void AEcoscapeTerrain::Regenerate()
 
 	CreateMesh();
 	GenerateExteriorDetail();
+	GenerateStartingItems();
+
+	// Recalculate colours
+	for (int X = ExteriorTileCount; X <= Width - ExteriorTileCount; X++)
+		for (int Y = ExteriorTileCount; Y <= Height - ExteriorTileCount; Y++)
+			CalculateVertColour(GetVertexIndex(X, Y));
+	FlushMesh();
 
 	InitWalkable();
 	

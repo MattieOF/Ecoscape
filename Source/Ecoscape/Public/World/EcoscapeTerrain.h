@@ -12,6 +12,17 @@ class AStaticMeshActor;
 class AFenceGate;
 class AProceduralFenceMesh;
 
+USTRUCT()
+struct FTerrainStartingObjectType
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	UPlaceableItemData*  Item = nullptr;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AActor> ActorType = nullptr;
+};
+
 DECLARE_MULTICAST_DELEGATE(FTerrainWalkabilityUpdated);
 
 FORCEINLINE FArchive& operator<<(FArchive& LHS, FProcMeshTangent& RHS)
@@ -296,6 +307,12 @@ public:
 
 	UPROPERTY(BlueprintReadOnly)
 	FText DiversityMessage = FText::FromString("");
+
+	UPROPERTY(EditAnywhere)
+	TArray<FTerrainStartingObjectType> StartingItems;
+
+	UPROPERTY(EditAnywhere)
+	int StartingItemCount = 0;
 	
 protected:
 	virtual void BeginPlay() override;
@@ -311,6 +328,7 @@ protected:
 	void GenerateDrinkLocations();
 	void CreateMesh() const;
 	void GenerateExteriorDetail();
+	void GenerateStartingItems();
 	void InitWalkable();
 
 #if WITH_EDITOR

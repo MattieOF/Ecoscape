@@ -2,6 +2,7 @@
 
 #include "Character/Animals/BaseAnimal.h"
 
+#include "BrainComponent.h"
 #include "Ecoscape.h"
 #include "EcoscapeGameModeBase.h"
 #include "EcoscapeLog.h"
@@ -45,27 +46,49 @@ bool FUpdateHappiness::Init()
 uint32 FUpdateHappiness::Run()
 {
 	bStopThread = false;
-	
+
 	if (bStopThread || !Animals.IsEmpty())
 	{
 		ABaseAnimal* Animal;
 		Animals.Dequeue(Animal);
 
+		UE_LOG(LogEcoscape, Log, TEXT("Start for %s"), *Animal->GivenName);
+	
 		// -------------
 		// SIMPLE FLOOD FILL ALGORITHM
 		// Copied from Wikipedia
 		// -------------
 		if (!Animal->GetTerrain())
+		{
+			FHappinessUpdateInfo UpdateInfo;
+			UpdateInfo.PercentageOfHabitatAvailable = 0;
+			Animal->OnHappinessUpdated.Broadcast(UpdateInfo);
+			CurrentlyQueued.Remove(Animal);
 			return 1;
+		}
 		float Width = Animal->GetTerrain()->Width, Height = Animal->GetTerrain()->Height;
 		const int TheoreticalWalkablePointsNum = Animal->GetTerrain()->GetWalkableVertCount();
 		const int StartIndex = Animal->GetTerrain()->GetClosestVertex(Animal->GetActorLocation());
-		const FVector2D Pos = Animal->GetTerrain()->GetVertexXY(StartIndex);
+		FVector2D Pos = Animal->GetTerrain()->GetVertexXY(StartIndex);
 		const TArray Walkable = Animal->GetTerrain()->Walkable;
 		
 		TArray<int> WalkablePoints;
 		if (!Walkable[StartIndex])
-			return 0;
+		{
+			if (Walkable[StartIndex + 1])
+				Pos = Animal->GetTerrain()->GetVertexXY(StartIndex + 1);
+			else if (Walkable[StartIndex - 1])
+				Pos = Animal->GetTerrain()->GetVertexXY(StartIndex - 1);
+			else
+			{
+				FHappinessUpdateInfo UpdateInfo;
+				UpdateInfo.PercentageOfHabitatAvailable = 0;
+				UpdateInfo.Reachable = WalkablePoints;
+				Animal->OnHappinessUpdated.Broadcast(UpdateInfo);
+				CurrentlyQueued.Remove(Animal);
+				return 0;
+			}
+		}
 		TQueue<FVector4> PointsToSearch;
 		PointsToSearch.Enqueue(FVector4(Pos.X, Pos.X, Pos.Y, 1));
 		PointsToSearch.Enqueue(FVector4(Pos.X, Pos.X, Pos.Y - 1, -1));
@@ -205,6 +228,9 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
+	if (bDead)
+		return;
+	
 	// Do hunger
 	if (Hunger <= 0 && !bIsEating)
 		Health -= 1 * DeltaSeconds; // Panda will die in ~60 seconds from no food
@@ -216,14 +242,21 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 	else
 		Thirst = FMath::Max(0, Thirst - (DeltaSeconds * AnimalData->ThirstRate * (bIsSleeping ? 0.3f : 1)));
 
+	if (bIsTrapped)
+		Health -= 4 * DeltaSeconds;
+	
 	// Healing
-	if (Hunger > 0 && Thirst > 0)
+	if (Hunger > 0 && Thirst > 0 && !bIsTrapped)
 		Health = FMath::Min(AnimalData->BaseHealth, Health + (DeltaSeconds * OverallHappiness * 3));
 	
-	if (Health <= 0)
+	if (!bDead && Health <= 0)
 	{
+		bDead = true;
+		Health = 0;
 		OnDeath.Broadcast();
-		Destroy();
+		Cast<AAIController>(Controller)->GetBrainComponent()->StopLogic("Death");
+		AEcoscapeGameModeBase::GetEcoscapeBaseGameMode(GetWorld())->AnimalDies.Broadcast(this);
+		SetLifeSpan(5);
 	}
 
 	DrawDebugString(GetWorld(), GetActorLocation() + FVector(0, 0, 100),
@@ -235,12 +268,10 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 		if (HappinessRecalcTimer <= 0)
 			RecalculateHappiness();
 	}
-	if (FreedomCheckTimer > 0)
-	{
-		FreedomCheckTimer    -= DeltaSeconds;
-		if (FreedomCheckTimer <= 0)
-			UpdateHappiness();
-	}
+	
+	FreedomCheckTimer    -= DeltaSeconds;
+	if (FreedomCheckTimer <= 0)
+		UpdateHappiness();
 	
 	// Do sound
 	if (AnimalData)
@@ -488,7 +519,7 @@ void ABaseAnimal::OnReceiveHappinessUpdated(FHappinessUpdateInfo Info)
 
 void ABaseAnimal::RecalculateHappiness()
 {
-	FreedomHappiness = FMath::Clamp(PercentageOfHabitatAvailable, 0, 1);
+	FreedomHappiness = FMath::Clamp(PercentageOfHabitatAvailable * 1.8, 0, 1);
 	FoodHappiness    = FMath::Clamp(FoodSourcesAvailable / 6, 0, 1);
 	DrinkHappiness   = FMath::Clamp(0.5 + DrinkSourcesAvailable, 0, 1);
 	DiseaseHappiness = 1;
@@ -501,6 +532,9 @@ void ABaseAnimal::RecalculateHappiness()
 						* FMath::Clamp(DiseaseHappiness, 0.2, 1)
 						* FMath::Clamp(EnvironmentHappiness, 0.25, 1);
 
+	if (bHasHappinessOverride)
+		OverallHappiness = HappinessOverride;
+	
 	AEcoscapeGameModeBase::GetEcoscapeBaseGameMode(GetWorld())->AnimalHappinessUpdated.Broadcast(this, OverallHappiness);
 
 	HappinessRecalcTimer = 1;

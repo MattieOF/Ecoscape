@@ -48,6 +48,12 @@ public:
 	FString Categorisation = "";
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Basic Details")
+	int32 ItemTypesValue = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Basic Details")
+	float Deadness = 0;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Basic Details")
 	float DiversityWeight = 1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Basic Details")
@@ -121,6 +127,9 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category="Colour")
 	float ColourRangeSquared;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Colour")
+	bool bNegativeColour = false;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Colour")
 	FLinearColor LandColour;

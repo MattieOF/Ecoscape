@@ -99,6 +99,9 @@ public:
 	float Thirst = 1;
 
 	UPROPERTY(BlueprintReadWrite)
+	bool bDead = false;
+
+	UPROPERTY(BlueprintReadWrite)
 	float TargetYaw;
 
 	UPROPERTY(BlueprintAssignable)
@@ -110,6 +113,9 @@ public:
 	bool bIsDrinking = false;
 	UPROPERTY(BlueprintReadWrite)
 	bool bIsSleeping = false;
+
+	UPROPERTY(BlueprintReadWrite)
+	bool bIsTrapped = false;
 
 	UPROPERTY(EditAnywhere)
 	bool bDrawNav = false;
@@ -123,6 +129,11 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	float DrinkSourcesAvailable = 0;
 
+	UPROPERTY(BlueprintReadWrite, Category = "Happiness")
+	bool bHasHappinessOverride = false;
+	UPROPERTY(BlueprintReadWrite, Category = "Happiness")
+	float HappinessOverride = 0;
+	
 	UPROPERTY(BlueprintReadWrite, Category = "Happiness")
 	float FreedomHappiness = 0;
 	UPROPERTY(BlueprintReadWrite, Category = "Happiness")
