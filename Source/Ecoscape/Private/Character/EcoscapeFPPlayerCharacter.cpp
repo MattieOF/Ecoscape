@@ -24,13 +24,13 @@ static TAutoConsoleVariable<int32> CVarAutoBHop(TEXT("move.Pogo"), 0, TEXT("If h
 static TAutoConsoleVariable<int32> CVarJumpBoost(TEXT("move.JumpBoost"), 1, TEXT("If the player should boost in a movement direction while jumping.\n0 - disables jump boosting entirely\n1 - boosts in the direction of input, even when moving in another direction\n2 - boosts in the direction of input when moving in the same direction\n"), ECVF_Cheat);
 static TAutoConsoleVariable<int32> CVarBunnyhop(TEXT("move.Bunnyhopping"), 0, TEXT("Enable normal bunnyhopping.\n"), ECVF_Cheat);
 
-void AEcoscapeFPPlayerCharacter::HighlightObject(AEcoscapeObject* NewObject)
+void AEcoscapeFPPlayerCharacter::HighlightObject(UOutlineComponent* NewOutline)
 {
-	if (HighlightedObject)
-		HighlightedObject->Outline->HideOutline();
-	HighlightedObject = NewObject;
-	if (HighlightedObject)
-		HighlightedObject->Outline->ShowOutline();
+	if (OutlinedObject)
+		OutlinedObject->HideOutline();
+	OutlinedObject = NewOutline;
+	if (OutlinedObject)
+		OutlinedObject->ShowOutline();
 }
 
 // Sets default values
@@ -97,12 +97,13 @@ void AEcoscapeFPPlayerCharacter::Tick(float DeltaTime)
 		UInteractionPrompt* InteractionPrompt = Cast<AEcoscapePlayerController>(Controller)->GetInteractionPrompt();
 		if (GetWorld()->LineTraceSingleByChannel(Hit, EyeHeight, EyeHeight + (LookDir * InteractionRange), ECC_WorldStatic, Params))
 		{
-			AEcoscapeObject* AsEcoscapeObject = Cast<AEcoscapeObject>(Hit.GetActor());
+			UOutlineComponent* Outline = Cast<UOutlineComponent>(Hit.GetActor()->GetComponentByClass(UOutlineComponent::StaticClass()));
 
-			if (UInteractableComponent* Interactable = Cast<UInteractableComponent>(Hit.GetActor()->GetComponentByClass(UInteractableComponent::StaticClass())))
+			UInteractableComponent* Interactable = Cast<UInteractableComponent>(Hit.GetActor()->GetComponentByClass(UInteractableComponent::StaticClass()));
+			if (Interactable && Interactable->bCanInteract)
 			{
-				if (AsEcoscapeObject)
-					HighlightObject(AsEcoscapeObject);
+				if (Outline)
+					HighlightObject(Outline);
 				CurrentInteractable = Interactable;
 				InteractionPrompt->ShowPrompt(Interactable);
 			} 

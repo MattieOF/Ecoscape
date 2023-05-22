@@ -37,6 +37,12 @@ void AEcoscapeGameModeBase::BeginPlay()
 	else
 		CodexFeed->AddToViewport();
 
+	NotificationPanel = CreateWidget<UNotificationPanel>(GetWorld(), NotificationsWidgetClass);
+	if (!NotificationPanel)
+		ECO_LOG_ERROR("Failed to create notification panel!");
+	else
+		NotificationPanel->AddToViewport();
+	
 	FScriptDelegate AnimalHappinessUpdatedDelegate;
 	AnimalHappinessUpdatedDelegate.BindUFunction(this, "OnAnimalHappinessUpdated");
 	AnimalHappinessUpdated.Add(AnimalHappinessUpdatedDelegate);
@@ -93,6 +99,17 @@ void AEcoscapeGameModeBase::OnAnimalHappinessUpdated(ABaseAnimal* Animal, float 
 	{
 		UnlockNextAnimal();
 	}
+
+	for (const auto& ArrayAnimal : CurrentAnimals)
+	{
+		if (ArrayAnimal.Value == Animal)
+		{
+			if (!Animal->bIsSick && SickAnimals.Contains(ArrayAnimal.Key))
+				SickAnimals.Remove(ArrayAnimal.Key);
+			else if (Animal->bIsSick && !SickAnimals.Contains(ArrayAnimal.Key))
+				SickAnimals.Add(ArrayAnimal.Key);
+		}
+	}
 }
 
 void AEcoscapeGameModeBase::OnAnimalDies(ABaseAnimal* Animal)
@@ -135,4 +152,20 @@ void AEcoscapeGameModeBase::GiveCodexEntry(UCodexEntry* CodexEntry)
 		Codex->UpdateEntries();
 		CodexFeed->AddUnlock(CodexEntry);
 	}
+}
+
+bool AEcoscapeGameModeBase::CanAnimalGetSick(ABaseAnimal* Animal)
+{
+	for (const auto& ArrayAnimal : CurrentAnimals)
+	{
+		if (ArrayAnimal.Value == Animal)
+		{
+			if (CurrentProgressionStage >= Progression->Stages.Num() - 1)
+				return true;
+
+			return ArrayAnimal.Key < CurrentProgressionStage;			
+		}
+	}
+
+	return false;
 }

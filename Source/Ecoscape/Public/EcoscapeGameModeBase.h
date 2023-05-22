@@ -15,6 +15,16 @@ class ABaseAnimal;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAnimalHappinessUpdated, ABaseAnimal*, Animal, float, NewHappiness);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAnyAnimalDies, ABaseAnimal*, Animal);
 
+UCLASS(Blueprintable)
+class UNotificationPanel : public UUserWidget
+{
+	GENERATED_BODY()
+
+public:
+	UFUNCTION(BlueprintImplementableEvent)
+	void AddNotification(const FText& Title, const FText& Content, float Time = 5, UTexture2D* Icon = nullptr);
+};
+
 USTRUCT()
 struct FEcoscapeProgressionItem
 {
@@ -78,6 +88,9 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	TMap<int, ABaseAnimal*> CurrentAnimals;
 
+	UPROPERTY(BlueprintReadWrite)
+	TArray<int> SickAnimals;
+
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UAnimalUnlockedWidget> AnimalUnlockedWidgetClass;
 	
@@ -86,6 +99,9 @@ public:
 	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UCodexFeedUI> CodexFeedWidgetClass;
+	
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UNotificationPanel> NotificationsWidgetClass;
 	
 	UFUNCTION()
 	void OnAnimalHappinessUpdated(ABaseAnimal* Animal, float NewHappiness);
@@ -102,9 +118,18 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void GiveCodexEntry(UCodexEntry* CodexEntry);
 
+	UFUNCTION(BlueprintCallable)
+	bool CanAnimalGetSick(ABaseAnimal* Animal);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE float GetAnimalSicknessModifier() { return FMath::Clamp(1 - (SickAnimals.Num() / 5), 0, 1); }
+
 	UPROPERTY(BlueprintReadWrite)
 	TArray<UCodexEntry*> UnlockedCodexEntries;
 	
+	UPROPERTY(BlueprintReadOnly)
+	UNotificationPanel* NotificationPanel;
+
 protected:
 	UPROPERTY(BlueprintReadOnly)
 	UCodexUI* Codex;

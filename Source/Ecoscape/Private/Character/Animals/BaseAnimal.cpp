@@ -10,6 +10,7 @@
 #include "EcoscapeStats.h"
 #include "MessageLogModule.h"
 #include "NavigationSystem.h"
+#include "VorbisAudioInfo.h"
 #include "Animation/AnimInstance.h"
 #include "Async/Async.h"
 #include "Character/EcoscapePlayerController.h"
@@ -173,7 +174,7 @@ void FUpdateHappiness::EnqueueAnimalForUpdate(ABaseAnimal* Animal, bool bRunIfNo
 ABaseAnimal::ABaseAnimal()
 {
 	PrimaryActorTick.bCanEverTick = true;
-
+	
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 	
 	bUseControllerRotationYaw = false;
@@ -192,6 +193,12 @@ ABaseAnimal::ABaseAnimal()
 
 	Audio = CreateDefaultSubobject<UAudioComponent>("Audio");
 	Audio->SetupAttachment(RootComponent);
+
+	Outline = CreateDefaultSubobject<UOutlineComponent>("Outline");
+	GetMesh()->ComponentTags.Add("Outline");
+	Outline->RefreshOutlinedComponents();
+
+	SicknessInteraction = CreateDefaultSubobject<USickAnimalInteractionComponent>("Sick Interaction");
 }
 
 void ABaseAnimal::BeginPlay()
@@ -255,6 +262,14 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 	}
 	else
 		Thirst = FMath::Max(0, Thirst - (DeltaSeconds * AnimalData->ThirstRate * (bIsSleeping ? 0.3f : 1)));
+
+	// Sickness
+	if (Health > 0 && bIsSick && Medicine <= 0)
+	{
+		Health -= 2 * DeltaSeconds;
+		if (Health <= 0)
+			DeathMessage = FText::FromString("was sick.");
+	}
 	
 	// Healing
 	if (Hunger > 0 && Thirst > 0 && !bIsTrapped)
@@ -286,6 +301,44 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 		FoodWaterCheckTimer -= GetWorld()->DeltaRealTimeSeconds;
 		if (FoodWaterCheckTimer <= 0)
 			CheckFoodWater();
+	}
+
+	SicknessInteraction->bCanInteract = bIsSick && Medicine <= 0;
+
+	if (Medicine > 0)
+	{
+		if (bIsSick)
+		{
+			Medicine -= 0.05 * DeltaSeconds;
+		} else Medicine = 0;
+	}
+	
+	if (SicknessCheckTimer > 0)
+	{
+		SicknessCheckTimer -= DeltaSeconds;
+		if (SicknessCheckTimer <= 0)
+		{
+			auto GameMode = AEcoscapeGameModeBase::GetEcoscapeBaseGameMode(GetWorld());
+			if (bIsSick
+				&& Medicine > 0)
+			{
+				if (FMath::FRand() <= 0.05f)
+				{
+					bIsSick = false;
+					Medicine = 0;
+				}
+			}
+			else if (!bIsSick
+				&& GameMode->CanAnimalGetSick(this)
+			    && FMath::FRand() <= AnimalData->SicknessChance * GameMode->GetAnimalSicknessModifier())
+			{
+				bIsSick = true;
+				GameMode->NotificationPanel->AddNotification(FText::FromString(FString::Printf(TEXT("%s is sick!"), *GivenName)),
+				                                                                                               FText::FromString(FString::Printf(TEXT("Go to your %s and give them medicine."), *AssociatedTerrain->TerrainName)));
+				RecalculateHappiness();
+			}
+			SicknessCheckTimer = 1;
+		}
 	}
 	
 	// Do sound
@@ -541,7 +594,7 @@ void ABaseAnimal::RecalculateHappiness()
 	FreedomHappiness = FMath::Clamp(PercentageOfHabitatAvailable * 2.5, 0, 1);
 	FoodHappiness    = FMath::Clamp(FoodSourcesAvailable / 6, 0, 1);
 	DrinkHappiness   = FMath::Clamp(0.5 + DrinkSourcesAvailable, 0, 1);
-	DiseaseHappiness = 1;
+	DiseaseHappiness = bIsSick ? 0.3 : 1;
 	if (AssociatedTerrain)
 		EnvironmentHappiness = FMath::Clamp(AssociatedTerrain->Diversity * 1.15, 0, 1);
 
@@ -580,6 +633,11 @@ void ABaseAnimal::CheckFoodWater()
 	}
 	
 	FoodWaterCheckTimer = 5;
+}
+
+void ABaseAnimal::GiveMedicine()
+{
+	Medicine = 1;
 }
 
 void ABaseAnimal::Die()

@@ -39,6 +39,9 @@ public:
 	float ThirstRate = 0.008f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Basic")
+	float SicknessChance = 0.005f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Basic")
 	UTexture2D* Icon;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Basic")

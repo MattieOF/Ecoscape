@@ -4,11 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "AnimalData.h"
+#include "SickAnimalInteractionComponent.h"
 #include "EnvironmentQuery/EnvQueryManager.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Character.h"
 #include "BaseAnimal.generated.h"
 
+class UOutlineComponent;
 class ABaseAnimal;
 class AEcoscapeTerrain;
 
@@ -130,6 +132,9 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	float DrinkSourcesAvailable = 0;
 
+	UPROPERTY(BlueprintReadWrite)
+	bool bIsSick = false;
+	
 	UPROPERTY(BlueprintReadWrite, Category = "Happiness")
 	bool bHasHappinessOverride = false;
 	UPROPERTY(BlueprintReadWrite, Category = "Happiness")
@@ -161,6 +166,12 @@ public:
 	void CheckFoodWater();
 
 	UFUNCTION(BlueprintCallable)
+	void GiveMedicine();
+
+	UPROPERTY(BlueprintReadWrite)
+	float Medicine = 0;
+
+	UFUNCTION(BlueprintCallable)
 	void Die();
 
 	FEnvQueryRequest FoodRequest, WaterRequest;
@@ -176,9 +187,15 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	AEcoscapeTerrain* AssociatedTerrain;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UOutlineComponent* Outline;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USickAnimalInteractionComponent* SicknessInteraction;
 	
 private:
-	float SoundTimer = 0, HappinessRecalcTimer = 1, FreedomCheckTimer = 2, FoodWaterCheckTimer = 5;
+	float SoundTimer = 0, HappinessRecalcTimer = 1, FreedomCheckTimer = 2, FoodWaterCheckTimer = 5, SicknessCheckTimer = 1;
 	FRotator TargetRotation;
 	static TSharedPtr<FUpdateHappiness> HappinessUpdateRunnable;
 	FDelegateHandle TerrainWalkabilityHandle;

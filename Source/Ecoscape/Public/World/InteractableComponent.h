@@ -23,4 +23,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintAssignable)
 	FOnInteractedWith OnInteractedWith;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bCanInteract = true;
 };

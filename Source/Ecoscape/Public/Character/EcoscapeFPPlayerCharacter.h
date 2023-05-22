@@ -120,10 +120,10 @@ protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY()
-	AEcoscapeObject* HighlightedObject;
+	UOutlineComponent* OutlinedObject;
 	UPROPERTY()
 	UInteractableComponent* CurrentInteractable;
-	void HighlightObject(AEcoscapeObject* NewObject);
+	void HighlightObject(UOutlineComponent* NewOutline);
 	
 public:
 	AEcoscapeFPPlayerCharacter(const FObjectInitializer& ObjectInitializer);
