@@ -253,6 +253,13 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	void GetPlayablePoints(TArray<FVector>& OutPoints);
 
+	FORCEINLINE FVector GetRandomPlayablePoint()
+	{
+		return GetVertexPositionWorld(GetVertexIndex(
+			FMath::RandRange(ExteriorTileCount + 2, Width - (ExteriorTileCount + 2)),
+			FMath::RandRange(ExteriorTileCount + 2, Height - (ExteriorTileCount + 2))));
+	}
+
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool GetRandomDrinkLocation(FDrinkLocation& OutDrinkLocation);
 	UFUNCTION(BlueprintCallable, BlueprintPure)

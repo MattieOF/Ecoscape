@@ -160,9 +160,15 @@ public:
 	UFUNCTION()
 	void CheckFoodWater();
 
+	UFUNCTION(BlueprintCallable)
+	void Die();
+
 	FEnvQueryRequest FoodRequest, WaterRequest;
 
 	bool bNeedsFreedomUpdate = true;
+
+	UPROPERTY(BlueprintReadWrite)
+	FText DeathMessage = FText::FromString("died.");
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

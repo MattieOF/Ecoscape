@@ -30,7 +30,7 @@ public:
 	static APlacedItem* SpawnItem(UWorld* World, UPlaceableItemData* ItemData, 
 		FVector Position, FVector Scale = FVector(1, 1, 1), FRotator Rotation = FRotator::ZeroRotator);
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	AEcoscapeTerrain* AssociatedTerrain;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)

@@ -230,19 +230,31 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 	if (bDead)
 		return;
 	
+	if (Health > 0 && bIsTrapped)
+	{
+		Health -= 4 * DeltaSeconds;
+		if (Health <= 0)
+			DeathMessage = FText::FromString("was trapped.");
+	}
+	
 	// Do hunger
-	if (Hunger <= 0 && !bIsEating)
+	if (Health > 0 && Hunger <= 0 && !bIsEating)
+	{
 		Health -= 1 * DeltaSeconds; // Panda will die in ~60 seconds from no food
+		if (Health <= 0)
+			DeathMessage = FText::FromString("starved to death.");
+	}
 	else
 		Hunger = FMath::Max(0, Hunger - (DeltaSeconds * AnimalData->HungerRate * (bIsSleeping ? 0.3f : 1)));
 
-	if (Thirst <= 0 && !bIsDrinking)
+	if (Health > 0 && Thirst <= 0 && !bIsDrinking)
+	{
 		Health -= 2 * DeltaSeconds;
+		if (Health <= 0)
+			DeathMessage = FText::FromString("died of dehydration.");
+	}
 	else
 		Thirst = FMath::Max(0, Thirst - (DeltaSeconds * AnimalData->ThirstRate * (bIsSleeping ? 0.3f : 1)));
-
-	if (bIsTrapped)
-		Health -= 4 * DeltaSeconds;
 	
 	// Healing
 	if (Hunger > 0 && Thirst > 0 && !bIsTrapped)
@@ -250,11 +262,8 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 	
 	if (!bDead && Health <= 0)
 	{
-		bDead = true;
-		Health = 0;
-		OnDeath.Broadcast();
+		Die();
 		Cast<AAIController>(Controller)->GetBrainComponent()->StopLogic("Death");
-		AEcoscapeGameModeBase::GetEcoscapeBaseGameMode(GetWorld())->AnimalDies.Broadcast(this);
 		SetLifeSpan(5);
 	}
 
@@ -571,6 +580,14 @@ void ABaseAnimal::CheckFoodWater()
 	}
 	
 	FoodWaterCheckTimer = 5;
+}
+
+void ABaseAnimal::Die()
+{
+	bDead = true;
+	Health = 0;
+	OnDeath.Broadcast();
+	AEcoscapeGameModeBase::GetEcoscapeBaseGameMode(GetWorld())->AnimalDies.Broadcast(this);
 }
 
 // void ABaseAnimal::OnNavTest()
