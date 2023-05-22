@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Character/Animals/BaseAnimal.h"
+#include "UMG/Public/Blueprint/UserWidget.h"
 #include "AnimalUI.generated.h"
 
 UINTERFACE(Blueprintable)
@@ -23,4 +24,14 @@ public:
 	void Hide();
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
 	void SetAnimal(ABaseAnimal* Animal);
+};
+
+UCLASS(Blueprintable)
+class UAnimalUnlockedWidget : public UUserWidget
+{
+	GENERATED_BODY()
+
+public:
+	UFUNCTION(BlueprintImplementableEvent)
+	void SetAnimal(UAnimalData* Animal, const FString& HabitatName);
 };

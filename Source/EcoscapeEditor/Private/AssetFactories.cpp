@@ -3,6 +3,7 @@
 #include "AssetFactories.h"
 
 #include "Character/Animals/AnimalData.h"
+#include "UI/Codex.h"
 #include "World/PlaceableItemData.h"
 
 UPlaceableItemFactory::UPlaceableItemFactory()
@@ -29,4 +30,17 @@ UObject* UAnimalDataFactory::FactoryCreateNew(UClass* Class, UObject* InParent, 
 	UObject* Context, FFeedbackContext* Warn)
 {
 	return NewObject<UAnimalData>(InParent, Class, Name, Flags, Context);
+}
+
+UCodexEntryFactory::UCodexEntryFactory()
+{
+	SupportedClass = UCodexEntry::StaticClass();
+	bEditAfterNew = true;
+	bCreateNew = true;
+}
+
+UObject* UCodexEntryFactory::FactoryCreateNew(UClass* Class, UObject* InParent, FName Name, EObjectFlags Flags,
+	UObject* Context, FFeedbackContext* Warn)
+{
+	return NewObject<UCodexEntry>(InParent, Class, Name, Flags, Context);
 }

@@ -32,13 +32,22 @@ void FEcoscapeEditorModule::StartupModule()
 	EcoscapeAssetCategory = AssetTools.RegisterAdvancedAssetCategory(FName(TEXT("EcoscapeCategory")),LOCTEXT("EcoscapeCategory", "Ecoscape"));
 	PlaceableItemAssetActions = MakeShared<FPlaceableItemAssetActions>();
 	AssetTools.RegisterAssetTypeActions(PlaceableItemAssetActions.ToSharedRef());
-	AnimalDataItemAssetActions = MakeShared<FAnimalDataAssetActions>();
-	AssetTools.RegisterAssetTypeActions(AnimalDataItemAssetActions.ToSharedRef());
+	AnimalDataAssetActions = MakeShared<FAnimalDataAssetActions>();
+	AssetTools.RegisterAssetTypeActions(AnimalDataAssetActions.ToSharedRef());
+	CodexEntryAssetActions = MakeShared<FCodexEntryAssetActions>();
+	AssetTools.RegisterAssetTypeActions(CodexEntryAssetActions.ToSharedRef());
 }
 
 void FEcoscapeEditorModule::ShutdownModule()
 {
 	UE_LOG(LogEcoscapeEditor, Warning, TEXT("EcoscapeEditor: Log Ended"));
+	
+	if (!FModuleManager::Get().IsModuleLoaded("AssetTools"))
+	{
+		FAssetToolsModule::GetModule().Get().UnregisterAssetTypeActions(PlaceableItemAssetActions.ToSharedRef());
+		FAssetToolsModule::GetModule().Get().UnregisterAssetTypeActions(AnimalDataAssetActions.ToSharedRef());
+		FAssetToolsModule::GetModule().Get().UnregisterAssetTypeActions(CodexEntryAssetActions.ToSharedRef());
+	}
 }
 
 void FEcoscapeEditorModule::AddMenuEntries(FMenuBuilder& MenuBuilder)
@@ -81,11 +90,6 @@ void FEcoscapeEditorModule::GeneratePlaceableData()
     	Item->CreateIcon();
     	Item->CreateValidTerrainsArray();
     }
-
-	if (!FModuleManager::Get().IsModuleLoaded("AssetTools"))
-	{
-		FAssetToolsModule::GetModule().Get().UnregisterAssetTypeActions(PlaceableItemAssetActions.ToSharedRef());
-	}
 }
 
 void FEcoscapeEditorModule::RefreshItemDir()

@@ -20,5 +20,6 @@ private:
 	void RefreshItemDir();
 
 	TSharedPtr<FPlaceableItemAssetActions> PlaceableItemAssetActions;
-	TSharedPtr<FAnimalDataAssetActions> AnimalDataItemAssetActions;
+	TSharedPtr<FAnimalDataAssetActions> AnimalDataAssetActions;
+	TSharedPtr<FCodexEntryAssetActions> CodexEntryAssetActions;
 };

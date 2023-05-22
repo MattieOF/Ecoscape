@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "AssetTypeActions_Base.h"
 #include "Character/Animals/AnimalData.h"
+#include "UI/Codex.h"
 #include "World/PlaceableItemData.h"
 
 #define LOCTEXT_NAMESPACE "EcoscapeEditor"
@@ -27,6 +28,16 @@ public:
 	virtual FColor GetTypeColor() const override { return FColor::Red; }
 	virtual FText GetAssetDescription(const FAssetData &AssetData) const override { return LOCTEXT("AnimalDesc", "Asset containg data for a type of animal."); }
 	virtual UClass* GetSupportedClass() const override { return UAnimalData::StaticClass(); }
+};
+
+class FCodexEntryAssetActions : public FAssetTypeActions_Base
+{
+public:
+	virtual FText GetName() const override { return LOCTEXT("CodexEntry", "Codex Entry"); }
+	virtual uint32 GetCategories() override { return EcoscapeAssetCategory; }
+	virtual FColor GetTypeColor() const override { return FColor::Green; }
+	virtual FText GetAssetDescription(const FAssetData &AssetData) const override { return LOCTEXT("CodexEntryDesc", "Asset containg data for a codex entry."); }
+	virtual UClass* GetSupportedClass() const override { return UCodexEntry::StaticClass(); }
 };
 
 #undef LOCTEXT_NAMESPACE

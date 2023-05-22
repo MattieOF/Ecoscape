@@ -538,7 +538,7 @@ void ABaseAnimal::OnReceiveHappinessUpdated(FHappinessUpdateInfo Info)
 
 void ABaseAnimal::RecalculateHappiness()
 {
-	FreedomHappiness = FMath::Clamp(PercentageOfHabitatAvailable * 1.8, 0, 1);
+	FreedomHappiness = FMath::Clamp(PercentageOfHabitatAvailable * 2.5, 0, 1);
 	FoodHappiness    = FMath::Clamp(FoodSourcesAvailable / 6, 0, 1);
 	DrinkHappiness   = FMath::Clamp(0.5 + DrinkSourcesAvailable, 0, 1);
 	DiseaseHappiness = 1;
