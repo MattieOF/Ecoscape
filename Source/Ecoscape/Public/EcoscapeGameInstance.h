@@ -9,6 +9,7 @@
 #include "World/PlaceableItemData.h"
 #include "EcoscapeGameInstance.generated.h"
 
+class UCodexEntry;
 class UAnimalData;
 
 UCLASS(BlueprintType)
@@ -78,7 +79,12 @@ public:
 	TMap<FString, UPlaceableItemData*> ItemTypes;
 	UPROPERTY(BlueprintReadOnly)
 	TMap<FString, UAnimalData*> AnimalTypes;
+	UPROPERTY(BlueprintReadOnly)
+	TMap<FString, UCodexEntry*> CodexEntries;
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE UCodexEntry* GetCodexEntry(FString EntryName) { return CodexEntries.Contains(EntryName) ? CodexEntries[EntryName] : nullptr; }
+	
 	UPROPERTY(BlueprintReadOnly)
 	UItemDirectory* ItemDirectory;
 
@@ -90,6 +96,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	AEcoscapeTerrain* GetTerrain(FString TerrainName);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	TArray<AEcoscapeTerrain*> GetAllTerrains();
 
 	UFUNCTION(BlueprintCallable)
 	int AddTerrain(AEcoscapeTerrain* Terrain);

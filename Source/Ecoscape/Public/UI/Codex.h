@@ -10,17 +10,19 @@
 /**
  * Data representing a codex entry
  */
-UCLASS()
+UCLASS(BlueprintType)
 class ECOSCAPE_API UCodexEntry : public UDataAsset
 {
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FText Title;
-	UPROPERTY(EditAnywhere, meta = (MultiLine = true))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FText ShortDescription;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (MultiLine = true))
 	FText Content;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bDismissable = true;
 };
 
@@ -51,4 +53,10 @@ class UCodexFeedUI : public UUserWidget
 public:
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
 	void AddUnlock(UCodexEntry* Entry);
+
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
+	void OpenLatest();
+
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
+	void TryDismissLatest();
 };

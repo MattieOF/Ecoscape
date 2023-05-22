@@ -62,7 +62,7 @@ public:
 
 	virtual void BeginPlay() override;
 
-	// virtual void Tick(float DeltaSeconds) override;
+	virtual void Tick(float DeltaSeconds) override;
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta=(WorldContext="WorldContext"))
 	static FORCEINLINE AEcoscapeGameModeBase* GetEcoscapeBaseGameMode(UObject* WorldContext)
@@ -130,10 +130,25 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	UNotificationPanel* NotificationPanel;
 
-protected:
-	UPROPERTY(BlueprintReadOnly)
-	UCodexUI* Codex;
+	UFUNCTION(BlueprintCallable, Exec)
+	void StartNewSave();
+
+	UFUNCTION(BlueprintCallable)
+	void AddWidgetToQueue(UUserWidget* Widget);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE bool IsWidgetQueueEmpty() { return WidgetQueue.IsEmpty(); }
 
 	UPROPERTY(BlueprintReadOnly)
 	UCodexFeedUI* CodexFeed;
+
+	UPROPERTY(BlueprintReadOnly)
+	UCodexUI* Codex;
+	
+protected:
+	UPROPERTY()
+	TArray<UUserWidget*> WidgetQueue;
+
+	UPROPERTY()
+	UUserWidget* CurrentWidget = nullptr;
 };

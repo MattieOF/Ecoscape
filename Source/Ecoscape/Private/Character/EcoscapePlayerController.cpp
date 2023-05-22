@@ -7,6 +7,7 @@
 #include "Character/EcoscapePlayerController.h"
 
 #include "EcoscapeGameInstance.h"
+#include "EcoscapeGameModeBase.h"
 #include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
 #include "Camera/CameraActor.h"
@@ -120,6 +121,8 @@ void AEcoscapePlayerController::BeginPlay()
 	InputComponent->BindAction("UseAltTool", IE_Released, this, &AEcoscapePlayerController::OnStopUseAltTool);
 	InputComponent->BindAction("ResetTool", IE_Pressed, this, &AEcoscapePlayerController::OnResetTool);
 	InputComponent->BindAction("HabitatSelect", IE_Pressed, this, &AEcoscapePlayerController::GoToHabitatSelect);
+	InputComponent->BindAction("OpenCodex", IE_Pressed, this, &AEcoscapePlayerController::OnViewCodex);
+	InputComponent->BindAction("DismissCodex", IE_Pressed, this, &AEcoscapePlayerController::OnDismissCodex);
 	
 	Super::BeginPlay();
 	
@@ -253,6 +256,20 @@ void AEcoscapePlayerController::OnInteract()
 {
 	if (CurrentView == EPSFirstPerson)
 		FPCharacter->Interact();
+}
+
+void AEcoscapePlayerController::OnViewCodex()
+{
+	if (CurrentView == EPSMenu)
+		return;
+	AEcoscapeGameModeBase::GetEcoscapeBaseGameMode(GetWorld())->CodexFeed->OpenLatest();
+}
+
+void AEcoscapePlayerController::OnDismissCodex()
+{
+	if (CurrentView == EPSMenu)
+		return;
+	AEcoscapeGameModeBase::GetEcoscapeBaseGameMode(GetWorld())->CodexFeed->TryDismissLatest();
 }
 
 void AEcoscapePlayerController::SetView(const EEcoscapePlayerView NewView, const bool bInstant, const float BlendTime)

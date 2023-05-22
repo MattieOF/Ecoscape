@@ -28,14 +28,14 @@ TSharedPtr<FUpdateHappiness> ABaseAnimal::HappinessUpdateRunnable;
 
 FUpdateHappiness::FUpdateHappiness()
 {
-	Thread = FRunnableThread::Create( this, TEXT("Animal Available Space Check"), 0, TPri_Lowest);
+	Thread = FRunnableThread::Create(this, TEXT("Animal Available Space Check"), 0, TPri_Lowest);
 }
 
 FUpdateHappiness::~FUpdateHappiness()
 {
-	if ( Thread != nullptr )
+	if (Thread != nullptr)
 	{
-		Thread->Kill( true );
+		Thread->Kill(true);
 		delete Thread;
 	}
 }
@@ -71,7 +71,7 @@ uint32 FUpdateHappiness::Run()
 		const int StartIndex = Animal->GetTerrain()->GetClosestVertex(Animal->GetActorLocation());
 		FVector2D Pos = Animal->GetTerrain()->GetVertexXY(StartIndex);
 		const TArray Walkable = Animal->GetTerrain()->Walkable;
-		
+
 		TArray<int> WalkablePoints;
 		if (!Walkable[StartIndex])
 		{
@@ -105,11 +105,11 @@ uint32 FUpdateHappiness::Run()
 				{
 					WalkablePoints.AddUnique(I);
 					X--;
-				
+
 					I = ((X - 1) * (Width + 1)) + Current.Z;
 				}
 			}
-		
+
 			if (X < Current.X)
 				PointsToSearch.Enqueue(FVector4(X, Current.X - 1, Current.Z - Current.W, -Current.W));
 			while (Current.X <= Current.Y)
@@ -121,23 +121,26 @@ uint32 FUpdateHappiness::Run()
 					Current.X++;
 					PointsToSearch.Enqueue(FVector4(X, Current.X - 1, Current.Z + Current.W, Current.W));
 					if (Current.X - 1 > Current.Y)
-						PointsToSearch.Enqueue(FVector4(Current.Y + 1, Current.X - 1, Current.Z - Current.W, -Current.W));
-				
+						PointsToSearch.Enqueue(
+							FVector4(Current.Y + 1, Current.X - 1, Current.Z - Current.W, -Current.W));
+
 					I = (Current.X * (Width + 1)) + Current.Z;
 				}
 				Current.X++;
 				I = (Current.X * (Width + 1)) + Current.Z;
-				while (Current.X < Current.Y && !(!WalkablePoints.Contains(I) && I >= 0 && I < Walkable.Num() && Walkable[I]))
+				while (Current.X < Current.Y && !(!WalkablePoints.Contains(I) && I >= 0 && I < Walkable.Num() &&
+					Walkable[I]))
 				{
 					Current.X++;
 					I = (Current.X * (Width + 1)) + Current.Z;
 				}
-				X = Current.X; 
+				X = Current.X;
 			}
 		}
 
 		FHappinessUpdateInfo UpdateInfo;
-		UpdateInfo.PercentageOfHabitatAvailable = FMath::Clamp(static_cast<float>(WalkablePoints.Num()) / TheoreticalWalkablePointsNum, 0, 1);
+		UpdateInfo.PercentageOfHabitatAvailable = FMath::Clamp(
+			static_cast<float>(WalkablePoints.Num()) / TheoreticalWalkablePointsNum, 0, 1);
 		UpdateInfo.Reachable = WalkablePoints;
 		Animal->OnHappinessUpdated.Broadcast(UpdateInfo);
 		// AsyncTask(ENamedThreads::GameThread, [UpdateInfo, Animal] ()
@@ -147,7 +150,7 @@ uint32 FUpdateHappiness::Run()
 
 		CurrentlyQueued.Remove(Animal);
 	}
-	
+
 	return 0;
 }
 
@@ -174,9 +177,9 @@ void FUpdateHappiness::EnqueueAnimalForUpdate(ABaseAnimal* Animal, bool bRunIfNo
 ABaseAnimal::ABaseAnimal()
 {
 	PrimaryActorTick.bCanEverTick = true;
-	
+
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
-	
+
 	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->RotationRate.Yaw = 180;
 	GetCharacterMovement()->bOrientRotationToMovement = false;
@@ -207,7 +210,7 @@ void ABaseAnimal::BeginPlay()
 
 	if (!HappinessUpdateRunnable)
 		HappinessUpdateRunnable = MakeShared<FUpdateHappiness>();
-	
+
 	if (!AnimalData)
 	{
 		ECO_LOG_ERROR(FString::Printf(TEXT("Null AnimalData in %s"), *GetName()));
@@ -236,14 +239,14 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 
 	if (bDead)
 		return;
-	
+
 	if (Health > 0 && bIsTrapped)
 	{
 		Health -= 4 * DeltaSeconds;
 		if (Health <= 0)
 			DeathMessage = FText::FromString("was trapped.");
 	}
-	
+
 	// Do hunger
 	if (Health > 0 && Hunger <= 0 && !bIsEating)
 	{
@@ -270,11 +273,11 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 		if (Health <= 0)
 			DeathMessage = FText::FromString("was sick.");
 	}
-	
+
 	// Healing
 	if (Hunger > 0 && Thirst > 0 && !bIsTrapped)
 		Health = FMath::Min(AnimalData->BaseHealth, Health + (DeltaSeconds * OverallHappiness * 3));
-	
+
 	if (!bDead && Health <= 0)
 	{
 		Die();
@@ -282,8 +285,10 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 		SetLifeSpan(5);
 	}
 
-	DrawDebugString(GetWorld(), GetActorLocation() + FVector(0, 0, 100),
-	                 FString::Printf(TEXT("HP: %f, Hunger: %f, Thirst: %f, Freedom: %f"), Health, Hunger, Thirst, PercentageOfHabitatAvailable), nullptr, FColor::White, DeltaSeconds);
+	// DrawDebugString(GetWorld(), GetActorLocation() + FVector(0, 0, 100),
+	//                 FString::Printf(
+	// 	                TEXT("HP: %f, Hunger: %f, Thirst: %f, Freedom: %f"), Health, Hunger, Thirst,
+	// 	                PercentageOfHabitatAvailable), nullptr, FColor::White, DeltaSeconds);
 
 	if (HappinessRecalcTimer > 0)
 	{
@@ -291,11 +296,11 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 		if (HappinessRecalcTimer <= 0)
 			RecalculateHappiness();
 	}
-	
-	FreedomCheckTimer    -= DeltaSeconds;
+
+	FreedomCheckTimer -= DeltaSeconds;
 	if (FreedomCheckTimer <= 0)
 		UpdateHappiness();
-	
+
 	if (FoodWaterCheckTimer > 0)
 	{
 		FoodWaterCheckTimer -= GetWorld()->DeltaRealTimeSeconds;
@@ -310,9 +315,10 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 		if (bIsSick)
 		{
 			Medicine -= 0.05 * DeltaSeconds;
-		} else Medicine = 0;
+		}
+		else Medicine = 0;
 	}
-	
+
 	if (SicknessCheckTimer > 0)
 	{
 		SicknessCheckTimer -= DeltaSeconds;
@@ -330,17 +336,20 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 			}
 			else if (!bIsSick
 				&& GameMode->CanAnimalGetSick(this)
-			    && FMath::FRand() <= AnimalData->SicknessChance * GameMode->GetAnimalSicknessModifier())
+				&& FMath::FRand() <= AnimalData->SicknessChance * GameMode->GetAnimalSicknessModifier())
 			{
 				bIsSick = true;
-				GameMode->NotificationPanel->AddNotification(FText::FromString(FString::Printf(TEXT("%s is sick!"), *GivenName)),
-				                                                                                               FText::FromString(FString::Printf(TEXT("Go to your %s and give them medicine."), *AssociatedTerrain->TerrainName)));
+				GameMode->NotificationPanel->AddNotification(
+					FText::FromString(FString::Printf(TEXT("%s is sick!"), *GivenName)),
+					FText::FromString(
+						FString::Printf(
+							TEXT("Go to your %s and give them medicine."), *AssociatedTerrain->TerrainName)));
 				RecalculateHappiness();
 			}
 			SicknessCheckTimer = 1;
 		}
 	}
-	
+
 	// Do sound
 	if (AnimalData)
 	{
@@ -351,11 +360,11 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 			SoundTimer = FMath::FRandRange(AnimalData->SoundTimeRange.X, AnimalData->SoundTimeRange.Y);
 		}
 	}
-	
+
 	// Find target rotation
 	FRotator CurrentRotation = GetMesh()->GetComponentRotation();
 	double CurrentYaw = CurrentRotation.Yaw;
-	
+
 	if (GetCharacterMovement()->GetCurrentAcceleration().SizeSquared() < KINDA_SMALL_NUMBER)
 	{
 		// AI path following request can orient us in that direction (it's effectively an acceleration)
@@ -364,13 +373,13 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 	}
 	else
 		TargetYaw = GetCharacterMovement()->GetCurrentAcceleration().GetSafeNormal().Rotation().Yaw;
-	
+
 	FHitResult Hit;
 	if (GetWorld()->LineTraceSingleByChannel(Hit, GetActorLocation(), GetActorLocation() + FVector(0, 0, -350),
 	                                         ECC_ITEM_PLACEABLE_ON))
 	{
 		GetMesh()->SetWorldRotation(FRotator(0, CurrentYaw, 0));
-		
+
 		// Set mesh rotation to match terrain
 		auto Rotation = UKismetMathLibrary::Conv_VectorToRotator(Hit.ImpactNormal);
 		FVector NormalVector = UKismetMathLibrary::VLerp(FVector::UpVector, Hit.ImpactNormal, 0.4f);
@@ -391,7 +400,8 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 		TargetRotation = FRotator(0, CurrentYaw, 0);
 
 	// Interpolate towards target rotation
-	GetMesh()->SetWorldRotation(UKismetMathLibrary::RInterpTo_Constant(CurrentRotation, TargetRotation, DeltaSeconds, 15));
+	GetMesh()->SetWorldRotation(
+		UKismetMathLibrary::RInterpTo_Constant(CurrentRotation, TargetRotation, DeltaSeconds, 15));
 
 	FRotator CurrentRot = GetActorRotation();
 	FRotator TargetRot = CurrentRot;
@@ -441,7 +451,7 @@ void ABaseAnimal::SetAnimalData(UAnimalData* Data, bool bRecreateAI)
 			FoodRequest = FEnvQueryRequest(Data->FoodQuery, this);
 		if (Data->WaterQuery)
 			WaterRequest = FEnvQueryRequest(Data->WaterQuery, this);
-		
+
 		// Setup AI
 		AIControllerClass = Data->AI;
 
@@ -455,16 +465,20 @@ void ABaseAnimal::SetAnimalData(UAnimalData* Data, bool bRecreateAI)
 			SpawnInfo.Instigator = GetInstigator();
 			SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 			SpawnInfo.OverrideLevel = GetLevel();
-			SpawnInfo.ObjectFlags |= RF_Transient;	// We never want to save AI controllers into a map
-			AController* NewController = GetWorld()->SpawnActor<AController>(AIControllerClass, GetActorLocation(), GetActorRotation(), SpawnInfo);
+			SpawnInfo.ObjectFlags |= RF_Transient; // We never want to save AI controllers into a map
+			AController* NewController = GetWorld()->SpawnActor<AController>(
+				AIControllerClass, GetActorLocation(), GetActorRotation(), SpawnInfo);
 			if (NewController != nullptr)
 			{
 				// if successful will result in setting this->Controller 
 				// as part of possession mechanics
 				NewController->Possess(this);
-			} else
+			}
+			else
 			{
-				ECO_LOG_ERROR(FString::Printf(TEXT("In Animal %ls of type %ls, failed to create AI!"), *GetName(), *Data->SpeciesName.ToString()));
+				ECO_LOG_ERROR(
+					FString::Printf(TEXT("In Animal %ls of type %ls, failed to create AI!"), *GetName(), *Data->
+						SpeciesName.ToString()));
 			}
 		}
 	}
@@ -476,7 +490,7 @@ void ABaseAnimal::SetTerrain(AEcoscapeTerrain* Terrain)
 		AssociatedTerrain->WalkabilityUpdated.Remove(TerrainWalkabilityHandle);
 	AssociatedTerrain = Terrain;
 	if (AssociatedTerrain)
-		AssociatedTerrain->WalkabilityUpdated.AddLambda([this] { bNeedsFreedomUpdate = true; } );
+		AssociatedTerrain->WalkabilityUpdated.AddLambda([this] { bNeedsFreedomUpdate = true; });
 }
 
 ABaseAnimal* ABaseAnimal::SpawnAnimal(UObject* World, UAnimalData* Data, AEcoscapeTerrain* Terrain, FVector Position)
@@ -497,13 +511,13 @@ void ABaseAnimal::UpdateHappiness()
 	SCOPE_CYCLE_COUNTER(STAT_CheckHappiness);
 
 	FreedomCheckTimer = 2;
-	
+
 	if (bNeedsFreedomUpdate)
 	{
 		HappinessUpdateRunnable->EnqueueAnimalForUpdate(this);
 		bNeedsFreedomUpdate = false;
 	}
-	
+
 	//
 	// int WalkablePointsNum = AssociatedTerrain->GetWalkableVertCount();
 	// int StartIndex = AssociatedTerrain->GetClosestVertex(GetActorLocation());
@@ -524,7 +538,7 @@ void ABaseAnimal::UpdateHappiness()
 	//
 	// 	while (!WalkablePoints.Contains())
 	// }
-	
+
 	// ----
 	// NAV TEST 2
 	// ----
@@ -562,12 +576,12 @@ void ABaseAnimal::UpdateHappiness()
 	// {
 	// 	DrawDebugLine(GetWorld(), NavMeshTileGeo.NavMeshEdges[i], NavMeshTileGeo.NavMeshEdges[i + 1], FColor::Red, false, 2, 0, 5);
 	// }
-	
+
 	// ----
 	// FLOOD FILL 1
 	// ----
-	
-	
+
+
 	// if (bDrawNav)
 	// {
 	// 	for (const auto& WalkablePoint : WalkablePoints)
@@ -579,7 +593,7 @@ void ABaseAnimal::OnReceiveHappinessUpdated(FHappinessUpdateInfo Info)
 {
 	PercentageOfHabitatAvailable = Info.PercentageOfHabitatAvailable;
 	RecalculateHappiness();
-	
+
 	if (bDrawNav)
 	{
 		for (int Vert : Info.Reachable)
@@ -592,22 +606,23 @@ void ABaseAnimal::OnReceiveHappinessUpdated(FHappinessUpdateInfo Info)
 void ABaseAnimal::RecalculateHappiness()
 {
 	FreedomHappiness = FMath::Clamp(PercentageOfHabitatAvailable * 2.5, 0, 1);
-	FoodHappiness    = FMath::Clamp(FoodSourcesAvailable / 6, 0, 1);
-	DrinkHappiness   = FMath::Clamp(0.5 + DrinkSourcesAvailable, 0, 1);
+	FoodHappiness = FMath::Clamp(FoodSourcesAvailable / 6, 0, 1);
+	DrinkHappiness = FMath::Clamp(0.5 + DrinkSourcesAvailable, 0, 1);
 	DiseaseHappiness = bIsSick ? 0.3 : 1;
 	if (AssociatedTerrain)
 		EnvironmentHappiness = FMath::Clamp(AssociatedTerrain->Diversity * 1.15, 0, 1);
 
 	OverallHappiness = FMath::Clamp(FreedomHappiness, 0.25, 1)
-						* FMath::Clamp(FoodHappiness, 0.2, 1)
-						* FMath::Clamp(DrinkHappiness, 0.2, 1)
-						* FMath::Clamp(DiseaseHappiness, 0.2, 1)
-						* FMath::Clamp(EnvironmentHappiness, 0.25, 1);
+		* FMath::Clamp(FoodHappiness, 0.2, 1)
+		* FMath::Clamp(DrinkHappiness, 0.2, 1)
+		* FMath::Clamp(DiseaseHappiness, 0.2, 1)
+		* FMath::Clamp(EnvironmentHappiness, 0.25, 1);
 
 	if (bHasHappinessOverride)
 		OverallHappiness = HappinessOverride;
-	
-	AEcoscapeGameModeBase::GetEcoscapeBaseGameMode(GetWorld())->AnimalHappinessUpdated.Broadcast(this, OverallHappiness);
+
+	AEcoscapeGameModeBase::GetEcoscapeBaseGameMode(GetWorld())->AnimalHappinessUpdated.
+	                                                            Broadcast(this, OverallHappiness);
 
 	HappinessRecalcTimer = 1;
 }
@@ -616,22 +631,24 @@ void ABaseAnimal::CheckFoodWater()
 {
 	if (AnimalData->FoodQuery)
 	{
-		FoodRequest.Execute(EEnvQueryRunMode::AllMatching, FQueryFinishedSignature::CreateLambda([this] (TSharedPtr<FEnvQueryResult> Result)
-		{
-			FoodSourcesAvailable = Result->Items.Num();
-			RecalculateHappiness();
-		}));
+		FoodRequest.Execute(EEnvQueryRunMode::AllMatching, FQueryFinishedSignature::CreateLambda(
+			                    [this](TSharedPtr<FEnvQueryResult> Result)
+			                    {
+				                    FoodSourcesAvailable = Result->Items.Num();
+				                    RecalculateHappiness();
+			                    }));
 	}
 
 	if (AnimalData->WaterQuery)
 	{
-		WaterRequest.Execute(EEnvQueryRunMode::AllMatching, FQueryFinishedSignature::CreateLambda([this] (TSharedPtr<FEnvQueryResult> Result)
-		{
-			DrinkSourcesAvailable = Result->Items.Num();
-			RecalculateHappiness();
-		}));
+		WaterRequest.Execute(EEnvQueryRunMode::AllMatching, FQueryFinishedSignature::CreateLambda(
+			                     [this](TSharedPtr<FEnvQueryResult> Result)
+			                     {
+				                     DrinkSourcesAvailable = Result->Items.Num();
+				                     RecalculateHappiness();
+			                     }));
 	}
-	
+
 	FoodWaterCheckTimer = 5;
 }
 

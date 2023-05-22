@@ -80,6 +80,22 @@ void AEcoscapeGameModeBase::BeginPlay()
 	GetWorldTimerManager().SetTimer(Handle, SpawnTimerDelegate, 7, true, 0);
 }
 
+void AEcoscapeGameModeBase::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if (!CurrentWidget || !CurrentWidget->IsInViewport())
+	{
+		CurrentWidget = nullptr;
+		if (WidgetQueue.Num() != 0)
+		{
+			CurrentWidget = WidgetQueue[0];
+			WidgetQueue.RemoveAt(0);
+			CurrentWidget->AddToViewport();
+		}
+	}
+}
+
 void AEcoscapeGameModeBase::SpawnAnimalAtCursor(FString Animal)
 {
 	const AEcoscapePlayerController* Controller = AEcoscapePlayerController::GetEcoscapePlayerController(GetWorld());
@@ -139,9 +155,9 @@ void AEcoscapeGameModeBase::UnlockStage(int Stage)
 		return;
 	
 	CurrentProgressionStage = Stage;
-	UAnimalUnlockedWidget* AnimalUnlockedWidget = CreateWidget<UAnimalUnlockedWidget>(GetWorld(), AnimalUnlockedWidgetClass);
+	UAnimalUnlockedWidget* AnimalUnlockedWidget = CreateWidget<UAnimalUnlockedWidget>(UEcoscapeGameInstance::GetEcoscapeGameInstance(GetWorld()), AnimalUnlockedWidgetClass);
 	AnimalUnlockedWidget->SetAnimal(Progression->Stages[CurrentProgressionStage].Animal, Progression->Stages[CurrentProgressionStage].Habitat);
-	AnimalUnlockedWidget->AddToViewport();
+	AddWidgetToQueue(AnimalUnlockedWidget);
 }
 
 void AEcoscapeGameModeBase::GiveCodexEntry(UCodexEntry* CodexEntry)
@@ -168,4 +184,38 @@ bool AEcoscapeGameModeBase::CanAnimalGetSick(ABaseAnimal* Animal)
 	}
 
 	return false;
+}
+
+void AEcoscapeGameModeBase::StartNewSave()
+{
+	const auto GI = UEcoscapeGameInstance::GetEcoscapeGameInstance(GetWorld());
+	
+	// Reset codex
+	UnlockedCodexEntries.Empty();
+	GiveCodexEntry(GI->GetCodexEntry("CDX_Welcome"));
+	GiveCodexEntry(GI->GetCodexEntry("CDX_Controls"));
+	GiveCodexEntry(GI->GetCodexEntry("CDX_Test"));
+
+	// Reset progression
+	CurrentProgressionStage = 0;
+	
+	// Destroy all current animals
+	for (const auto& Animal : CurrentAnimals)
+		Animal.Value->Destroy();
+	CurrentAnimals.Empty();
+	SickAnimals.Empty();
+
+	// Regenerate terrains
+	const auto& Terrains = GI->GetAllTerrains();
+	for (AEcoscapeTerrain* Terrain : Terrains)
+	{
+		Terrain->Regenerate();
+		if (Terrain->TerrainName == "Forest")
+			AEcoscapePlayerController::GetEcoscapePlayerController(GetWorld())->GoToTerrain(Terrain);
+	}
+}
+
+void AEcoscapeGameModeBase::AddWidgetToQueue(UUserWidget* Widget)
+{
+	WidgetQueue.Add(Widget);
 }

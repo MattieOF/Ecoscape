@@ -8,6 +8,7 @@
 #include "Character/EcoscapePlayerController.h"
 #include "Character/Animals/AnimalData.h"
 #include "Kismet/KismetStringLibrary.h"
+#include "UI/Codex.h"
 #include "World/EcoscapeTerrain.h"
 
 void UEcoscapeGameInstance::Init()
@@ -39,13 +40,25 @@ void UEcoscapeGameInstance::Init()
 	ContentPaths[0] = TEXT("/Game/Blueprints/Character/Animals/");
 	AssetRegistry.ScanPathsSynchronous(ContentPaths);
 
-	// Find all the resource data assets and add them to the resources map
+	// Find all the animal data assets and add them to the animals map
 	TArray<FAssetData> AnimalAssetData;
 	AssetRegistry.GetAssetsByClass(UAnimalData::StaticClass()->GetFName(), AnimalAssetData, true);
 	for (auto& Asset : AnimalAssetData)
 	{
 		UAnimalData* Animal = Cast<UAnimalData>(Asset.GetAsset());
 		AnimalTypes.Add(Animal->GetName(), Animal);
+	}
+
+	ContentPaths[0] = TEXT("/Game/Codex//");
+	AssetRegistry.ScanPathsSynchronous(ContentPaths);
+
+	// Find all the codex entries assets and add them to the codex entries map
+	TArray<FAssetData> CodexData;
+	AssetRegistry.GetAssetsByClass(UCodexEntry::StaticClass()->GetFName(), CodexData, true);
+	for (auto& Asset : CodexData)
+	{
+		UCodexEntry* CodexEntry = Cast<UCodexEntry>(Asset.GetAsset());
+		CodexEntries.Add(CodexEntry->GetName(), CodexEntry);
 	}
 }
 
@@ -71,6 +84,16 @@ AEcoscapeTerrain* UEcoscapeGameInstance::GetTerrain(FString TerrainName)
 	
 	UE_LOG(LogEcoscape, Error, TEXT("In UEcoscapeGameInstance::GetTerrain, failed to find terrain named %s"), *TerrainName);
 	return nullptr;
+}
+
+TArray<AEcoscapeTerrain*> UEcoscapeGameInstance::GetAllTerrains()
+{
+	TArray<AEcoscapeTerrain*> AllTerrains;
+
+	for (const auto& Terrain : Terrains)
+		AllTerrains.Add(Terrain.Value);
+	
+	return AllTerrains;
 }
 
 int UEcoscapeGameInstance::AddTerrain(AEcoscapeTerrain* Terrain)

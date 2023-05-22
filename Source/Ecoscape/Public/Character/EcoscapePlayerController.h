@@ -128,6 +128,9 @@ protected:
 	void OnResetTool();
 	void OnInteract();
 
+	void OnViewCodex();
+	void OnDismissCodex();
+
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnEcoscapePlayerViewChanged(EEcoscapePlayerView NewState, APawn* NewPawn, float Time = 0.5f);
 
