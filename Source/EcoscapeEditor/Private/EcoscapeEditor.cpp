@@ -41,13 +41,14 @@ void FEcoscapeEditorModule::StartupModule()
 void FEcoscapeEditorModule::ShutdownModule()
 {
 	UE_LOG(LogEcoscapeEditor, Warning, TEXT("EcoscapeEditor: Log Ended"));
-	
-	if (!FModuleManager::Get().IsModuleLoaded("AssetTools"))
-	{
-		FAssetToolsModule::GetModule().Get().UnregisterAssetTypeActions(PlaceableItemAssetActions.ToSharedRef());
-		FAssetToolsModule::GetModule().Get().UnregisterAssetTypeActions(AnimalDataAssetActions.ToSharedRef());
-		FAssetToolsModule::GetModule().Get().UnregisterAssetTypeActions(CodexEntryAssetActions.ToSharedRef());
-	}
+
+	// Causes issues. Just don't bother.
+	// if (!FModuleManager::Get().IsModuleLoaded("AssetTools"))
+	// {
+	// 	FAssetToolsModule::GetModule().Get().UnregisterAssetTypeActions(PlaceableItemAssetActions.ToSharedRef());
+	// 	FAssetToolsModule::GetModule().Get().UnregisterAssetTypeActions(AnimalDataAssetActions.ToSharedRef());
+	// 	FAssetToolsModule::GetModule().Get().UnregisterAssetTypeActions(CodexEntryAssetActions.ToSharedRef());
+	// }
 }
 
 void FEcoscapeEditorModule::AddMenuEntries(FMenuBuilder& MenuBuilder)

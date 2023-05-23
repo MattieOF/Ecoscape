@@ -60,6 +60,9 @@ void AEcoscapeGameModeBase::BeginPlay()
 			if (CurrentProgressionStage > Progression->Stages.Num() - 1)
 				break;
 
+			if (!Progression->Stages[i].Animal)
+				continue;
+			
 			if (!CurrentAnimals.Contains(i))
 			{
 				AEcoscapeTerrain* Terrain = UEcoscapeGameInstance::GetEcoscapeGameInstance(GetWorld())->GetTerrain(Progression->Stages[i].Habitat);
@@ -94,6 +97,43 @@ void AEcoscapeGameModeBase::Tick(float DeltaSeconds)
 			CurrentWidget->AddToViewport();
 		}
 	}
+
+	if (CurrentProgressionStage <= Progression->Stages.Num() - 1)
+	{
+		const auto& Stage = Progression->Stages[CurrentProgressionStage];
+		switch (Progression->Stages[CurrentProgressionStage].RequirementType)
+		{
+		case PRTAnimalHappiness:
+			{
+				if (CurrentAnimals.Contains(CurrentProgressionStage) 
+					&& CurrentAnimals[CurrentProgressionStage] 
+					&& Progression->Stages[CurrentProgressionStage].MinimumHappiness <= CurrentAnimals[CurrentProgressionStage]->OverallHappiness)
+				{
+					UnlockNextAnimal();
+				}
+			}
+			break;
+		case PRTHabitatDeadness:
+			{
+				UEcoscapeGameInstance* GI = UEcoscapeGameInstance::GetEcoscapeGameInstance(GetWorld());
+				const AEcoscapeTerrain* Terrain = GI->GetTerrain(Stage.Habitat);
+				if (Terrain->Deadness <= Stage.MaxDeadness)
+					UnlockNextAnimal();
+			}
+			break;
+		case PRTHabitatDiversity:
+			{
+				UEcoscapeGameInstance* GI = UEcoscapeGameInstance::GetEcoscapeGameInstance(GetWorld());
+				const AEcoscapeTerrain* Terrain = GI->GetTerrain(Stage.Habitat);
+				if (Terrain->Diversity >= Stage.MinDiversity)
+					UnlockNextAnimal();
+			}
+			break;
+		default:
+			ECO_LOG_ERROR(FString::Printf(TEXT("Invalid progression requirement type %i!"), static_cast<int>(Progression->Stages[CurrentProgressionStage].RequirementType)));
+			break;
+		}
+	}
 }
 
 void AEcoscapeGameModeBase::SpawnAnimalAtCursor(FString Animal)
@@ -109,13 +149,6 @@ void AEcoscapeGameModeBase::SpawnAnimalAtCursor(FString Animal)
 
 void AEcoscapeGameModeBase::OnAnimalHappinessUpdated(ABaseAnimal* Animal, float NewHappiness)
 {
-	if (CurrentAnimals.Contains(CurrentProgressionStage) 
-	    && CurrentAnimals[CurrentProgressionStage] == Animal
-	    && Progression->Stages[CurrentProgressionStage].MinimumHappiness <= NewHappiness)
-	{
-		UnlockNextAnimal();
-	}
-
 	for (const auto& ArrayAnimal : CurrentAnimals)
 	{
 		if (ArrayAnimal.Value == Animal)
@@ -132,7 +165,7 @@ void AEcoscapeGameModeBase::OnAnimalDies(ABaseAnimal* Animal)
 {
 	TArray<int> AnimalIndexes;
 	CurrentAnimals.GetKeys(AnimalIndexes);
-	for (int i : AnimalIndexes)
+	for (const int i : AnimalIndexes)
 	{
 		if (CurrentAnimals[i] == Animal)
 		{
@@ -149,15 +182,28 @@ void AEcoscapeGameModeBase::UnlockNextAnimal()
 
 void AEcoscapeGameModeBase::UnlockStage(int Stage)
 {
-	Stage = FMath::Clamp(Stage, 0, Progression->Stages.Num() - 1);
+	Stage = FMath::Clamp(Stage, 0, Progression->Stages.Num());
 
 	if (Stage <= CurrentProgressionStage)
 		return;
 	
 	CurrentProgressionStage = Stage;
-	UAnimalUnlockedWidget* AnimalUnlockedWidget = CreateWidget<UAnimalUnlockedWidget>(UEcoscapeGameInstance::GetEcoscapeGameInstance(GetWorld()), AnimalUnlockedWidgetClass);
-	AnimalUnlockedWidget->SetAnimal(Progression->Stages[CurrentProgressionStage].Animal, Progression->Stages[CurrentProgressionStage].Habitat);
-	AddWidgetToQueue(AnimalUnlockedWidget);
+
+	if (Stage != Progression->Stages.Num() && Progression->Stages[Stage].Animal)
+	{
+		UAnimalUnlockedWidget* AnimalUnlockedWidget = CreateWidget<UAnimalUnlockedWidget>(UEcoscapeGameInstance::GetEcoscapeGameInstance(GetWorld()), AnimalUnlockedWidgetClass);
+		AnimalUnlockedWidget->SetAnimal(Progression->Stages[CurrentProgressionStage].Animal, Progression->Stages[CurrentProgressionStage].Habitat);
+		AddWidgetToQueue(AnimalUnlockedWidget);
+	}
+
+	// Ensure all codex entries are unlocked
+	for (int i = 0; i < CurrentProgressionStage; i++)
+	{
+		for (UCodexEntry* Entry : Progression->Stages[i].UnlockedCodexEntries)
+			GiveCodexEntry(Entry);
+		if (Progression->Stages[i].Animal && Progression->Stages[i].Animal->RelevantCodexEntry)
+			GiveCodexEntry(Progression->Stages[i].Animal->RelevantCodexEntry);	
+	}
 }
 
 void AEcoscapeGameModeBase::GiveCodexEntry(UCodexEntry* CodexEntry)
@@ -166,7 +212,8 @@ void AEcoscapeGameModeBase::GiveCodexEntry(UCodexEntry* CodexEntry)
 	{
 		UnlockedCodexEntries.Add(CodexEntry);
 		Codex->UpdateEntries();
-		CodexFeed->AddUnlock(CodexEntry);
+		if (CodexEntry->bShouldNotify)
+			CodexFeed->AddUnlock(CodexEntry);
 	}
 }
 
@@ -194,7 +241,9 @@ void AEcoscapeGameModeBase::StartNewSave()
 	UnlockedCodexEntries.Empty();
 	GiveCodexEntry(GI->GetCodexEntry("CDX_Welcome"));
 	GiveCodexEntry(GI->GetCodexEntry("CDX_Controls"));
-	GiveCodexEntry(GI->GetCodexEntry("CDX_Test"));
+	GiveCodexEntry(GI->GetCodexEntry("CDX_KnownBugs"));
+	GiveCodexEntry(GI->GetCodexEntry("CDX_Survey"));
+	GiveCodexEntry(GI->GetCodexEntry("CDX_Credits"));
 
 	// Reset progression
 	CurrentProgressionStage = 0;

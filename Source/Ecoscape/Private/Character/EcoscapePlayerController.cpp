@@ -19,6 +19,7 @@
 AEcoscapePlayerController::AEcoscapePlayerController()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bTickEvenWhenPaused = true;
 }
 
 bool AEcoscapePlayerController::GoToTerrain(AEcoscapeTerrain* Terrain)
@@ -71,6 +72,16 @@ void AEcoscapePlayerController::GoToHabitatSelect()
 	CreateWidget(this, HabitatSelectUIClass)->AddToViewport();
 }
 
+void AEcoscapePlayerController::GoToMainMenu()
+{
+	if (CurrentView == EPSMenu)
+		return;
+	
+	SetView(EPSMenu, false);
+	CreateWidget(this, MainMenuUIClass)->AddToViewport();
+	SetMouseEnabled(true);
+}
+
 void AEcoscapePlayerController::PlayMusic(USoundWave* NewMusic)
 {
 	if (CurrentMusic)
@@ -80,6 +91,7 @@ void AEcoscapePlayerController::PlayMusic(USoundWave* NewMusic)
 	}
 
 	CurrentMusic = Cast<UAudioComponent>(AddComponentByClass(UAudioComponent::StaticClass(), false, FTransform(), false));
+	CurrentMusic->bIsUISound = true;
 	CurrentMusic->SetSound(NewMusic);
 	CurrentMusic->bAllowSpatialization = false;
 	CurrentMusic->Play();
@@ -88,6 +100,9 @@ void AEcoscapePlayerController::PlayMusic(USoundWave* NewMusic)
 
 void AEcoscapePlayerController::BeginPlay()
 {
+	SetTickableWhenPaused(true);
+	InputComponent->SetTickableWhenPaused(false);
+	
 	InteractionPrompt = CreateWidget<UInteractionPrompt>(this, InteractionPromptClass);
 	InteractionPrompt->AddToViewport();
 	
@@ -126,10 +141,10 @@ void AEcoscapePlayerController::BeginPlay()
 	
 	Super::BeginPlay();
 	
-	// Go to habitat select for now
+	// Go to main menu
 	GoToTerrain(UEcoscapeGameInstance::GetEcoscapeGameInstance(GetWorld())->GetTerrain("Forest"));
 	SetupHUD(); // Order here is important. If HUD is setup after going to habitat select, HUD will stay on screen 
-	GoToHabitatSelect();
+	GoToMainMenu();
 }
 
 void AEcoscapePlayerController::OnMoveForward(const float Value)

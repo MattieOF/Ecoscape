@@ -24,6 +24,8 @@ public:
 	FText Content;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bDismissable = true;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bShouldNotify = true;
 };
 
 UCLASS(Blueprintable)

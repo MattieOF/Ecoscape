@@ -339,6 +339,7 @@ void ABaseAnimal::Tick(float DeltaSeconds)
 				&& FMath::FRand() <= AnimalData->SicknessChance * GameMode->GetAnimalSicknessModifier())
 			{
 				bIsSick = true;
+				GameMode->GiveCodexEntry(UEcoscapeGameInstance::GetEcoscapeGameInstance(GetWorld())->GetCodexEntry("CDX_Sickness"));
 				GameMode->NotificationPanel->AddNotification(
 					FText::FromString(FString::Printf(TEXT("%s is sick!"), *GivenName)),
 					FText::FromString(

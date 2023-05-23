@@ -147,6 +147,9 @@ public:
 	TArray<APlacedItem*> PlacedItems;
 
 	UPROPERTY()
+	TArray<AActor*> OtherSerialisedObjects;
+
+	UPROPERTY()
 	TArray<AProceduralFenceMesh*> PlacedFences;
 
 	UPROPERTY(EditAnywhere)
@@ -311,6 +314,9 @@ public:
 	
 	UPROPERTY(BlueprintReadOnly)
 	float Diversity = 0;
+
+	UPROPERTY(BlueprintReadOnly)
+	float Deadness = 1;
 
 	UPROPERTY(BlueprintReadOnly)
 	FText DiversityMessage = FText::FromString("");

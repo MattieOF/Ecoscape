@@ -18,7 +18,9 @@ int32 UBTComposite_Random::GetNextChildHandler(FBehaviorTreeSearchData& SearchDa
 	return NextChildIdx;
 }
 
+#if WITH_EDITOR
 FName UBTComposite_Random::GetNodeIconName() const
 {
 	return FName("BTEditor.Graph.BTNode.Composite.Selector.Icon");
 }
+#endif

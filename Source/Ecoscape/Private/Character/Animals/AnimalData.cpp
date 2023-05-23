@@ -22,7 +22,7 @@ UAnimalData::UAnimalData()
 		AnimalClass = ABaseAnimal::StaticClass();
 }
 
-#ifdef WITH_EDITOR
+#if WITH_EDITOR
 void UAnimalData::CreateIcon()
 {
 	UE_LOG(LogEcoscape, Log, TEXT("Creating icon for %s"), *GetName());

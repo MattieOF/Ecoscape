@@ -45,16 +45,17 @@ AEcoscapeTerrain::AEcoscapeTerrain()
 
 void AEcoscapeTerrain::CalculateDiversity()
 {
+	Deadness = 0;
+	Diversity = 0;
+	
 	if (PlacedItems.Num() == 0)
 	{
-		Diversity = 0;
 		DiversityMessage = FText::FromString("Your habitat could use some items.");
 		return;	
 	}
 	
 	TMap<FString, float> Values;
 	float TotalWeight = 0;
-	float Deadness = 0;
 
 	// Add up all the diversity weights into the map
 	int ItemTypes = 0;
@@ -952,12 +953,13 @@ void AEcoscapeTerrain::GenerateStartingItems()
 			}
 			else if (Object.ActorType != nullptr)
 			{
-					if (0 > Hit.ImpactPoint.Z - Water->GetActorLocation().Z)
-					{
-						i--;
-						continue;
-					}
+				if (0 > Hit.ImpactPoint.Z - Water->GetActorLocation().Z)
+				{
+					i--;
+					continue;
+				}
 				SpawnedObject = GetWorld()->SpawnActor(Object.ActorType, &Hit.ImpactPoint, &FRotator::ZeroRotator);
+				OtherSerialisedObjects.Add(SpawnedObject);
 			} else
 			{
 				ECO_LOG_ERROR("In terrain, a placeable item was not either an item type or actor.");
@@ -1316,6 +1318,9 @@ void AEcoscapeTerrain::Regenerate()
 	for (const auto& Detail : DetailActors)
 		if (Detail.Actor) Detail.Actor->Destroy();
 	DetailActors.Empty();
+	for (AActor* Item : OtherSerialisedObjects)
+		Item->Destroy();
+	OtherSerialisedObjects.Empty();
 	GenerateVerticies();
 	GenerateIndicies();
 	GenerateNormals();

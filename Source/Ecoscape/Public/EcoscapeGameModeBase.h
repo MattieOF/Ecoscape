@@ -25,6 +25,14 @@ public:
 	void AddNotification(const FText& Title, const FText& Content, float Time = 5, UTexture2D* Icon = nullptr);
 };
 
+UENUM(BlueprintType)
+enum EProgressionRequirementType
+{
+	PRTAnimalHappiness   UMETA(DisplayName = "Animal Happiness"),
+	PRTHabitatDiversity  UMETA(DisplayName = "Habitat Diversity"),
+	PRTHabitatDeadness   UMETA(DisplayName = "Habitat Deadness")
+};
+
 USTRUCT()
 struct FEcoscapeProgressionItem
 {
@@ -32,11 +40,23 @@ struct FEcoscapeProgressionItem
 
 public:
 	UPROPERTY(EditAnywhere)
-	UAnimalData* Animal;
+	TEnumAsByte<EProgressionRequirementType> RequirementType;
+	
 	UPROPERTY(EditAnywhere)
 	FString Habitat;
 	UPROPERTY(EditAnywhere)
+	float MinDiversity = 0;
+	UPROPERTY(EditAnywhere)
+	float MaxDeadness = 0;
+	UPROPERTY(EditAnywhere)
+	UAnimalData* Animal;
+	UPROPERTY(EditAnywhere)
 	float MinimumHappiness = 0.7f;
+	UPROPERTY(EditAnywhere)
+	float MinimumHabitatDiversity = 0.6f;
+
+	UPROPERTY(EditAnywhere)
+	TArray<UCodexEntry*> UnlockedCodexEntries;
 };
 
 UCLASS(Blueprintable)

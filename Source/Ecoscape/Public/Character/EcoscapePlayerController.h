@@ -80,6 +80,9 @@ public:
 	void GoToHabitatSelect();
 
 	UFUNCTION(BlueprintCallable)
+	void GoToMainMenu();
+
+	UFUNCTION(BlueprintCallable)
 	void PlayMusic(USoundWave* NewMusic);
 
 	UFUNCTION(BlueprintImplementableEvent)
@@ -96,6 +99,9 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UUserWidget> HabitatSelectUIClass;
+	
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UUserWidget> MainMenuUIClass;
 
 	UPROPERTY(BlueprintAssignable)
 	FOnPlayerViewChanged OnPlayerViewChanged;

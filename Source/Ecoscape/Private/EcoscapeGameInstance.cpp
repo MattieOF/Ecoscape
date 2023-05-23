@@ -72,6 +72,14 @@ UTextPopup* UEcoscapeGameInstance::ShowPopup(FString Title, FString Message)
 
 AEcoscapeTerrain* UEcoscapeGameInstance::GetTerrain(FString TerrainName)
 {
+	if (TerrainNameMap.Contains(TerrainName))
+	{
+		if (AEcoscapeTerrain* Terrain = TerrainNameMap[TerrainName]; !Terrain)
+			TerrainNameMap.Remove(TerrainName);
+		else
+			return Terrain;
+	}
+	
 	TArray<AActor*> AllTerrains;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEcoscapeTerrain::StaticClass(), AllTerrains);
 
@@ -79,7 +87,10 @@ AEcoscapeTerrain* UEcoscapeGameInstance::GetTerrain(FString TerrainName)
 	{
 		AEcoscapeTerrain* Terrain = Cast<AEcoscapeTerrain>(TerrainActor);
 		if (Terrain->TerrainName == TerrainName)
+		{
+			TerrainNameMap.Add(TerrainName, Terrain);
 			return Terrain;
+		}
 	}
 	
 	UE_LOG(LogEcoscape, Error, TEXT("In UEcoscapeGameInstance::GetTerrain, failed to find terrain named %s"), *TerrainName);

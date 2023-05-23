@@ -128,4 +128,6 @@ private:
 	int CurrentTerrainIndex = 0;
 	UPROPERTY()
 	TMap<int, AEcoscapeTerrain*> Terrains;
+	UPROPERTY()
+	TMap<FString, AEcoscapeTerrain*> TerrainNameMap;
 };
