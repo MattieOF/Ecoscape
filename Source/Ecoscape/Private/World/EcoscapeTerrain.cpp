@@ -1319,7 +1319,7 @@ void AEcoscapeTerrain::Regenerate()
 		if (Detail.Actor) Detail.Actor->Destroy();
 	DetailActors.Empty();
 	for (AActor* Item : OtherSerialisedObjects)
-		Item->Destroy();
+		if (Item) Item->Destroy();
 	OtherSerialisedObjects.Empty();
 	GenerateVerticies();
 	GenerateIndicies();
