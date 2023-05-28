@@ -5,11 +5,14 @@
 #include "Ecoscape.h"
 #include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
-#include "MessageLogModule.h"
 #include "Character/EcoscapeFPPlayerCharacter.h"
 #include "Character/EcoscapePlayerController.h"
 #include "Character/Animals/BaseAnimal.h"
 #include "World/EcoscapeTerrain.h"
+
+#if WITH_EDITOR
+#include "MessageLogModule.h"
+#endif
 
 AEcoscapeGameModeBase::AEcoscapeGameModeBase()
 {

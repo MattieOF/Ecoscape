@@ -5,7 +5,10 @@
 #include "Ecoscape.h"
 #include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
+
+#if WITH_EDITOR
 #include "MessageLogModule.h"
+#endif
 
 UStagedItemComponent::UStagedItemComponent()
 {

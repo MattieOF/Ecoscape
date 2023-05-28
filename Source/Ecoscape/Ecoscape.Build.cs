@@ -9,9 +9,12 @@ public class Ecoscape : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "PhysicsCore", "UMG", "AIModule", "GameplayTasks" });
-		PrivateDependencyModuleNames.AddRange(new string[] { "ProceduralMeshComponent", "GeometryFramework", "GeometryScriptingCore", "NavigationSystem", "MessageLog" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "ProceduralMeshComponent", "GeometryFramework", "GeometryScriptingCore", "NavigationSystem" });
 		
 		if (Target.bBuildEditor) 
+		{
 			PublicDependencyModuleNames.Add("UnrealEd");
+			PrivateDependencyModuleNames.Add("MessageLog");
+		}
 	}
 }

@@ -4,13 +4,13 @@
 
 #include "Ecoscape.h"
 #include "EngineUtils.h"
-#include "MessageLogModule.h"
 #include "Engine/PostProcessVolume.h"
 #include "Kismet/GameplayStatics.h"
 #include "World/PlaceableItemData.h"
 
 #if WITH_EDITOR
 #include "Editor.h"
+#include "MessageLogModule.h"
 #endif
 
 FVector2D UEcoscapeStatics::ClampVector2D(FVector2D Vector, FVector2D Min, FVector2D Max)

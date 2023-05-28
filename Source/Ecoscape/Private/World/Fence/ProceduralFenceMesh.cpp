@@ -5,11 +5,14 @@
 #include "Ecoscape.h"
 #include "EcoscapeStatics.h"
 #include "KismetProceduralMeshLibrary.h"
-#include "MessageLogModule.h"
 #include "UObject/ConstructorHelpers.h"
 #include "World/EcoscapeProcMeshStatics.h"
 #include "World/Fence/FenceGate.h"
 #include "World/EcoscapeTerrain.h" // Not unused, used for archive overload
+
+#if WITH_EDITOR
+#include "MessageLogModule.h"
+#endif
 
 // Sets default values
 AProceduralFenceMesh::AProceduralFenceMesh()

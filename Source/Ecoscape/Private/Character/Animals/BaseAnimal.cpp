@@ -8,7 +8,6 @@
 #include "EcoscapeLog.h"
 #include "EcoscapeStatics.h"
 #include "EcoscapeStats.h"
-#include "MessageLogModule.h"
 #include "NavigationSystem.h"
 #include "VorbisAudioInfo.h"
 #include "Animation/AnimInstance.h"
@@ -21,6 +20,10 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Tasks/AITask_RunEQS.h"
 #include "World/EcoscapeTerrain.h"
+
+#if WITH_EDITOR
+#include "MessageLogModule.h"
+#endif
 
 DECLARE_CYCLE_STAT(TEXT("Terrain/Animal: Check Happiness"), STAT_CheckHappiness, STATGROUP_EcoscapeTerrain);
 

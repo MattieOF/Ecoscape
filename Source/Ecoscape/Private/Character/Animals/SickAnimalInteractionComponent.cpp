@@ -3,8 +3,11 @@
 #include "Character/Animals/SickAnimalInteractionComponent.h"
 
 #include "Ecoscape.h"
-#include "MessageLogModule.h"
 #include "Character/Animals/BaseAnimal.h"
+
+#if WITH_EDITOR
+#include "MessageLogModule.h"
+#endif
 
 USickAnimalInteractionComponent::USickAnimalInteractionComponent()
 {

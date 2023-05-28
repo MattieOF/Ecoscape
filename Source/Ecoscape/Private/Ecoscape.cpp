@@ -16,24 +16,28 @@ IMPLEMENT_PRIMARY_GAME_MODULE( FEcoscapeModule, Ecoscape, "Ecoscape" );
 
 void FEcoscapeModule::StartupModule()
 {
+#if WITH_EDITOR
 	FMessageLogModule& MessageLogModule = FModuleManager::LoadModuleChecked<FMessageLogModule>("MessageLog");
 	FMessageLogInitializationOptions InitOptions;
 	InitOptions.bShowPages = true;
 	InitOptions.bAllowClear = true;
 	InitOptions.bShowFilters = true;
 	MessageLogModule.RegisterLogListing("Ecoscape", NSLOCTEXT("Ecoscape", "EcoscapeLogLabel", "Ecoscape"), InitOptions);
+#endif
 	
 	UE_LOG(LogEcoscape, Log, TEXT("Started main Ecoscape module!"));
 }
 
 void FEcoscapeModule::ShutdownModule()
 {
+#if WITH_EDITOR
 	if (FModuleManager::Get().IsModuleLoaded("MessageLog"))
 	{
 		// Unregister message log
 		FMessageLogModule& MessageLogModule = FModuleManager::GetModuleChecked<FMessageLogModule>("MessageLog");
 		MessageLogModule.UnregisterLogListing("Ecoscape");
 	}
+#endif
 	
 	UE_LOG(LogEcoscape, Log, TEXT("Shutdown main Ecoscape module!"));
 }

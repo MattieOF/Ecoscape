@@ -8,7 +8,6 @@
 #include "EcoscapeStatics.h"
 #include "EcoscapeStats.h"
 #include "KismetProceduralMeshLibrary.h"
-#include "MessageLogModule.h"
 #include "NavigationSystem.h"
 #include "Engine/StaticMeshActor.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -19,6 +18,10 @@
 #include "World/Fence/Fence.h"
 #include "World/Fence/ProceduralFence.h"
 #include "World/Fence/ProceduralFenceMesh.h"
+
+#if WITH_EDITOR
+#include "MessageLogModule.h"
+#endif
 
 DECLARE_CYCLE_STAT(TEXT("Terrain: Generate"), STAT_GenTerrain, STATGROUP_EcoscapeTerrain);
 DECLARE_CYCLE_STAT(TEXT("Terrain: Get Nearest Vertex"), STAT_GetNearestVert, STATGROUP_EcoscapeTerrain);

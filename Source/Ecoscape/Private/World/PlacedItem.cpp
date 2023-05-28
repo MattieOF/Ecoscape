@@ -4,10 +4,13 @@
 
 #include "Ecoscape.h"
 #include "EcoscapeStatics.h"
-#include "MessageLogModule.h"
 #include "NavModifierComponent.h"
 #include "NavAreas/NavArea_Null.h"
 #include "World/StagedItemComponent.h"
+
+#if WITH_EDITOR
+#include "MessageLogModule.h"
+#endif
 
 APlacedItem::APlacedItem()
 {

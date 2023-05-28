@@ -4,10 +4,13 @@
 
 #include "Ecoscape.h"
 #include "EcoscapeStatics.h"
-#include "MessageLogModule.h"
 #include "Character/Animals/BaseAnimal.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+
+#if WITH_EDITOR
+#include "MessageLogModule.h"
+#endif
 
 void UAnimalAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
@@ -16,7 +19,9 @@ void UAnimalAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	if (!Animal)
 	{
 		if (UEcoscapeStatics::InActualGame())
+		{
 			ECO_LOG_ERROR("In UAnimalAnimInstance, pawn owner is not a BaseAnimal!");
+		}
 		return;
 	}
 
